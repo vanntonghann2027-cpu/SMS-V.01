@@ -745,21 +745,36 @@
               loaded = true;
             }
           }
-          const stuRes = await fetch(`${cfg.url}/rest/v1/sms_students?select=id,student_json&limit=10000`, { headers });
-          if (stuRes.ok) {
+          // 1. Pull students with pagination (1,000 max per page in PostgREST)
+          let allStuRows = [];
+          let stuOffset = 0;
+          while (stuOffset < 10000) {
+            const stuRes = await fetch(`${cfg.url}/rest/v1/sms_students?select=id,student_json&order=id.asc&limit=1000&offset=${stuOffset}`, { headers });
+            if (!stuRes.ok) break;
             const sRows = await stuRes.json();
-            if (Array.isArray(sRows) && sRows.length > 0) {
-              state.students = sRows.map(r => r.student_json || { id: r.id });
-            }
+            if (!Array.isArray(sRows) || sRows.length === 0) break;
+            allStuRows = allStuRows.concat(sRows);
+            if (sRows.length < 1000) break;
+            stuOffset += 1000;
           }
-          const scRes = await fetch(`${cfg.url}/rest/v1/sms_scores?select=student_id,period_key,subject_code,score&limit=20000`, { headers });
-          if (scRes.ok) {
+          if (allStuRows.length > 0) {
+            state.students = allStuRows.map(r => r.student_json || { id: r.id });
+          }
+
+          // 2. Pull scores with pagination (1,000 max per page in PostgREST)
+          let scOffset = 0;
+          while (scOffset < 100000) {
+            const scRes = await fetch(`${cfg.url}/rest/v1/sms_scores?select=student_id,period_key,subject_code,score&order=updated_at.asc&limit=1000&offset=${scOffset}`, { headers });
+            if (!scRes.ok) break;
             const scRows = await scRes.json();
+            if (!Array.isArray(scRows) || scRows.length === 0) break;
             scRows.forEach(r => {
               if (!state.scores[r.student_id]) state.scores[r.student_id] = {};
               if (!state.scores[r.student_id][r.period_key]) state.scores[r.student_id][r.period_key] = {};
               state.scores[r.student_id][r.period_key][r.subject_code] = Number(r.score);
             });
+            if (scRows.length < 1000) break;
+            scOffset += 1000;
           }
           if (loaded) {
             document.getElementById('cloudStatusDot').classList.add('online');

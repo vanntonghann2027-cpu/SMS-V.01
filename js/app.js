@@ -22079,29 +22079,39 @@ CREATE POLICY "Allow all sms_app_state" ON public.sms_app_state FOR ALL TO anon,
     if (!cfg || !cfg.url || !cfg.key) return 0;
 
     try {
-      // 1. Pull students and merge by ID
-      const stuRes = await this.supabaseFetch('/rest/v1/sms_students?select=id,student_json&limit=10000', {
-        method: 'GET'
-      }, cfg);
-      if (stuRes.ok) {
-        const stuRows = await stuRes.json();
-        if (Array.isArray(stuRows) && stuRows.length > 0) {
-          const existingMap = new Map((this.students || []).map((s) => [String(s.id), s]));
-          for (const row of stuRows) {
-            if (row && row.id && row.student_json) {
-              const prev = existingMap.get(String(row.id)) || {};
-              existingMap.set(String(row.id), { ...prev, ...row.student_json });
-            }
+      // 1. Pull students (paginated by 1,000 rows - PostgREST max page) and merge by ID
+      let allStuRows = [];
+      let stuOffset = 0;
+      const stuPageSize = 1000;
+      while (stuOffset < 20000) {
+        const stuRes = await this.supabaseFetch(
+          `/rest/v1/sms_students?select=id,student_json&order=id.asc&limit=${stuPageSize}&offset=${stuOffset}`,
+          { method: 'GET' },
+          cfg
+        );
+        if (!stuRes.ok) break;
+        const pageRows = await stuRes.json();
+        if (!Array.isArray(pageRows) || pageRows.length === 0) break;
+        allStuRows = allStuRows.concat(pageRows);
+        if (pageRows.length < stuPageSize) break;
+        stuOffset += stuPageSize;
+      }
+      if (allStuRows.length > 0) {
+        const existingMap = new Map((this.students || []).map((s) => [String(s.id), s]));
+        for (const row of allStuRows) {
+          if (row && row.id && row.student_json) {
+            const prev = existingMap.get(String(row.id)) || {};
+            existingMap.set(String(row.id), { ...prev, ...row.student_json });
           }
-          this.students = Array.from(existingMap.values());
         }
+        this.students = Array.from(existingMap.values());
       }
 
-      // 2. Pull all scores (paginated up to 50,000 rows) and merge by (student_id, period_key, subject_code)
+      // 2. Pull all scores (paginated by 1,000 rows - PostgREST max page up to 100,000 rows)
       let allScoreRows = [];
       let offset = 0;
-      const pageSize = 5000;
-      while (offset < 50000) {
+      const pageSize = 1000;
+      while (offset < 100000) {
         const scoreRes = await this.supabaseFetch(
           `/rest/v1/sms_scores?select=student_id,period_key,subject_code,score&order=updated_at.asc&limit=${pageSize}&offset=${offset}`,
           { method: 'GET' },
