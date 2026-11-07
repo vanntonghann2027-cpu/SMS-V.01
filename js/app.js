@@ -22061,6 +22061,12 @@ CREATE POLICY "Allow all sms_app_state" ON public.sms_app_state FOR ALL TO anon,
         body: JSON.stringify(examMetaPayload)
       }, cfg);
 
+      const statusEl = document.getElementById('supabaseLastSyncStatus');
+      if (statusEl) {
+        const nowStr = new Date().toLocaleTimeString('km-KH');
+        statusEl.innerHTML = `✅ បានបញ្ជូនទៅ Cloud ចុងក្រោយនៅម៉ោង ${nowStr} (ពិន្ទុ៖ <b>${scoreRows.length}</b> ខ្ទង់, សិស្ស៖ <b>${(this.students || []).length}</b> នាក់)`;
+      }
+
       if (!silent) {
         this.showToast(`⬆️ បានបញ្ជូនពិន្ទុ (${scoreRows.length} ខ្ទង់) និងអក្សរសម្ងាត់/បន្ទប់ប្រឡងទៅកាន់ Supabase Cloud ជោគជ័យ!`, 'success');
       }
@@ -22162,8 +22168,15 @@ CREATE POLICY "Allow all sms_app_state" ON public.sms_app_state FOR ALL TO anon,
       this.renderNavigation();
       this.renderCurrentView();
 
+      const statusEl = document.getElementById('supabaseLastSyncStatus');
+      if (statusEl) {
+        const nowStr = new Date().toLocaleTimeString('km-KH');
+        const stuTotal = (this.students || []).filter(s => !this.isIncompleteLateStudent(s)).length;
+        statusEl.innerHTML = `✅ បានទាញយកចុងក្រោយនៅម៉ោង ${nowStr} (សិស្សសរុប៖ <b>${stuTotal}</b> នាក់, ពិន្ទុ៖ <b>${allScoreRows.length}</b> ខ្ទង់)`;
+      }
+
       if (!silent) {
-        this.showToast(`⬇️ បានទាញយក និងបញ្ចូលពិន្ទុចំនួន ${allScoreRows.length} ខ្ទង់ ពី Supabase Cloud!`, 'success');
+        this.showToast(`⬇️ បានទាញយកសិស្ស (${allStuRows.length} នាក់) និងពិន្ទុ (${allScoreRows.length} ខ្ទង់) ពី Supabase Cloud ជោគជ័យ!`, 'success');
       }
       return allScoreRows.length;
     } catch (err) {
