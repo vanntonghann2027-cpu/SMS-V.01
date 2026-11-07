@@ -812,9 +812,37 @@ class ScoreManagementApp {
       }
     }
 
+    // 3.5. On GitHub Pages / static hosting without /api/data, auto-pull complete state from Supabase Cloud
+    if (!loadedData || (loadedData.students && loadedData.students.length <= 25)) {
+      try {
+        const cloudScores = await this.pullFromSupabase({ silent: true });
+        if (this.students && this.students.length > 50) {
+          loadedData = {
+            students: this.students,
+            scores: this.scores,
+            examArrangements: this.examArrangements,
+            roomSubjectSecrets: this.roomSubjectSecrets,
+            roomSubjectSecretsByPeriod: this.roomSubjectSecretsByPeriod,
+            activeScorePeriod: this.activeScorePeriod
+          };
+          console.info(`Auto-pulled ${this.students.length} students & ${cloudScores} scores from Supabase Cloud on initial startup!`);
+        }
+      } catch (e) {
+        console.warn('Initial Supabase pull warning:', e);
+      }
+    }
+
     // 4. Apply loaded data or initialize default demo students
     if (loadedData) {
       this.applyParsedState(loadedData);
+      // If examArrangements or roomSubjectSecrets are missing from local cache, pull from Supabase Cloud
+      if ((!this.examArrangements || this.examArrangements.length === 0) ||
+          (!this.roomSubjectSecrets || Object.keys(this.roomSubjectSecrets).length === 0)) {
+        this.pullFromSupabase({ silent: true }).then(() => {
+          this.renderNavigation();
+          this.renderCurrentView();
+        }).catch(err => console.warn('Background meta sync:', err));
+      }
     } else {
       // First-time visit ever: initialize demo students
       this.students = [...INITIAL_DEMO_STUDENTS];
@@ -22048,18 +22076,28 @@ CREATE POLICY "Allow all sms_app_state" ON public.sms_app_state FOR ALL TO anon,
             examArrangements: this.examArrangements || [],
             examConfigs: this.examConfigs || {},
             examDateConfigs: this.examDateConfigs || {},
+            examLateStudentCounts: this.examLateStudentCounts || {},
+            examGradeSettings: this.examGradeSettings || {},
+            curriculumConfigs: this.curriculumConfigs || {},
+            classSections: this.classSections || {},
+            examSubjectOrders: this.examSubjectOrders || {},
             updatedAt: nowIso
           },
           updated_at: nowIso
         }
       ];
-      await this.supabaseFetch('/rest/v1/sms_app_state?on_conflict=key', {
-        method: 'POST',
-        headers: {
-          'Prefer': 'resolution=merge-duplicates,return=minimal'
-        },
-        body: JSON.stringify(examMetaPayload)
+      const metaPatchRes = await this.supabaseFetch('/rest/v1/sms_app_state?key=eq.exam_meta', {
+        method: 'PATCH',
+        headers: { 'Prefer': 'return=minimal' },
+        body: JSON.stringify({ value: examMetaPayload[0].value, updated_at: nowIso })
       }, cfg);
+      if (!metaPatchRes.ok) {
+        await this.supabaseFetch('/rest/v1/sms_app_state', {
+          method: 'POST',
+          headers: { 'Prefer': 'return=minimal' },
+          body: JSON.stringify(examMetaPayload)
+        }, cfg);
+      }
 
       const statusEl = document.getElementById('supabaseLastSyncStatus');
       if (statusEl) {
@@ -22085,6 +22123,40 @@ CREATE POLICY "Allow all sms_app_state" ON public.sms_app_state FOR ALL TO anon,
     if (!cfg || !cfg.url || !cfg.key) return 0;
 
     try {
+      // 0. Pull complete exam_meta (roomSubjectSecrets, examArrangements, activeScorePeriod, etc.) from sms_app_state
+      try {
+        const metaRes = await this.supabaseFetch(
+          '/rest/v1/sms_app_state?key=eq.exam_meta&select=value',
+          { method: 'GET' },
+          cfg
+        );
+        if (metaRes.ok) {
+          const metaRows = await metaRes.json();
+          if (Array.isArray(metaRows) && metaRows[0] && metaRows[0].value) {
+            const v = metaRows[0].value;
+            if (v.roomSubjectSecrets && Object.keys(v.roomSubjectSecrets).length > 0) {
+              this.roomSubjectSecrets = v.roomSubjectSecrets;
+            }
+            if (v.roomSubjectSecretsByPeriod && Object.keys(v.roomSubjectSecretsByPeriod).length > 0) {
+              this.roomSubjectSecretsByPeriod = v.roomSubjectSecretsByPeriod;
+            }
+            if (Array.isArray(v.examArrangements) && v.examArrangements.length > 0) {
+              this.examArrangements = v.examArrangements;
+            }
+            if (v.activeScorePeriod) this.activeScorePeriod = v.activeScorePeriod;
+            if (v.examConfigs) this.examConfigs = { ...this.examConfigs, ...v.examConfigs };
+            if (v.examDateConfigs) this.examDateConfigs = { ...this.examDateConfigs, ...v.examDateConfigs };
+            if (v.examLateStudentCounts) this.examLateStudentCounts = { ...this.examLateStudentCounts, ...v.examLateStudentCounts };
+            if (v.examGradeSettings) this.examGradeSettings = { ...this.examGradeSettings, ...v.examGradeSettings };
+            if (v.curriculumConfigs) this.curriculumConfigs = { ...this.curriculumConfigs, ...v.curriculumConfigs };
+            if (v.classSections) this.classSections = { ...this.classSections, ...v.classSections };
+            if (v.examSubjectOrders) this.examSubjectOrders = { ...this.examSubjectOrders, ...v.examSubjectOrders };
+          }
+        }
+      } catch (metaErr) {
+        console.warn('Pull exam_meta error:', metaErr);
+      }
+
       // 1. Pull students (paginated by 1,000 rows - PostgREST max page) and merge by ID
       let allStuRows = [];
       let stuOffset = 0;
