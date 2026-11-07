@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <base target="_top">
+    <style>
+      /* លុបគម្លាតគែមទាំងអស់ចេញ ដើម្បីឱ្យលាតពេញ 100% */
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Khmer OS Battambang', sans-serif;
+        background-color: #f4f7f6;
+      }
+
+      /* រចនាសម្ព័ន្ធ Container ធំ */
+      .modern-tab-container {
+        width: 100%;
+        background: #ffffff;
+        display: flex;
+        flex-direction: column;
+        min-height: 100vh;
+      }
+
+      /* រចនាប័ទ្មប៊ូតុង Tab */
+      .tab-header {
+        display: flex;
+        background-color: #f8f9fa;
+        border-bottom: 2px solid #e9ecef;
+        width: 100%;
+      }
+
+      .tab-btn {
+        flex: 1;
+        background: transparent;
+        border: none;
+        padding: 16px 10px;
+        font-size: 15px;
+        font-family: 'Khmer OS Battambang', sans-serif;
+        color: #6c757d;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        outline: none;
+      }
+
+      .tab-btn:hover {
+        background-color: #e2e6ea;
+        color: #1a3a5f;
+      }
+
+      .tab-btn.active {
+        color: #1a3a5f;
+        font-weight: bold;
+        background-color: #ffffff;
+      }
+
+      .tab-btn.active::after {
+        content: "";
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background-color: #1a3a5f;
+        border-radius: 3px 3px 0 0;
+      }
+
+      /* ផ្ទៃបង្ហាញទិន្នន័យ (Body) */
+      .tab-body {
+        flex: 1;
+        padding: 30px;
+        background-color: #ffffff;
+      }
+
+      .tab-panel {
+        display: none;
+        animation: fadeIn 0.4s ease-in-out;
+      }
+
+      .tab-panel.active-panel {
+        display: block;
+      }
+
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      h3 {
+        margin-top: 0;
+        color: #1a3a5f;
+        border-bottom: 2px dashed #f0f0f0;
+        padding-bottom: 12px;
+        margin-bottom: 20px;
+      }
+
+      /* ផ្នែកបញ្ជា និងតារាង */
+      .action-controls {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 20px;
+        font-family: 'Khmer OS Battambang', sans-serif;
+        position: relative; 
+        z-index: 999; 
+        flex-wrap: wrap;
+      }
+      
+      .input-grade {
+        width: 200px;
+        padding: 8px 10px;
+        border: 1px solid #e76c22;
+        border-radius: 4px;
+        font-family: 'Khmer OS Battambang', sans-serif;
+        font-size: 14px;
+        outline: none;
+        background-color: #ffffff;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      }
+
+      .action-controls label {
+        font-size: 16px;
+        color: #000;
+      }
+
+      .btn-orange {
+        background: linear-gradient(to bottom, #f07b3f, #da5a21);
+        color: white;
+        border: none;
+        padding: 8px 25px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: 'Khmer OS Battambang', sans-serif;
+        font-size: 15px;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        transition: 0.2s;
+      }
+      .btn-orange:hover { background: linear-gradient(to bottom, #da5a21, #c14d18); }
+
+      .btn-green {
+        background: linear-gradient(to bottom, #308032, #1b5e20);
+        color: white;
+        border: none;
+        padding: 8px 25px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-family: 'Khmer OS Battambang', sans-serif;
+        font-size: 15px;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+        transition: 0.2s;
+      }
+      .btn-green:hover { background: linear-gradient(to bottom, #1b5e20, #124016); }
+
+      /* តារាងទិន្នន័យ (Data Table) */
+      .custom-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+        font-family: 'Kantumruy Pro', 'Khmer OS Battambang', sans-serif;
+        background-color: #ffffff;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .custom-table thead {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: #ffffff;
+      }
+
+      .custom-table th {
+        padding: 12px 15px;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 14px;
+        letter-spacing: 0.5px;
+      }
+
+      .custom-table td {
+        padding: 12px 15px;
+        border-bottom: 1px solid #eef2f5;
+        color: #333333;
+        font-size: 14px;
+        vertical-align: middle;
+      }
+
+      .custom-table tbody tr:nth-child(even) {
+        background-color: #f8fafc;
+      }
+
+      .custom-table tbody tr:hover {
+        background-color: #f1f5f9;
+        transition: background 0.2s ease;
+      }
+
+      /* រង្វង់មូលសម្រាប់ "លេខបន្ទប់" (ពណ៌ខៀវ) */
+      .room-badge {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 36px !important;
+        height: 36px !important;
+        background-color: #e0f2fe !important;
+        color: #0369a1 !important;
+        font-weight: bold !important;
+        border-radius: 50% !important;
+        border: 2px solid #bae6fd !important;
+        box-shadow: 0 2px 4px rgba(3, 105, 161, 0.1) !important;
+      }
+
+      /* រង្វង់មូលសម្រាប់ "លេខតុ" (ពណ៌បៃតង) */
+      .seat-badge {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 36px !important;
+        height: 36px !important;
+        background-color: #dcfce7 !important;
+        color: #15803d !important;
+        font-weight: bold !important;
+        border-radius: 50% !important;
+        border: 2px solid #bbf7d0 !important;
+        box-shadow: 0 2px 4px rgba(21, 128, 61, 0.1) !important;
+      }
+
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      /* ==========================================
+         Per-room capacity controls (ប្រអប់បន្ទប់)
+         ========================================== */
+      .exam-capacity-table-wrapper {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+        min-width: 260px;
+        max-width: 340px;
+      }
+
+      .room-capacity-table {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 0.4rem;
+        background: #f8fafc;
+      }
+
+      .room-cap-row {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.35rem 0.6rem;
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        border-radius: 6px;
+        font-size: 0.85rem;
+      }
+
+      .room-cap-room {
+        min-width: 70px;
+        font-weight: 600;
+        color: #374151;
+      }
+
+      .room-cap-input {
+        flex: 1;
+        width: 60px;
+        padding: 0.25rem 0.4rem;
+        border: 1px solid #94a3b8;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        text-align: right;
+      }
+
+      .room-cap-input:focus {
+        outline: none;
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+      }
+    </style>
+  </head>
+  <body>
+    
+    <div class="modern-tab-container">
+      
+      <div class="tab-header">
+        <button class="tab-btn active" onclick="openModernTab(event, 'tab-name-list')">
+          📝 រៀបចំបញ្ជីឈ្មោះលេខបន្ទប់និងលេខតុ
+        </button>
+         <button class="tab-btn" onclick="openModernTab(event, 'tab-secret-code')">
+          🔑 រៀបចំអក្សរសម្ងាត់
+        </button>
+        <button class="tab-btn" onclick="openModernTab(event, 'tab-room-desk')">
+           បញ្ជីឈ្មោះនិងបញ្ជីស្រង់អវត្តមានសិស្សតាមបន្ទប់
+        </button>
+        
+      </div>
+
+      <div class="tab-body">
+        
+        <div id="tab-name-list" class="tab-panel active-panel">
+          <h3>ការរៀបចំបញ្ជីឈ្មោះ</h3>
+          
+          <div class="action-controls">
+            <label>សូមជ្រើសកម្រិតថ្នាក់</label>
+            <select class="input-grade" id="gradeSelect" onchange="fetchStudents()">
+              <option value="">-- សូមជ្រើសរើស --</option>
+              <option value="7">ថ្នាក់ទី៧</option>
+              <option value="8">ថ្នាក់ទី៨</option>
+              <option value="9">ថ្នាក់ទី៩</option>
+              <option value="10">ថ្នាក់ទី១០</option>
+              <option value="11 វិទ្យាសាស្ត្រ">ថ្នាក់ទី១១ វិទ្យាសាស្ត្រ</option>
+              <option value="11 វិទ្យាសាស្ត្រសង្គម">ថ្នាក់ទី១១ វិទ្យាសាស្ត្រសង្គម</option>
+              <option value="12 វិទ្យាសាស្ត្រ">ថ្នាក់ទី១២ វិទ្យាសាស្ត្រ</option>
+              <option value="12 វិទ្យាសាស្ត្រសង្គម">ថ្នាក់ទី១២ វិទ្យាសាស្ត្រសង្គម</option>
+            </select>
+
+            <label>របៀបរៀប</label>
+            <select class="input-grade" id="arrangeModeSelect" style="padding: 6px; border-radius: 4px;" onchange="fetchStudents()">
+              <option value="normal">រៀបធម្មតា</option>
+              <option value="lessFirst">សិស្សតិចបន្ទប់ដំបូង</option>
+            </select>
+
+            <label>បន្ទប់ចាបះផ្ដើង</label>
+            <input type="number" class="input-grade" id="startRoomInput" value="1" min="1" 
+                  style="width: 50px; text-align: center; -moz-appearance: textfield; appearance: textfield;" oninput="fetchStudents()">
+
+            <!-- Per-room capacity controls -->
+            <div class="exam-capacity-table-wrapper">
+              <label style="margin-bottom: 0.25rem; font-size: 14px;">ចំនួនបន្ទប់</label>
+              <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                <input type="number" id="totalRoomsInput" class="exam-num-input" value="5" min="1" 
+                      style="width: 60px; text-align: center;">
+                <button type="button" class="btn btn-outline btn-sm" id="btnGenerateRoomCapacityRows" 
+                      style="padding: 0.35rem 0.75rem; font-size: 0.8rem;" onclick="generateRoomCapacityRows()">
+                  រក្សាទុកប្រអប់បន្ទប់
+                </button>
+              </div>
+              <div class="room-capacity-table" id="roomCapacityTable">
+                <div class="room-cap-row">
+                  <span class="room-cap-room">បន្ទប់ 01</span>
+                  <input type="number" class="room-cap-input" value="25" min="1" data-room="1">
+                </div>
+                <div class="room-cap-row">
+                  <span class="room-cap-room">បន្ទប់ 02</span>
+                  <input type="number" class="room-cap-input" value="25" min="1" data-room="2">
+                </div>
+                <div class="room-cap-row">
+                  <span class="room-cap-room">បន្ទប់ 03</span>
+                  <input type="number" class="room-cap-input" value="25" min="1" data-room="3">
+                </div>
+                <div class="room-cap-row">
+                  <span class="room-cap-room">បន្ទប់ 04</span>
+                  <input type="number" class="room-cap-input" value="25" min="1" data-room="4">
+                </div>
+                <div class="room-cap-row">
+                  <span class="room-cap-room">បន្ទប់ 05</span>
+                  <input type="number" class="room-cap-input" value="25" min="1" data-room="5">
+                </div>
+              </div>
+            </div>
+
+            <button class="btn-green" id="btnSaveExam" onclick="saveData()">បញ្ចូលក្នុងប្រព័ន្ធប្រឡង</button>
+          </div>
+
+
+          <table class="custom-table">
+            <thead>
+              <tr>
+                <th>អត្តលេខ</th>
+                <th>គោត្តនាម និង នាម</th>
+                <th>ភេទ</th>
+                <th>ថ្ងៃ/ខែ/ឆ្នាំកំណើត</th>
+                <th>ថ្នាក់ទី</th>
+                <th>ស្ថានភាពសិស្ស</th>
+                <th>លេខបន្ទប់</th>
+                <th>លេខតុ</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td colspan="8" style="text-align:center;">សូមរង់ចាំការទាញទិន្នន័យ...</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        
+
+
+          <div id="tab-secret-code" class="tab-panel">
+            <div class="action-controls" style="margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem; align-items: center;">
+              <label style="font-weight: 600;">ជ្រើសរើសកម្រិតថ្នាក់</label>
+              <select class="input-grade" id="secretGradeSelect" style="min-width: 170px;" onchange="renderSecretCodeMatrix()">
+                <option value="7" selected>ថ្នាក់ទី៧</option>
+                <option value="8">ថ្នាក់ទី៨</option>
+                <option value="9">ថ្នាក់ទី៩</option>
+                <option value="10">ថ្នាក់ទី១០</option>
+                <option value="11 វិទ្យាសាស្ត្រ">ថ្នាក់ទី១១ វិទ្យាសាស្ត្រ</option>
+                <option value="11 វិទ្យាសាស្ត្រសង្គម">ថ្នាក់ទី១១ វិទ្យាសាស្ត្រសង្គម</option>
+                <option value="12 វិទ្យាសាស្ត្រ">ថ្នាក់ទី១២ វិទ្យាសាស្ត្រ</option>
+                <option value="12 វិទ្យាសាស្ត្រសង្គម">ថ្នាក់ទី១២ វិទ្យាសាស្ត្រសង្គម</option>
+              </select>
+
+              <select class="input-grade" id="secretPrintSubSelect" style="min-width: 180px;" onchange="renderSecretCodeMatrix()">
+                <option value="ALL">ជ្រើសរើសមុខវិជ្ជាបោះពុម្ព</option>
+              </select>
+
+              <div style="display: flex; gap: 0.5rem; margin-left: auto;">
+                <button class="btn-green" type="button" onclick="generateSecretCodesForMatrix()" style="background-color: #1e7e34; padding: 7px 16px;">បង្កើតអក្សរសម្ងាត់</button>
+                <button class="btn-green" type="button" onclick="saveSecretMatrix()" style="background-color: #7c3aed; padding: 7px 16px;">រក្សាទុក</button>
+                <button class="btn-green" type="button" onclick="window.print()" style="background-color: #0284c7; padding: 7px 16px;">បោះពុម្ព</button>
+              </div>
+            </div>
+
+            <div style="overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 6px; background: #ffffff;">
+              <table id="secretMatrixTable" style="width: 100%; border-collapse: collapse; font-family: 'Khmer OS Battambang', sans-serif; text-align: center; font-size: 13.5px;">
+                <thead id="secretMatrixHead" style="background-color: #fef08a; color: #1e293b;">
+                  <!-- Rendered dynamically -->
+                </thead>
+                <tbody id="secretMatrixBody">
+                  <!-- Rendered dynamically -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+
+          <div id="tab-room-desk" class="tab-panel">
+            <div id="StudentExamListFormContainer">
+              <div style="text-align: center; padding: 40px; color: #64748b;">
+                <p style="font-size: 15px; font-family: 'Khmer OS Battambang', sans-serif;">🔄 កំពុងតភ្ជាប់ទៅកាន់ទម្រង់រៀបចំអក្សរសម្ងាត់...</p>
+              </div>
+            </div>
+          </div>
+  
+
+      
+        <div id="tab-attendance" class="tab-panel">
+          <h3>បញ្ជីស្រង់វត្តមានបេក្ខជន</h3>
+          <p>សូមរចនាទម្រង់ ឬតារាងសម្រាប់បញ្ជីស្រង់វត្តមាននៅទីនេះ...</p>
+        </div>
+
+      </div>
+    </div>
+
+    <script>
+      function openModernTab(evt, tabId) {
+        let panels = document.querySelectorAll('.tab-panel');
+        panels.forEach(panel => panel.classList.remove('active-panel'));
+
+        let btns = document.querySelectorAll('.tab-btn');
+        btns.forEach(btn => btn.classList.remove('active'));
+
+        document.getElementById(tabId).classList.add('active-panel');
+        evt.currentTarget.classList.add('active');
+        if (tabId === 'tab-secret-code') {
+          renderSecretCodeMatrix();
+        }
+      }
+
+      var allStudentsData = [];
+
+// ព្រឹត្តិការណ៍ដំណើរការដំបូងពេញបើក Web Page
+document.addEventListener("DOMContentLoaded", function() {
+  var tbody = document.querySelector('.custom-table tbody');
+  
+  if (tbody) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:blue;">⏳ កំពុងផ្ទុកទិន្នន័យសិស្សពី Server... សូមរង់ចាំ!</td></tr>';
+  }
+  
+  console.log("ចាប់ផ្តើមហៅទិន្នន័យពី Server...");
+  
+  google.script.run
+    .withSuccessHandler(function(data) {
+      allStudentsData = data; 
+      console.log("ទាញទិន្នន័យបានជោគជ័យ ចំនួន៖", data.length); 
+      
+      if (tbody) {
+        if(data.length > 0) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:green;">បានផ្ទុកទិន្នន័យរួចរាល់! សូមជ្រើសរើសកម្រិតថ្នាក់ខាងលើ ដើម្បីបង្ហាញបញ្ជីឈ្មោះសិស្ស។</td></tr>';
+        } else {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:orange;">ទាញទិន្នន័យបាន ០ នាក់ (សូមពិនិត្យមើលសន្លឹកកិច្ចការ Sheets)</td></tr>';
+        }
+      }
+    })
+    .withFailureHandler(function(err) {
+       console.error("Error ពី Server:", err);
+       if (tbody) {
+          tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">កំហុស៖ ' + err.message + '</td></tr>';
+       }
+    })
+    .getAllStudents();
+});
+
+
+function generateRoomCapacityRows() {
+  var totalRooms = parseInt(document.getElementById('totalRoomsInput').value) || 1;
+  var startRoom = parseInt(document.getElementById('startRoomInput').value) || 1;
+  var table = document.getElementById('roomCapacityTable');
+  if (!table) return;
+
+  table.innerHTML = '';
+  for (var i = 0; i < totalRooms; i++) {
+    var roomNum = startRoom + i;
+    var row = document.createElement('div');
+    row.className = 'room-cap-row';
+    row.innerHTML = '<span class="room-cap-room">បន្ទប់ ' + String(roomNum).padStart(2, '0') + '</span>' +
+      '<input type="number" class="room-cap-input" value="25" min="1" data-room="' + roomNum + '">';
+    table.appendChild(row);
+  }
+  // Only re-render if a grade is already selected
+  var gradeSelect = document.getElementById('gradeSelect');
+  if (gradeSelect && gradeSelect.value) {
+    fetchStudents();
+  }
+}
+
+function fetchStudents() {
+  var gradeSelect = document.getElementById('gradeSelect');
+  var arrangeModeSelect = document.getElementById('arrangeModeSelect');
+  var startRoomInput = document.getElementById('startRoomInput');
+  var tbody = document.querySelector('.custom-table tbody');
+  
+  if (!gradeSelect || !gradeSelect.value) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">សូមជ្រើសរើសកម្រិតថ្នាក់ជាមុនសិន!</td></tr>';
+    return;
+  }
+  
+  if (allStudentsData.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">គ្មានទិន្នន័យសម្រាប់បង្ហាញទេ ឬទិន្នន័យមិនទាន់ផ្ទុកចូល!</td></tr>';
+    return;
+  }
+  
+  var arrangeMode = arrangeModeSelect ? arrangeModeSelect.value : "normal";
+  var startRoom = startRoomInput ? parseInt(startRoomInput.value) : 1;
+  
+  // Read per-room capacities from the table
+  var roomCapacities = [];
+  var roomCapacityTable = document.getElementById('roomCapacityTable');
+  if (roomCapacityTable) {
+    roomCapacityTable.querySelectorAll('.room-cap-input').forEach(function(input) {
+      var roomNum = parseInt(input.getAttribute('data-room')) || 0;
+      var cap = parseInt(input.value) || 25;
+      roomCapacities.push({ room: roomNum, capacity: cap });
+    });
+  }
+  
+  if (roomCapacities.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">សូមរក្សាប្រអប់បន្ទប់ជាមុនសិន!</td></tr>';
+    return;
+  }
+  
+  var gradeInput = gradeSelect.value.trim();
+  var targetGrade = "";
+  var targetType = "";
+  
+  if (gradeInput === "7") targetGrade = "7";
+  else if (gradeInput === "8") targetGrade = "8";
+  else if (gradeInput === "9") targetGrade = "9";
+  else if (gradeInput === "10") targetGrade = "10";
+  else if (gradeInput.indexOf("11") === 0) targetGrade = "11";
+  else if (gradeInput.indexOf("12") === 0) targetGrade = "12";
+  
+  if (gradeInput.indexOf("វិទ្យាសាស្ត្រសង្គម") !== -1) {
+    targetType = "វិទ្យាសាស្ត្រសង្គម";
+  } else if (gradeInput.indexOf("វិទ្យាសាស្ត្រ") !== -1) {
+    targetType = "វិទ្យាសាស្ត្រ";
+  }
+  
+  // ១. ច្រោះទិន្នន័យសិស្សតាមថ្នាក់
+  var filteredData = allStudentsData.filter(function(student) {
+    var sGrade = student.grade ? String(student.grade).trim() : "";
+    var sType = student.classType ? String(student.classType).trim() : "";
+    var isGradeMatch = (targetGrade !== "") ? (sGrade.indexOf(targetGrade) === 0) : false;
+    var isTypeMatch = (targetType !== "") ? (sType === targetType) : true;
+    return isGradeMatch && isTypeMatch;
+  });
+  
+  if (filteredData.length === 0) {
+     tbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color:red;">រកមិនឃើញសិស្សក្នុងថ្នាក់នេះទេ!</td></tr>';
+     return;
+  }
+  
+  // ២. តម្រៀបតាមអក្ខរក្រមខ្មែរ (ក-អ)
+  filteredData.sort(function(a, b) {
+    return (a.name || "").localeCompare((b.name || ""), 'km');
+  });
+  
+  // ==========================================
+  // ៣. បង្កើតជួរតារាង និងបែងចែកបន្ទប់តាមប្រអប់ទិន្នន័តិការ
+  // ==========================================
+  var totalStudents = filteredData.length;
+  var htmlString = '';
+  var currentRoomIdx = 0;           // index into roomCapacities array
+  var studentsInCurrentRoom = 0;    // count for current room
+  
+  // For "lessFirst" mode: first room gets the remainder students
+  var firstRoomLimit = null;
+  if (arrangeMode === "lessFirst") {
+    var firstRoomCap = roomCapacities.length > 0 ? roomCapacities[0].capacity : 25;
+    var remainder = totalStudents % firstRoomCap;
+    if (remainder > 0) {
+      firstRoomLimit = remainder;
+    }
+  }
+  
+  for (var i = 0; i < totalStudents; i++) {
+    var s = filteredData[i];
+    
+    // លេខតុរត់ជាស្វីតតគ្នារហូត (1, 2, 3, ...)
+    var seatNumber = i + 1; 
+    
+    // Determine current room
+    if (currentRoomIdx >= roomCapacities.length) {
+      // No more rooms defined — stop assigning
+      break;
+    }
+    
+    var capEntry = roomCapacities[currentRoomIdx];
+    var roomNum = capEntry.room;
+    
+    // Determine capacity for current room
+    var roomCapacity;
+    if (arrangeMode === "lessFirst" && currentRoomIdx === 0 && firstRoomLimit !== null) {
+      roomCapacity = firstRoomLimit;
+    } else {
+      roomCapacity = capEntry.capacity;
+    }
+    
+    var roomDisplay = String(roomNum).padStart(2, '0');
+    var seatDisplay = String(seatNumber).padStart(2, '0');
+    
+    htmlString += '<tr>' +
+              '<td>' + (s.id || '') + '</td>' +
+              '<td>' + (s.name || '') + '</td>' +
+              '<td>' + (s.gender || '') + '</td>' +
+              '<td>' + (s.dob || '') + '</td>' +
+              '<td>' + (s.grade || '') + '</td>' +
+              '<td>' + (s.status || '') + '</td>' +
+              '<td style="text-align:center;"><span class="room-badge">' + roomDisplay + '</span></td>' + 
+              '<td style="text-align:center;"><span class="seat-badge">' + seatDisplay + '</span></td>' + 
+              '</tr>';
+                  
+    studentsInCurrentRoom++;
+    
+    if (studentsInCurrentRoom >= roomCapacity) {
+      currentRoomIdx++;
+      studentsInCurrentRoom = 0;
+    }
+  }
+  
+  tbody.innerHTML = htmlString;
+}
+
+function saveData() {
+  var gradeSelect = document.getElementById('gradeSelect');
+  var tbody = document.querySelector('.custom-table tbody');
+  
+  if (!gradeSelect || !gradeSelect.value) {
+    Swal.fire({ icon: 'warning', title: 'សូមបញ្ជាក់', text: 'សូមជ្រើសរើសកម្រិតថ្នាក់ជាមុនសិន!' });
+    return;
+  }
+  
+  var rows = tbody.querySelectorAll('tr');
+  if (rows.length === 0 || rows[0].cells[0].textContent.includes("សូមជ្រើសរើស") || rows[0].cells[0].textContent.includes("កំពុងផ្ទុក")) {
+    Swal.fire({ icon: 'error', title: 'គ្មានទិន្នន័យ', text: 'គ្មានទិន្នន័យសិស្សសម្រាប់រក្សាទុកទេ!' });
+    return;
+  }
+  
+  var tempStudentList = [];
+  var tempSelectedGrade = gradeSelect.value;
+  
+  rows.forEach(function(row) {
+    var cells = row.querySelectorAll('td');
+    if (cells.length >= 6) {
+      var roomSpan = row.querySelector('.room-badge');
+      var seatSpan = row.querySelector('.seat-badge');
+      
+      tempStudentList.push({
+        id: cells[0].textContent.trim(),
+        name: cells[1].textContent.trim(),
+        gender: cells[2].textContent.trim(),
+        dob: cells[3].textContent.trim(),
+        grade: cells[4].textContent.trim(),
+        room: roomSpan ? roomSpan.textContent.trim() : "",
+        seat: seatSpan ? seatSpan.textContent.trim() : ""
+      });
+    }
+  });
+  
+  Swal.fire({
+    title: 'បញ្ជាក់ការរក្សាទុក',
+    html: 'តើអ្នកពិតជាចង់រក្សាទុកសិស្សចំនួន <b>' + tempStudentList.length + ' នាក់</b> ចូលប្រព័ន្ធមែនទេ?',
+    icon: 'question',
+    showCancelButton: true,
+    confirmButtonColor: '#10b981',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'រក្សាទុកឥឡូវនេះ',
+    cancelButtonText: 'បោះបង់'
+  }).then((result) => {
+    if (result.isConfirmed) {
+      executeFastSave(tempSelectedGrade, tempStudentList);
+    }
+  });
+}
+
+function executeFastSave(grade, studentList) {
+  var btnSave = document.getElementById('btnSaveExam');
+  if (btnSave) {
+    btnSave.disabled = true;
+    btnSave.style.opacity = "0.7";
+    btnSave.innerText = "⏳ កំពុងបញ្ជូនទិន្នន័យ... ⚡";
+  }
+  
+  Swal.fire({
+    title: 'កំពុងរក្សាទុក...',
+    html: 'សូមរង់ចាំបន្តិច ប្រព័ន្ធកំពុងបញ្ជូនទិន្នន័យចូល Sheet! ⚡',
+    allowOutsideClick: false,
+    didOpen: () => {
+      Swal.showLoading();
+    }
+  });
+  
+  google.script.run
+    .withSuccessHandler(function(response) {
+      if (btnSave) {
+        btnSave.disabled = false;
+        btnSave.style.opacity = "1";
+        btnSave.innerText = "បញ្ចូលក្នុងប្រព័ន្ធប្រឡង";
+      }
+      if (response.success) {
+        Swal.fire({ icon: 'success', title: 'ជោគជ័យ!', text: response.message });
+      } else {
+        Swal.fire({ icon: 'warning', title: 'មានបញ្ហាខ្លះ!', text: response.message });
+      }
+    })
+    .withFailureHandler(function(err) {
+      if (btnSave) {
+        btnSave.disabled = false;
+        btnSave.style.opacity = "1";
+        btnSave.innerText = "បញ្ចូលក្នុងប្រព័ន្ធប្រឡង";
+      }
+      Swal.fire({ icon: 'error', title: 'កំហុសប្រព័ន្ធ!', text: err.message });
+    })
+    .saveExamDataToSheet(grade, studentList);
+}
+
+var MATRIX_SUBJECTS_LIST = [
+  { code: 'DI', name: 'សរសេរតាមអាន' },
+  { code: 'LE', name: 'តែងសេចក្តី' },
+  { code: 'RD', name: 'អំណាន' },
+  { code: 'K',  name: 'ភាសាខ្មែរ' },
+  { code: 'M',  name: 'គណិតវិទ្យា' },
+  { code: 'P',  name: 'រូបវិទ្យា' },
+  { code: 'C',  name: 'គីមីវិទ្យា' },
+  { code: 'B',  name: 'ជីវវិទ្យា' },
+  { code: 'H',  name: 'ប្រវត្តិវិទ្យា' },
+  { code: 'IT', name: 'ព័ត៌មានវិទ្យា' },
+  { code: 'MO', name: 'សីលធម៌-ពលរដ្ឋ' },
+  { code: 'ES', name: 'ផែនដីវិទ្យា' },
+  { code: 'G',  name: 'ភូមិវិទ្យា' },
+  { code: 'HE', name: 'គេហវិទ្យា' }
+];
+
+var roomSecretData = {};
+
+function renderSecretCodeMatrix() {
+  var head = document.getElementById('secretMatrixHead');
+  var body = document.getElementById('secretMatrixBody');
+  var gradeSel = document.getElementById('secretGradeSelect');
+  var subSel = document.getElementById('secretPrintSubSelect');
+  if (!head || !body) return;
+
+  var selectedSub = subSel ? subSel.value : 'ALL';
+  if (subSel && subSel.options.length <= 1) {
+    MATRIX_SUBJECTS_LIST.forEach(function(s) {
+      var opt = document.createElement('option');
+      opt.value = s.code;
+      opt.textContent = s.code + ' - ' + s.name;
+      subSel.appendChild(opt);
+    });
+  }
+
+  var visibleSubs = (selectedSub === 'ALL') ? MATRIX_SUBJECTS_LIST : MATRIX_SUBJECTS_LIST.filter(function(s) { return s.code === selectedSub; });
+
+  // Read rooms from room capacity table
+  var rooms = [];
+  var capInputs = document.querySelectorAll('#roomCapacityTable .room-cap-input');
+  if (capInputs.length > 0) {
+    capInputs.forEach(function(inp) {
+      rooms.push({ room: inp.getAttribute('data-room'), count: inp.value || 25 });
+    });
+  } else {
+    rooms = [{ room: '1', count: '25' }, { room: '2', count: '14' }];
+  }
+
+  // Build Header
+  var tr1 = '<tr style="background:#fef08a; color:#1e293b; font-weight:700;"><th rowspan="2" style="border:1px solid #e2e8f0; padding:6px;">លេខ<br>បន្ទប់</th><th rowspan="2" style="border:1px solid #e2e8f0; padding:6px;">ចំនួន<br>សិស្ស</th>';
+  var tr2 = '<tr style="background:#fef08a; color:#334155; font-size:12px;">';
+  visibleSubs.forEach(function(s) {
+    tr1 += '<th style="border:1px solid #e2e8f0; padding:6px; font-weight:800;">' + s.code + '</th>';
+    tr2 += '<th style="border:1px solid #e2e8f0; padding:4px;">' + s.name + '</th>';
+  });
+  tr1 += '</tr>';
+  tr2 += '</tr>';
+  head.innerHTML = tr1 + tr2;
+
+  // Build Body
+  body.innerHTML = '';
+  var gKey = gradeSel ? gradeSel.value : '7';
+  if (!roomSecretData[gKey]) roomSecretData[gKey] = {};
+
+  rooms.forEach(function(rm) {
+    if (!roomSecretData[gKey][rm.room]) roomSecretData[gKey][rm.room] = {};
+    var rData = roomSecretData[gKey][rm.room];
+
+    var tr = document.createElement('tr');
+    var html = '<td style="border:1px solid #e2e8f0; padding:6px; font-weight:700; color:#0284c7;">' + rm.room + '</td>';
+    html += '<td style="border:1px solid #e2e8f0; padding:6px; font-weight:700; color:#0284c7;">' + rm.count + '</td>';
+
+    visibleSubs.forEach(function(s) {
+      var val = rData[s.code] || '';
+      html += '<td style="border:1px solid #e2e8f0; padding:4px;"><input type="text" class="secret-matrix-cell-input" value="' + val + '" data-sub="' + s.code + '" data-room="' + rm.room + '" style="width:58px; height:28px; text-align:center; font-weight:700; border:1px solid #cbd5e1; border-radius:4px; font-family: monospace;" oninput="updateRoomSecret(this)"></td>';
+    });
+    tr.innerHTML = html;
+    body.appendChild(tr);
+  });
+
+  validateSecretDuplicatesInExamPage();
+}
+
+function validateSecretDuplicatesInExamPage() {
+  var inputs = document.querySelectorAll('#secretMatrixBody .secret-matrix-cell-input');
+  if (!inputs || inputs.length === 0) return;
+
+  inputs.forEach(function(inp) {
+    inp.style.border = '1px solid #cbd5e1';
+    inp.style.backgroundColor = '#ffffff';
+    inp.style.color = '#000000';
+    inp.title = '';
+  });
+
+  var bySub = {};
+  inputs.forEach(function(inp) {
+    var sub = inp.getAttribute('data-sub') || 'all';
+    if (!bySub[sub]) bySub[sub] = [];
+    bySub[sub].push(inp);
+  });
+
+  var dupCount = 0;
+  Object.keys(bySub).forEach(function(sub) {
+    var map = {};
+    bySub[sub].forEach(function(inp) {
+      var val = (inp.value || '').trim().toUpperCase();
+      if (val) {
+        if (!map[val]) map[val] = [];
+        map[val].push(inp);
+      }
+    });
+
+    Object.keys(map).forEach(function(val) {
+      if (map[val].length > 1) {
+        map[val].forEach(function(inp) {
+          inp.style.border = '2px solid #ef4444';
+          inp.style.backgroundColor = '#fee2e2';
+          inp.style.color = '#b91c1c';
+          inp.title = 'អក្សរសម្ងាត់ស្ទួន៖ ' + val;
+          dupCount++;
+        });
+      }
+    });
+  });
+
+  var alertDiv = document.getElementById('examSecretDuplicateAlert');
+  if (!alertDiv) {
+    alertDiv = document.createElement('div');
+    alertDiv.id = 'examSecretDuplicateAlert';
+    alertDiv.style.cssText = 'color:#b91c1c; background:#fef2f2; border:1px solid #ef4444; border-radius:6px; padding:6px 12px; margin-top:8px; font-weight:700; display:none;';
+    var tbl = document.getElementById('secretMatrixTable');
+    if (tbl && tbl.parentElement) {
+      tbl.parentElement.insertBefore(alertDiv, tbl);
+    }
+  }
+  if (alertDiv) {
+    if (dupCount > 0) {
+      alertDiv.style.display = 'block';
+      alertDiv.innerHTML = '⚠️ រកឃើញអក្សរសម្ងាត់ស្ទួនចំនួន ' + dupCount + ' កន្លែង (ប្រអប់ពណ៌ក្រហម)! សូមកែតម្រូវកុំឱ្យស្ទួនគ្នា។';
+    } else {
+      alertDiv.style.display = 'none';
+    }
+  }
+}
+
+function updateRoomSecret(inp) {
+  var gradeSel = document.getElementById('secretGradeSelect');
+  var gKey = gradeSel ? gradeSel.value : '7';
+  var rm = inp.getAttribute('data-room');
+  var sub = inp.getAttribute('data-sub');
+  if (!roomSecretData[gKey]) roomSecretData[gKey] = {};
+  if (!roomSecretData[gKey][rm]) roomSecretData[gKey][rm] = {};
+  roomSecretData[gKey][rm][sub] = inp.value.trim().toUpperCase();
+  validateSecretDuplicatesInExamPage();
+}
+
+function getRoomSuffixForExam(index) {
+  var alphabet = 'abcdefghijklmnopqrstuvwxyz';
+  var letter = alphabet[index % 26];
+  var cycle = Math.floor(index / 26);
+  return cycle === 0 ? letter : letter + cycle;
+}
+
+function generateSecretCodesForMatrix() {
+  var gradeSel = document.getElementById('secretGradeSelect');
+  var gKey = gradeSel ? gradeSel.value : '7';
+  var gSuffix = gKey.replace(/[^0-9]/g, '') || '7';
+
+  var capInputs = document.querySelectorAll('#roomCapacityTable .room-cap-input');
+  var rooms = [];
+  if (capInputs.length > 0) {
+    capInputs.forEach(function(inp) { rooms.push(inp.getAttribute('data-room')); });
+  } else {
+    rooms = ['1', '2'];
+  }
+
+  if (!roomSecretData[gKey]) roomSecretData[gKey] = {};
+
+  var suffixes = [];
+  for (var r = 0; r < rooms.length; r++) {
+    suffixes.push(getRoomSuffixForExam(r));
+  }
+
+  MATRIX_SUBJECTS_LIST.forEach(function(s) {
+    var shuffled = suffixes.slice();
+    for (var i = shuffled.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var temp = shuffled[i];
+      shuffled[i] = shuffled[j];
+      shuffled[j] = temp;
+    }
+
+    var usedInSub = {};
+    rooms.forEach(function(rm, idx) {
+      if (!roomSecretData[gKey][rm]) roomSecretData[gKey][rm] = {};
+      var l = shuffled[idx];
+      var code = s.code + gSuffix + l;
+      if (usedInSub[code]) {
+        for (var k = 0; k < suffixes.length; k++) {
+          var cand = s.code + gSuffix + suffixes[k];
+          if (!usedInSub[cand]) {
+            code = cand;
+            break;
+          }
+        }
+      }
+      usedInSub[code] = true;
+      roomSecretData[gKey][rm][s.code] = code;
+    });
+  });
+
+  renderSecretCodeMatrix();
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({ icon: 'success', title: 'ជោគជ័យ!', text: 'បានបង្កើតអក្សរសម្ងាត់តាមបន្ទប់និងមុខវិជ្ជាជោគជ័យ (ធានាគ្មានស្ទួន)!' });
+  }
+}
+
+function saveSecretMatrix() {
+  var inputs = document.querySelectorAll('#secretMatrixBody .secret-matrix-cell-input');
+  var hasDup = false;
+  inputs.forEach(function(inp) {
+    if (inp.style.backgroundColor === 'rgb(254, 226, 226)' || inp.style.backgroundColor === '#fee2e2') {
+      hasDup = true;
+    }
+  });
+  if (hasDup) {
+    if (typeof Swal !== 'undefined') {
+      Swal.fire({ icon: 'error', title: 'មិនអាចរក្សាទុកបានទេ!', text: 'រកឃើញអក្សរសម្ងាត់ស្ទួន (ប្រអប់ពណ៌ក្រហម) សូមកែសម្រួលជាមុនសិន!' });
+    } else {
+      alert('រកឃើញអក្សរសម្ងាត់ស្ទួន សូមកែសម្រួលជាមុនសិន!');
+    }
+    return;
+  }
+  localStorage.setItem('sms_exam_secret_matrix', JSON.stringify(roomSecretData));
+  if (typeof Swal !== 'undefined') {
+    Swal.fire({ icon: 'success', title: 'រក្សាទុកជោគជ័យ!', text: 'បានរក្សាទុកអក្សរសម្ងាត់ក្នុងប្រព័ន្ធរួចរាល់!' });
+  }
+}
+
+function initSecretCodeTab() {
+  renderSecretCodeMatrix();
+}
+
+function initStudentExamListTab() {
+  google.script.run
+    .withSuccessHandler(function(htmlContent) {
+      var container = document.getElementById('StudentExamListFormContainer');
+      container.innerHTML = htmlContent;
+      
+      var scripts = container.getElementsByTagName('script');
+      for (var i = 0; i < scripts.length; i++) {
+        var newScript = document.createElement('script');
+        newScript.text = scripts[i].text;
+        document.body.appendChild(newScript);
+      }
+    })
+    .getStudentExamListHtmlContent();
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+  initSecretCodeTab();
+  initStudentExamListTab();
+});
+
+  
+   
+    </script>
+  </body>
+</html>

@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Operating System
+.DS_Store
+Thumbs.db
+__pycache__/
+*.pyc
+
+# Sensitive / Heavy Student Data & Databases (1,861 students)
+data/*.db
+data/*.db-journal
+data/sms_data.json
+data/backups/
+data/tts_cache/
+*.tmp
+
+# Ignore specific local large databases
+database/*.db
+
+# Log files
+*.log

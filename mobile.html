@@ -1,0 +1,1499 @@
+<!DOCTYPE html>
+<html lang="km">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>SMS Mobile - បញ្ចូលពិន្ទុតាមទូរស័ព្ទ និង Tablet (AI + Supabase)</title>
+  <!-- PWA Meta tags -->
+  <link rel="manifest" href="./manifest.json" />
+  <meta name="theme-color" content="#312e81" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="SMS Mobile" />
+  <link rel="apple-touch-icon" href="./assets/icons/icon-192.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;500;600;700&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css" rel="stylesheet" />
+  <style>
+    :root {
+      --primary: #4f46e5;
+      --primary-dark: #3730a3;
+      --success: #16a34a;
+      --danger: #dc2626;
+      --warning: #d97706;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+    }
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Kantumruy Pro', 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding-bottom: 240px;
+    }
+    /* Top App Bar */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: linear-gradient(135deg, #1e1b4b, #312e81);
+      color: #fff;
+      padding: 0.75rem 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18);
+    }
+    .app-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 700;
+      font-size: 1rem;
+    }
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+    .btn-icon {
+      background: rgba(255,255,255,0.14);
+      color: #fff;
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 8px;
+      padding: 0.42rem 0.65rem;
+      font-size: 0.82rem;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #fbbf24;
+      display: inline-block;
+    }
+    .status-dot.online { background: #4ade80; box-shadow: 0 0 6px #4ade80; }
+
+    .container {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 0.75rem;
+    }
+
+    /* Card */
+    .card {
+      background: var(--card);
+      border-radius: 14px;
+      padding: 0.9rem;
+      margin-bottom: 0.75rem;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.04);
+    }
+
+    /* Secret Code Search Bar */
+    .secret-search-row {
+      display: flex;
+      gap: 0.5rem;
+      align-items: stretch;
+    }
+    .secret-input {
+      flex: 1;
+      font-size: 1.15rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      padding: 0.65rem 0.85rem;
+      border: 2px solid #cbd5e1;
+      border-radius: 10px;
+      outline: none;
+      font-family: 'Inter', 'Kantumruy Pro', sans-serif;
+      letter-spacing: 0.5px;
+    }
+    .secret-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, #4f46e5, #4338ca);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 0 1rem;
+      font-weight: 700;
+      font-size: 0.95rem;
+      font-family: inherit;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      white-space: nowrap;
+    }
+    .btn-sync {
+      background: linear-gradient(135deg, #059669, #047857);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 0.6rem 0.95rem;
+      font-weight: 700;
+      font-size: 0.92rem;
+      font-family: inherit;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    /* Room Info Pills */
+    .room-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.45rem;
+      margin-top: 0.65rem;
+      padding: 0.65rem;
+      background: #f5f3ff;
+      border: 1.5px solid #ddd6fe;
+      border-radius: 10px;
+      font-size: 0.85rem;
+    }
+    .room-meta-item strong { color: #4c1d95; }
+
+    /* Error Banner */
+    .error-banner {
+      display: none;
+      margin-top: 0.65rem;
+      padding: 0.85rem;
+      background: #fef2f2;
+      border: 1.5px solid #fca5a5;
+      border-radius: 10px;
+      color: #991b1b;
+      text-align: center;
+      font-weight: 700;
+    }
+
+    /* Student Score List */
+    .student-list {
+      display: flex;
+      flex-direction: column;
+      gap: 0.45rem;
+    }
+    .student-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.55rem 0.75rem;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 11px;
+      transition: all 0.12s ease;
+    }
+    .student-row.active-row {
+      border-color: #7c3aed;
+      background: #f5f3ff;
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.16);
+    }
+    .seq-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #ede9fe;
+      color: #5b21b6;
+      border: 1.5px solid #c4b5fd;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.95rem;
+      flex-shrink: 0;
+    }
+    .student-row.active-row .seq-badge {
+      background: #7c3aed;
+      color: #fff;
+      border-color: #6d28d9;
+    }
+    .student-meta {
+      flex: 1;
+      margin-left: 0.65rem;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #334155;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .score-box {
+      width: 110px;
+      height: 42px;
+      text-align: center;
+      font-size: 1.25rem;
+      font-weight: 800;
+      font-family: 'Inter', sans-serif;
+      border: 2px solid #cbd5e1;
+      border-radius: 9px;
+      background: #ffffff;
+      color: #0f172a;
+      outline: none;
+      cursor: text;
+      transition: all 0.15s ease;
+    }
+    .score-box:focus {
+      border-color: #7c3aed;
+      box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.22);
+      background: #ffffff;
+    }
+    .student-row.active-row .score-box {
+      border-color: #7c3aed;
+      background: #fff;
+    }
+    .score-box.has-val {
+      border-color: #16a34a;
+      color: #15803d;
+      background: #f0fdf4;
+    }
+    .score-box.invalid-val {
+      border-color: #dc2626;
+      color: #dc2626;
+      background: #fef2f2;
+    }
+    .student-row.score-entered {
+      background: #fafdfb;
+      border-left: 3px solid #22c55e;
+    }
+    .status-pill-ok {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 0.72rem;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: #dcfce7;
+      color: #15803d;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+    .room-already-filled-banner {
+      background: #eff6ff;
+      border: 1.5px solid #bfdbfe;
+      color: #1e40af;
+      padding: 10px 14px;
+      border-radius: 10px;
+      margin-top: 10px;
+      font-size: 0.88rem;
+      font-weight: 600;
+      line-height: 1.45;
+      display: none;
+      align-items: center;
+      gap: 8px;
+    }
+    .room-already-filled-banner.full {
+      background: #f0fdf4;
+      border-color: #86efac;
+      color: #166534;
+    }
+
+    /* Sticky Bottom Voice + Touch Keypad Dock */
+    .bottom-dock {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 150;
+      background: #ffffff;
+      border-top: 2px solid #e2e8f0;
+      box-shadow: 0 -8px 25px rgba(15, 23, 42, 0.12);
+      padding: 0.5rem 0.65rem calc(0.5rem + env(safe-area-inset-bottom));
+    }
+    .dock-inner {
+      max-width: 760px;
+      margin: 0 auto;
+    }
+    .voice-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.45rem;
+    }
+    .voice-status {
+      flex: 1;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #334155;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      padding: 0.42rem 0.65rem;
+      border-radius: 8px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .btn-mic {
+      background: linear-gradient(135deg, #7c3aed, #6d28d9);
+      color: #fff;
+      border: none;
+      border-radius: 9px;
+      padding: 0.48rem 0.85rem;
+      font-weight: 700;
+      font-size: 0.85rem;
+      font-family: inherit;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+    }
+    .btn-mic.listening {
+      background: linear-gradient(135deg, #dc2626, #b91c1c);
+      animation: pulseMic 1.2s infinite;
+    }
+    @keyframes pulseMic {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.45); }
+      50% { box-shadow: 0 0 0 8px rgba(220, 38, 38, 0); }
+    }
+
+    .numpad-grid {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 0.35rem;
+    }
+    .num-btn {
+      height: 42px;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+      color: #0f172a;
+      font-size: 1.08rem;
+      font-weight: 800;
+      font-family: 'Inter', 'Kantumruy Pro', sans-serif;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+    }
+    .num-btn:active {
+      background: #e2e8f0;
+      transform: scale(0.96);
+    }
+    .num-btn.btn-zero-a {
+      background: #fef3c7;
+      border-color: #fcd34d;
+      color: #92400e;
+    }
+    .num-btn.btn-next {
+      background: #4f46e5;
+      border-color: #4338ca;
+      color: #fff;
+      grid-column: span 2;
+      font-size: 0.92rem;
+    }
+
+    /* Settings Modal */
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.6);
+      z-index: 300;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+    .modal-backdrop.open { display: flex; }
+    .modal-card {
+      background: #fff;
+      width: 100%;
+      max-width: 480px;
+      border-radius: 16px;
+      padding: 1.15rem;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .form-group { margin-bottom: 0.75rem; }
+    .form-group label {
+      display: block;
+      font-size: 0.83rem;
+      font-weight: 700;
+      margin-bottom: 0.28rem;
+      color: #334155;
+    }
+    .form-control {
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      border: 1.5px solid #cbd5e1;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-family: inherit;
+    }
+    .toast-box {
+      position: fixed;
+      top: 64px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 400;
+      background: #1e293b;
+      color: #fff;
+      padding: 0.6rem 1rem;
+      border-radius: 10px;
+      font-size: 0.86rem;
+      font-weight: 600;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.22);
+      display: none;
+      max-width: 92vw;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header class="app-header">
+    <div class="app-title">
+      <i class="ri-smartphone-line" style="font-size: 1.25rem; color: #a5b4fc;"></i>
+      <span>SMS Mobile & Tablet</span>
+      <span class="status-dot" id="cloudStatusDot" title="ស្ថានភាពតភ្ជាប់ Cloud"></span>
+    </div>
+    <div class="header-actions">
+      <button type="button" class="btn-icon" id="btnRefreshCloudMeta" title="ទាញអក្សរសម្ងាត់ថ្មីពី Cloud">
+        <i class="ri-refresh-line"></i> ទាញអក្សរសម្ងាត់
+      </button>
+      <button type="button" class="btn-icon" id="btnOpenSettings">
+        <i class="ri-settings-4-line"></i> កំណត់ AI & Cloud
+      </button>
+    </div>
+  </header>
+
+  <div class="toast-box" id="mobileToast"></div>
+
+  <main class="container">
+    <!-- Secret Code Card -->
+    <div class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.45rem;">
+        <span style="font-weight: 700; font-size: 0.9rem; color: #334155;">
+          🔑 បញ្ចូលអក្សរសម្ងាត់ (តាមខែ Active៖ <strong id="activePeriodBadge" style="color: #4f46e5;">កំពុងផ្ទុក...</strong>)
+        </span>
+        <label style="font-size: 0.8rem; display: inline-flex; align-items: center; gap: 0.25rem; color: #475569; cursor: pointer;">
+          <input type="checkbox" id="chkShowNames"> បង្ហាញឈ្មោះសិស្ស
+        </label>
+      </div>
+
+      <div class="secret-search-row">
+        <input type="text" id="inputSecretCode" class="secret-input" placeholder="ឧ. M12SCa, LE7a..." autocomplete="off" />
+        <button type="button" class="btn-primary" id="btnFetchRoom">
+          <i class="ri-search-2-line"></i> ទាញយក
+        </button>
+        <button type="button" class="btn-sync" id="btnSaveAndSync">
+          <i class="ri-cloud-upload-line"></i> Sync ពិន្ទុ
+        </button>
+      </div>
+
+      <div id="errorBanner" class="error-banner"></div>
+      <div id="roomFilledBanner" class="room-already-filled-banner"></div>
+
+      <div id="roomMetaGrid" class="room-meta-grid" style="display: none;">
+        <div class="room-meta-item">🎓 កម្រិតថ្នាក់: <strong id="metaGrade">-</strong></div>
+        <div class="room-meta-item">📘 មុខវិជ្ជា: <strong id="metaSubject">-</strong></div>
+        <div class="room-meta-item">🏆 ពិន្ទុពេញ: <strong id="metaMaxScore" style="color:#b91c1c;">-</strong></div>
+        <div class="room-meta-item">👥 ចំនួនសិស្ស: <strong id="metaStudentCount">-</strong></div>
+      </div>
+    </div>
+
+    <!-- Student Score Rows -->
+    <div id="studentListContainer" class="student-list">
+      <div class="card" style="text-align: center; padding: 2.2rem 1rem; color: #64748b;">
+        <i class="ri-key-2-line" style="font-size: 2.2rem; color: #8b5cf6; display: block; margin-bottom: 0.4rem;"></i>
+        <div style="font-weight: 700; color: #334155;">សូមវាយអក្សរសម្ងាត់ រួចចុច «ទាញយក»</div>
+        <div style="font-size: 0.82rem; margin-top: 0.25rem;">ប្រព័ន្ធនឹងផ្ទៀងផ្ទាត់អក្សរសម្ងាត់តាមកម្រិតថ្នាក់ក្នុងខែ Active រួចបង្ហាញបញ្ជីបញ្ចូលពិន្ទុភ្លាមៗ។</div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Sticky Bottom Voice + Fast Numpad -->
+  <div class="bottom-dock">
+    <div class="dock-inner">
+      <div class="voice-bar">
+        <div class="voice-status" id="voiceStatusText">
+          🎙️ ចុចប៊ូតុងសម្លេង ឬចុចលេខខាងក្រោម (និយាយ "A" ឬ "សូន្យ" = 0)
+        </div>
+        <button type="button" class="btn-mic" id="btnToggleMic">
+          <i class="ri-mic-fill"></i> <span id="btnMicLabel">និយាយពិន្ទុ (AI)</span>
+        </button>
+      </div>
+      <div class="numpad-grid">
+        <button type="button" class="num-btn" data-key="1">1</button>
+        <button type="button" class="num-btn" data-key="2">2</button>
+        <button type="button" class="num-btn" data-key="3">3</button>
+        <button type="button" class="num-btn" data-key="4">4</button>
+        <button type="button" class="num-btn" data-key="5">5</button>
+        <button type="button" class="num-btn btn-zero-a" data-key="A">A=0</button>
+        <button type="button" class="num-btn" data-key="BACK"><i class="ri-delete-back-2-line"></i></button>
+
+        <button type="button" class="num-btn" data-key="6">6</button>
+        <button type="button" class="num-btn" data-key="7">7</button>
+        <button type="button" class="num-btn" data-key="8">8</button>
+        <button type="button" class="num-btn" data-key="9">9</button>
+        <button type="button" class="num-btn" data-key="0">0</button>
+        <button type="button" class="num-btn btn-next" data-key="NEXT">បន្ទាប់ ⏎</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal (Supabase + Google AI Studio Gemini API Key) -->
+  <div class="modal-backdrop" id="settingsModal">
+    <div class="modal-card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.8rem;">
+        <h3 style="margin:0; font-size:1.02rem; color:#1e1b4b;"><i class="ri-cloud-line"></i> កំណត់ការតភ្ជាប់ Supabase & Google AI Studio</h3>
+        <button type="button" id="btnCloseSettings" style="background:none; border:none; font-size:1.3rem; cursor:pointer;">&times;</button>
+      </div>
+
+      <div class="form-group">
+        <label>ឈ្មោះគ្រូបញ្ចូលពិន្ទុ (Teacher Name)</label>
+        <input type="text" id="cfgTeacherName" class="form-control" placeholder="ឧ. គ្រូ គណិតវិទ្យា" />
+      </div>
+
+      <div class="form-group">
+        <label>Supabase Project URL</label>
+        <input type="text" id="cfgSupabaseUrl" class="form-control" value="https://ztyqyvogvvkgaduwdjoy.supabase.co" />
+      </div>
+
+      <div class="form-group">
+        <label>Supabase Publishable / Anon Key</label>
+        <input type="password" id="cfgSupabaseKey" class="form-control" placeholder="sb_publishable_... ឬ eyJ..." />
+      </div>
+
+      <div class="form-group">
+        <label>ម៉ាស៊ីនស្តាប់សំឡេង (Voice Engine)</label>
+        <select id="cfgVoiceEngine" class="form-control">
+          <option value="hybrid">⚡ Hybrid (Web Speech km-KH + Gemini AI Studio)</option>
+          <option value="gemini">✨ Google AI Studio (Gemini 2.5 Flash Audio)</option>
+          <option value="webspeech">🎙️ Browser Web Speech (km-KH លឿនភ្លាមៗ)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Google AI Studio API Key (Gemini API Key - សម្រាប់ស្តាប់សំឡេងខ្មែរច្បាស់ ១០០%)</label>
+        <input type="password" id="cfgGeminiKey" class="form-control" placeholder="AIzaSy..." />
+        <div style="font-size:0.75rem; color:#64748b; margin-top:0.25rem;">
+          អាចយក Key ដោយឥតគិតថ្លៃពី <strong>aistudio.google.com</strong> (Model: <code>gemini-2.5-flash</code>)
+        </div>
+      </div>
+
+      <div style="display:flex; gap:0.5rem; justify-content:flex-end; margin-top:1rem;">
+        <button type="button" class="btn-primary" id="btnSaveSettings" style="padding:0.55rem 1.1rem;">
+          <i class="ri-save-line"></i> រក្សាទុក និងភ្ជាប់
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // =========================================================================
+    // SMS Mobile & Tablet Score Entry (Supabase Cloud + Google AI Studio Gemini)
+    // =========================================================================
+    const PERIOD_TITLES = {
+      test_early: 'តេស្តដើមឆ្នាំ',
+      year_start_test: 'តេស្តដើមឆ្នាំ',
+      m11: 'ខែវិច្ឆិកា', m12: 'ខែធ្នូ', m01: 'ខែមករា', m02: 'ខែកុម្ភៈ',
+      sem1_exam: 'ប្រឡងឆមាសទី១', sem1_overall: 'ប្រឡងឆមាសទី១',
+      m04: 'ខែមេសា', m05: 'ខែឧសភា', m06: 'ខែមិថុនា',
+      sem2_exam: 'ប្រឡងឆមាសទី២', sem2_overall: 'ប្រឡងឆមាសទី២'
+    };
+
+    const GRADE_LABELS = {
+      grade_7: 'ថ្នាក់ទី៧',
+      grade_8: 'ថ្នាក់ទី៨',
+      grade_9: 'ថ្នាក់ទី៩',
+      grade_10: 'ថ្នាក់ទី១០',
+      grade_11_sci: 'ថ្នាក់ទី១១ វិទ្យាសាស្ត្រ (11SC)',
+      grade_11_soc: 'ថ្នាក់ទី១១ សង្គម (11SS)',
+      grade_12_sci: 'ថ្នាក់ទី១២ វិទ្យាសាស្ត្រ (12SC)',
+      grade_12_soc: 'ថ្នាក់ទី១២ សង្គម (12SS)'
+    };
+
+    const SUBJECT_DEFS = {
+      LE: { name: 'តែងសេចក្តី', fullKey: 'kh_essay', max789: 60, maxHigh: 125 },
+      DI: { name: 'សរសេរតាមអាន', fullKey: 'kh_dict', max789: 40, maxHigh: 50 },
+      K:  { name: 'ភាសាខ្មែរ', fullKey: 'kh', max789: 100, maxHigh: 125 },
+      M:  { name: 'គណិតវិទ្យា', fullKey: 'math', max789: 100, maxHigh: 125 },
+      P:  { name: 'រូបវិទ្យា', fullKey: 'phy', max789: 50, maxHigh: 75 },
+      C:  { name: 'គីមីវិទ្យា', fullKey: 'chem', max789: 50, maxHigh: 75 },
+      B:  { name: 'ជីវវិទ្យា', fullKey: 'bio', max789: 50, maxHigh: 75 },
+      H:  { name: 'ប្រវត្តិវិទ្យា', fullKey: 'hist', max789: 50, maxHigh: 50 },
+      G:  { name: 'ភូមិវិទ្យា', fullKey: 'geo', max789: 50, maxHigh: 50 },
+      MO: { name: 'សីលធម៌-ពលរដ្ឋ', fullKey: 'moral', max789: 50, maxHigh: 50 },
+      ES: { name: 'ផែនដីវិទ្យា', fullKey: 'earth', max789: 50, maxHigh: 50 },
+      E:  { name: 'ភាសាអង់គ្លេស', fullKey: 'eng', max789: 50, maxHigh: 50 }
+    };
+
+    const state = {
+      activeScorePeriod: 'test_early',
+      roomSubjectSecrets: {},
+      roomSubjectSecretsByPeriod: {},
+      examArrangements: [],
+      students: [],
+      scores: {},
+      currentBundle: null, // { foundGrade, foundRoom, foundSubCode, maxLimit, subObj, studentsInRoom }
+      activeRowIndex: 0,
+      listening: false
+    };
+
+    function getConfig() {
+      let saved = {};
+      try { saved = JSON.parse(localStorage.getItem('sms_db_connection_config') || '{}'); } catch (_) {}
+      let mobileCfg = {};
+      try { mobileCfg = JSON.parse(localStorage.getItem('sms_mobile_ai_config') || '{}'); } catch (_) {}
+      return {
+        url: (mobileCfg.url || saved.url || 'https://ztyqyvogvvkgaduwdjoy.supabase.co').replace(/\/+$/, ''),
+        key: (mobileCfg.key || saved.key || '').trim(),
+        teacherName: mobileCfg.teacherName || saved.teacherName || 'teacher_mobile',
+        voiceEngine: mobileCfg.voiceEngine || 'hybrid',
+        geminiKey: (mobileCfg.geminiKey || '').trim()
+      };
+    }
+
+    function showToast(msg, bg = '#1e293b') {
+      const el = document.getElementById('mobileToast');
+      el.textContent = msg;
+      el.style.background = bg;
+      el.style.display = 'block';
+      clearTimeout(el._timer);
+      el._timer = setTimeout(() => { el.style.display = 'none'; }, 3200);
+    }
+
+    // Play Khmer AI Speech (TTS)
+    const ttsCache = new Map();
+    function playKhmerTts(text) {
+      if (!text) return;
+      if (ttsCache.has(text)) {
+        new Audio(ttsCache.get(text)).play().catch(() => {});
+        return;
+      }
+      const enc = encodeURIComponent(text);
+      const audio = new Audio(`/api/tts?text=${enc}`);
+      audio.onerror = () => {
+        const gAudio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&tl=km&client=gtx&q=${enc}`);
+        gAudio.play().catch(() => {});
+      };
+      audio.play().catch(() => {});
+    }
+
+    // Auto-fetch Supabase Config from Server so teachers never need to enter keys manually
+    async function checkAndAutoHydrateSupabaseConfig() {
+      try {
+        const res = await fetch('/api/supabase-config');
+        if (res.ok) {
+          const cfg = await res.json();
+          if (cfg && (cfg.key || cfg.url)) {
+            const currentSaved = getConfig();
+            const merged = {
+              url: cfg.url || currentSaved.url || 'https://ztyqyvogvvkgaduwdjoy.supabase.co',
+              key: cfg.key || currentSaved.key || '',
+              teacherName: currentSaved.teacherName || cfg.teacherName || 'teacher_mobile',
+              voiceEngine: currentSaved.voiceEngine || 'hybrid',
+              geminiKey: currentSaved.geminiKey || ''
+            };
+            localStorage.setItem('sms_db_connection_config', JSON.stringify({ url: merged.url, key: merged.key }));
+            localStorage.setItem('sms_mobile_ai_config', JSON.stringify(merged));
+          }
+        }
+      } catch (_) {}
+    }
+
+    // Load exam metadata (Active Month + Saved Secret Matrix + Students) from Supabase or Local Server
+    async function loadExamMetaAndScores() {
+      // 0. Try auto-loading Supabase config from server
+      await checkAndAutoHydrateSupabaseConfig();
+      const cfg = getConfig();
+      let loaded = false;
+
+      // Hydrate cached scores from localStorage if any
+      try {
+        const cachedScores = JSON.parse(localStorage.getItem('sms_mobile_cached_scores') || '{}');
+        if (cachedScores && typeof cachedScores === 'object') {
+          Object.keys(cachedScores).forEach(sid => {
+            if (!state.scores[sid]) state.scores[sid] = {};
+            Object.assign(state.scores[sid], cachedScores[sid]);
+          });
+        }
+      } catch (_) {}
+
+      // 1. Try Supabase Cloud (sms_app_state + sms_students + sms_scores)
+      if (cfg.url && cfg.key) {
+        try {
+          const headers = {
+            'apikey': cfg.key,
+            'Authorization': `Bearer ${cfg.key}`,
+            'Content-Type': 'application/json'
+          };
+          const metaRes = await fetch(`${cfg.url}/rest/v1/sms_app_state?key=eq.exam_meta&select=value`, { headers });
+          if (metaRes.ok) {
+            const rows = await metaRes.json();
+            if (rows && rows[0] && rows[0].value) {
+              const v = rows[0].value;
+              state.activeScorePeriod = v.activeScorePeriod || 'test_early';
+              state.roomSubjectSecrets = v.roomSubjectSecrets || {};
+              state.roomSubjectSecretsByPeriod = v.roomSubjectSecretsByPeriod || {};
+              state.examArrangements = v.examArrangements || [];
+              loaded = true;
+            }
+          }
+          const stuRes = await fetch(`${cfg.url}/rest/v1/sms_students?select=id,student_json&limit=10000`, { headers });
+          if (stuRes.ok) {
+            const sRows = await stuRes.json();
+            if (Array.isArray(sRows) && sRows.length > 0) {
+              state.students = sRows.map(r => r.student_json || { id: r.id });
+            }
+          }
+          const scRes = await fetch(`${cfg.url}/rest/v1/sms_scores?select=student_id,period_key,subject_code,score&limit=20000`, { headers });
+          if (scRes.ok) {
+            const scRows = await scRes.json();
+            scRows.forEach(r => {
+              if (!state.scores[r.student_id]) state.scores[r.student_id] = {};
+              if (!state.scores[r.student_id][r.period_key]) state.scores[r.student_id][r.period_key] = {};
+              state.scores[r.student_id][r.period_key][r.subject_code] = Number(r.score);
+            });
+          }
+          if (loaded) {
+            document.getElementById('cloudStatusDot').classList.add('online');
+          }
+        } catch (e) {
+          console.warn('Supabase meta fetch fallback to local:', e);
+        }
+      }
+
+      // 2. Fallback to Local Server (/api/data) if on same Wi-Fi / localhost
+      if (!loaded) {
+        try {
+          const res = await fetch('/api/data');
+          if (res.ok) {
+            const d = await res.json();
+            state.activeScorePeriod = d.activeScorePeriod || 'test_early';
+            state.roomSubjectSecrets = d.roomSubjectSecrets || {};
+            state.roomSubjectSecretsByPeriod = d.roomSubjectSecretsByPeriod || {};
+            state.examArrangements = d.examArrangements || [];
+            state.students = d.students || [];
+            if (d.scores && typeof d.scores === 'object') {
+              Object.keys(d.scores).forEach(sid => {
+                if (!state.scores[sid]) state.scores[sid] = {};
+                Object.assign(state.scores[sid], d.scores[sid]);
+              });
+            }
+            loaded = true;
+            document.getElementById('cloudStatusDot').classList.add('online');
+          }
+        } catch (_) {}
+      }
+
+      const pTitle = PERIOD_TITLES[state.activeScorePeriod] || state.activeScorePeriod;
+      document.getElementById('activePeriodBadge').textContent = pTitle;
+    }
+
+    // Strict lookup: ONLY accept secret codes saved per grade in the Active Month
+    function lookupSavedSecretCode(rawCode) {
+      const cleanCode = String(rawCode || '').trim().toUpperCase();
+      if (!cleanCode) return null;
+      const normPeriod = (state.activeScorePeriod === 'year_start_test') ? 'test_early' : (state.activeScorePeriod || 'test_early');
+      const activeMatrix = (state.roomSubjectSecretsByPeriod && state.roomSubjectSecretsByPeriod[normPeriod]) || state.roomSubjectSecrets || {};
+
+      for (const gKey of Object.keys(activeMatrix)) {
+        const rooms = activeMatrix[gKey] || {};
+        for (const rKey of Object.keys(rooms)) {
+          const subs = rooms[rKey] || {};
+          for (const sc of Object.keys(subs)) {
+            const savedVal = subs[sc] ? String(subs[sc]).trim().toUpperCase() : '';
+            if (savedVal && savedVal === cleanCode) {
+              return { foundGrade: gKey, foundRoom: rKey, foundSubCode: sc, activePeriodKey: normPeriod };
+            }
+          }
+        }
+      }
+      return null;
+    }
+
+    function studentMatchesGrade(item, gradeKey) {
+      const raw = String(item.grade || item.class || '').trim();
+      const cType = String(item.classType || '').toLowerCase();
+      if (gradeKey === 'grade_7') return /៧|7/.test(raw);
+      if (gradeKey === 'grade_8') return /៨|8/.test(raw);
+      if (gradeKey === 'grade_9') return /៩|9/.test(raw);
+      if (gradeKey === 'grade_10') return /១០|10/.test(raw);
+      if (gradeKey === 'grade_11_sci') return (/១១|11/.test(raw)) && !(/សង្គម|ss|soc/.test(raw + cType));
+      if (gradeKey === 'grade_11_soc') return (/១១|11/.test(raw)) && (/សង្គម|ss|soc/.test(raw + cType));
+      if (gradeKey === 'grade_12_sci') return (/១២|12/.test(raw)) && !(/សង្គម|ss|soc/.test(raw + cType));
+      if (gradeKey === 'grade_12_soc') return (/១២|12/.test(raw)) && (/សង្គម|ss|soc/.test(raw + cType));
+      return false;
+    }
+
+    function getMaxScoreForGradeSubject(gradeKey, subCode) {
+      const def = SUBJECT_DEFS[subCode] || { name: subCode, fullKey: subCode.toLowerCase(), max789: 100, maxHigh: 100 };
+      const is789 = ['grade_7', 'grade_8', 'grade_9'].includes(gradeKey);
+      if (gradeKey === 'grade_12_sci' && (subCode === 'M' || subCode === 'K')) return subCode === 'M' ? 125 : 75;
+      if (gradeKey === 'grade_12_soc' && (subCode === 'K' || subCode === 'M')) return subCode === 'K' ? 125 : 75;
+      return is789 ? def.max789 : def.maxHigh;
+    }
+
+    function focusScoreBox(idx) {
+      setTimeout(() => {
+        const inputs = document.querySelectorAll('.score-box');
+        if (inputs && inputs[idx]) {
+          inputs[idx].focus();
+          inputs[idx].select();
+        }
+      }, 50);
+    }
+
+    async function handleFetchRoom() {
+      const rawCode = document.getElementById('inputSecretCode').value.trim().toUpperCase();
+      const errBanner = document.getElementById('errorBanner');
+      const filledBanner = document.getElementById('roomFilledBanner');
+      const metaGrid = document.getElementById('roomMetaGrid');
+      const listEl = document.getElementById('studentListContainer');
+
+      if (!rawCode) {
+        showToast('សូមបញ្ចូលអក្សរសម្ងាត់ជាមុនសិន!', '#d97706');
+        return;
+      }
+
+      const match = lookupSavedSecretCode(rawCode);
+      if (!match) {
+        state.currentBundle = null;
+        metaGrid.style.display = 'none';
+        filledBanner.style.display = 'none';
+        errBanner.style.display = 'block';
+        const pTitle = PERIOD_TITLES[state.activeScorePeriod] || state.activeScorePeriod;
+        errBanner.innerHTML = `⚠️ គ្មានអក្សរសម្ងាត់ហ្នឹងទេ! («${rawCode}» មិនមានក្នុងបញ្ជីរក្សាទុកនៃខែ Active «${pTitle}» ឡើយ)`;
+        listEl.innerHTML = '';
+        playKhmerTts('គ្មានអក្សរសម្ងាត់ហ្នឹងទេ');
+        showToast('⚠️ គ្មានអក្សរសម្ងាត់ហ្នឹងទេ!', '#dc2626');
+        return;
+      }
+
+      errBanner.style.display = 'none';
+      const { foundGrade, foundRoom, foundSubCode, activePeriodKey } = match;
+      const subDef = SUBJECT_DEFS[foundSubCode] || { name: foundSubCode, fullKey: foundSubCode.toLowerCase() };
+      const maxLimit = getMaxScoreForGradeSubject(foundGrade, foundSubCode);
+
+      let studentsInRoom = (state.examArrangements || []).filter(item => {
+        return parseInt(item.roomNumber, 10) === parseInt(foundRoom, 10) && studentMatchesGrade(item, foundGrade);
+      }).sort((a, b) => parseInt(a.deskNumber || 0, 10) - parseInt(b.deskNumber || 0, 10));
+
+      state.currentBundle = { foundGrade, foundRoom, foundSubCode, activePeriodKey, maxLimit, subDef, studentsInRoom };
+
+      document.getElementById('metaGrade').textContent = GRADE_LABELS[foundGrade] || foundGrade;
+      document.getElementById('metaSubject').textContent = `${subDef.name} (${foundSubCode})`;
+      document.getElementById('metaMaxScore').textContent = maxLimit;
+      document.getElementById('metaStudentCount').textContent = `${studentsInRoom.length} នាក់`;
+      metaGrid.style.display = 'grid';
+
+      // 1. Fetch fresh scores from Supabase Cloud for this room & subject
+      const cfg = getConfig();
+      if (cfg.url && cfg.key) {
+        try {
+          const scRes = await fetch(
+            `${cfg.url}/rest/v1/sms_scores?period_key=eq.${encodeURIComponent(activePeriodKey)}&subject_code=in.(${encodeURIComponent(subDef.fullKey)},${encodeURIComponent(foundSubCode)})&select=student_id,score`,
+            {
+              headers: {
+                'apikey': cfg.key,
+                'Authorization': `Bearer ${cfg.key}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
+          if (scRes.ok) {
+            const scRows = await scRes.json();
+            if (Array.isArray(scRows)) {
+              scRows.forEach(r => {
+                const sid = String(r.student_id);
+                if (!state.scores[sid]) state.scores[sid] = {};
+                if (!state.scores[sid][activePeriodKey]) state.scores[sid][activePeriodKey] = {};
+                state.scores[sid][activePeriodKey][subDef.fullKey] = Number(r.score);
+                state.scores[sid][activePeriodKey][foundSubCode] = Number(r.score);
+              });
+            }
+          }
+        } catch (e) {
+          console.warn('Supabase score fetch error:', e);
+        }
+      }
+
+      // 2. Calculate how many students already have scores entered
+      let filledCount = 0;
+      let firstUnfilledIndex = -1;
+      studentsInRoom.forEach((stu, idx) => {
+        const sId = String(stu.studentId || stu.id);
+        const val = state.scores[sId]?.[activePeriodKey]?.[subDef.fullKey] ?? state.scores[sId]?.[activePeriodKey]?.[foundSubCode];
+        if (val !== undefined && val !== null && val !== '') {
+          filledCount++;
+        } else if (firstUnfilledIndex === -1) {
+          firstUnfilledIndex = idx;
+        }
+      });
+
+      // 3. Display room status banner if scores were already entered
+      if (filledCount > 0) {
+        filledBanner.style.display = 'flex';
+        if (filledCount === studentsInRoom.length) {
+          filledBanner.className = 'room-already-filled-banner full';
+          filledBanner.innerHTML = `🎉 <strong>បន្ទប់នេះបានបញ្ចូលពិន្ទុគ្រប់សិស្ស (${filledCount}/${studentsInRoom.length} នាក់) រួចរាល់ហើយ!</strong><br><span style="font-size:0.8rem; font-weight:normal;">ប្រព័ន្ធបានបង្ហាញពិន្ទុចាស់រួចជាស្រេច ដើម្បីការពារកុំឲ្យច្រឡំ ឬបញ្ចូលជាន់គ្នា។</span>`;
+          playKhmerTts('បន្ទប់នេះបានបញ្ចូលពិន្ទុរួចរាល់ហើយ');
+        } else {
+          filledBanner.className = 'room-already-filled-banner';
+          filledBanner.innerHTML = `📋 <strong>បន្ទប់នេះមានពិន្ទុដែលបានបញ្ចូលរួចចំនួន ${filledCount} / ${studentsInRoom.length} នាក់</strong><br><span style="font-size:0.8rem; font-weight:normal;">បានបង្ហាញពិន្ទុដែលបានបញ្ចូលរួច។ Cursor បានលោតទៅសិស្សទី ${firstUnfilledIndex + 1} ដែលមិនទាន់មានពិន្ទុ។</span>`;
+        }
+      } else {
+        filledBanner.style.display = 'none';
+      }
+
+      renderStudentRows();
+      const targetIdx = (firstUnfilledIndex !== -1 && filledCount > 0) ? firstUnfilledIndex : 0;
+      setActiveRow(targetIdx);
+      focusScoreBox(targetIdx);
+    }
+
+    function renderStudentRows() {
+      const listEl = document.getElementById('studentListContainer');
+      const showNames = document.getElementById('chkShowNames').checked;
+      if (!state.currentBundle) return;
+      const { studentsInRoom, activePeriodKey, foundSubCode, subDef, maxLimit } = state.currentBundle;
+
+      listEl.innerHTML = '';
+      studentsInRoom.forEach((stu, idx) => {
+        const sId = String(stu.studentId || stu.id);
+        const existing = state.scores[sId]?.[activePeriodKey]?.[subDef.fullKey] ?? state.scores[sId]?.[activePeriodKey]?.[foundSubCode] ?? '';
+        const hasVal = existing !== '' && existing !== undefined && existing !== null;
+        const row = document.createElement('div');
+        row.className = `student-row ${hasVal ? 'score-entered' : ''}`;
+        row.dataset.index = idx;
+        row.innerHTML = `
+          <span class="seq-badge">${idx + 1}</span>
+          <div class="student-meta">
+            ${showNames ? `${stu.khmerName || ''} (តុ ${stu.deskNumber || idx + 1})` : `អក្សរសម្ងាត់ ទី ${idx + 1}`}
+            ${hasVal ? '<span class="status-pill-ok">✓ បញ្ចូលរួច</span>' : ''}
+          </div>
+          <input type="text" inputmode="decimal" class="score-box ${hasVal ? 'has-val' : ''}"
+                 data-stuid="${sId}" data-index="${idx}"
+                 value="${hasVal ? existing : ''}" placeholder="0-${maxLimit}" autocomplete="off" />
+        `;
+
+        const inp = row.querySelector('.score-box');
+
+        // Physical Keyboard & Tablet External Keyboard handling
+        inp.addEventListener('focus', () => {
+          setActiveRow(idx, false);
+          inp.select();
+        });
+
+        inp.addEventListener('keydown', (e) => {
+          // Enter, Tab, ArrowDown: commit & jump to next student
+          if (e.key === 'Enter' || e.key === 'Tab' || e.key === 'ArrowDown') {
+            e.preventDefault();
+            const val = inp.value.trim();
+            if (val !== '') {
+              commitScoreAtActiveRow(val, false);
+            }
+            const nextIdx = idx + 1;
+            setActiveRow(nextIdx);
+            focusScoreBox(nextIdx);
+            return;
+          }
+          // ArrowUp: jump to previous student
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            const prevIdx = Math.max(0, idx - 1);
+            setActiveRow(prevIdx);
+            focusScoreBox(prevIdx);
+            return;
+          }
+          // 'A' or 'a': student is absent -> score = 0
+          if (e.key === 'a' || e.key === 'A' || e.key === 'KeyA') {
+            e.preventDefault();
+            inp.value = '0';
+            commitScoreAtActiveRow(0, false);
+            const nextIdx = idx + 1;
+            setActiveRow(nextIdx);
+            focusScoreBox(nextIdx);
+            return;
+          }
+        });
+
+        inp.addEventListener('input', () => {
+          let v = inp.value.replace(/[^0-9.]/g, '');
+          inp.value = v;
+          if (v !== '') {
+            const num = Number(v);
+            if (num > maxLimit) {
+              showToast(`⚠️ ពិន្ទុមិនអាចលើសពី ${maxLimit} ទេ!`, '#dc2626');
+              inp.classList.add('invalid-val');
+            } else {
+              inp.classList.remove('invalid-val');
+              inp.classList.add('has-val');
+            }
+          }
+        });
+
+        inp.addEventListener('blur', () => {
+          const v = inp.value.trim();
+          if (v !== '') {
+            commitScoreAtActiveRow(v, false);
+          }
+        });
+
+        row.addEventListener('click', (e) => {
+          if (e.target !== inp) {
+            setActiveRow(idx);
+            focusScoreBox(idx);
+          }
+        });
+
+        listEl.appendChild(row);
+      });
+    }
+
+    function setActiveRow(idx, clearBuffer = true) {
+      const rows = document.querySelectorAll('.student-row');
+      if (!rows.length) return;
+      if (idx >= rows.length) {
+        // Completed all students in bundle!
+        playKhmerTts('ការបញ្ចូលជោគជ័យ');
+        showToast('🎉 ការបញ្ចូលជោគជ័យ! សូមចុច «Sync ពិន្ទុ»', '#16a34a');
+        document.getElementById('voiceStatusText').innerHTML = '🎉 <strong style="color:#16a34a;">ការបញ្ចូលជោគជ័យ!</strong> បានបញ្ចូលគ្រប់សិស្សទាំងអស់។';
+        return;
+      }
+      state.activeRowIndex = Math.max(0, idx);
+      rows.forEach((r, i) => r.classList.toggle('active-row', i === state.activeRowIndex));
+      const activeRow = rows[state.activeRowIndex];
+      if (activeRow) {
+        activeRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      if (clearBuffer) state._numpadBuffer = '';
+      document.getElementById('voiceStatusText').innerHTML = `🎯 កំពុងបញ្ចូលពិន្ទុ <strong>ល.រ ទី ${state.activeRowIndex + 1}</strong> (ពិន្ទុពេញ: ${state.currentBundle?.maxLimit || 100})`;
+    }
+
+    function commitScoreAtActiveRow(val, autoAdvance = true) {
+      if (!state.currentBundle) return;
+      const { studentsInRoom, activePeriodKey, foundSubCode, subDef, maxLimit } = state.currentBundle;
+      const stu = studentsInRoom[state.activeRowIndex];
+      if (!stu) return;
+      const num = Number(val);
+      if (!Number.isFinite(num) || num < 0 || num > maxLimit) {
+        showToast(`⚠️ ពិន្ទុត្រូវនៅចន្លោះ 0 ដល់ ${maxLimit}!`, '#dc2626');
+        return;
+      }
+      const sId = String(stu.studentId || stu.id);
+      if (!state.scores[sId]) state.scores[sId] = {};
+      if (!state.scores[sId][activePeriodKey]) state.scores[sId][activePeriodKey] = {};
+      state.scores[sId][activePeriodKey][subDef.fullKey] = num;
+      state.scores[sId][activePeriodKey][foundSubCode] = num;
+
+      // Persist to local cache so reload never loses entered scores
+      try {
+        localStorage.setItem('sms_mobile_cached_scores', JSON.stringify(state.scores));
+      } catch (_) {}
+
+      const rows = document.querySelectorAll('.student-row');
+      const activeRow = rows[state.activeRowIndex];
+      if (activeRow) {
+        activeRow.classList.add('score-entered');
+        const meta = activeRow.querySelector('.student-meta');
+        if (meta && !meta.querySelector('.status-pill-ok')) {
+          const pill = document.createElement('span');
+          pill.className = 'status-pill-ok';
+          pill.textContent = '✓ បញ្ចូលរួច';
+          meta.appendChild(pill);
+        }
+      }
+
+      const inputs = document.querySelectorAll('.score-box');
+      const inp = inputs[state.activeRowIndex];
+      if (inp) {
+        inp.value = num;
+        inp.classList.remove('invalid-val');
+        inp.classList.add('has-val');
+      }
+      if (autoAdvance) {
+        const nextIdx = state.activeRowIndex + 1;
+        setActiveRow(nextIdx);
+        focusScoreBox(nextIdx);
+      }
+    }
+
+    // Fast Touch Numpad handler
+    document.querySelectorAll('.num-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (!state.currentBundle) return;
+        const key = btn.dataset.key;
+        const maxLimit = state.currentBundle.maxLimit || 100;
+        const inputs = document.querySelectorAll('.score-box');
+        const inp = inputs[state.activeRowIndex];
+        if (!inp) return;
+
+        if (key === 'A') {
+          commitScoreAtActiveRow(0, true);
+          return;
+        }
+        if (key === 'BACK') {
+          state._numpadBuffer = (state._numpadBuffer || '').slice(0, -1);
+          inp.value = state._numpadBuffer;
+          return;
+        }
+        if (key === 'NEXT') {
+          if (inp.value !== '') {
+            commitScoreAtActiveRow(Number(inp.value), true);
+          } else {
+            const nextIdx = state.activeRowIndex + 1;
+            setActiveRow(nextIdx);
+            focusScoreBox(nextIdx);
+          }
+          return;
+        }
+        // Digit pressed
+        const nextBuf = (state._numpadBuffer || '') + key;
+        const num = Number(nextBuf);
+        if (num > maxLimit) {
+          showToast(`⚠️ ពិន្ទុមិនអាចលើសពី ${maxLimit} ទេ!`, '#dc2626');
+          return;
+        }
+        state._numpadBuffer = nextBuf;
+        inp.value = nextBuf;
+        // Auto-jump if 2 digits and multiplying by 10 would exceed maxLimit
+        if (nextBuf.length >= 2 && (num * 10 > maxLimit)) {
+          setTimeout(() => commitScoreAtActiveRow(num, true), 90);
+        }
+      });
+    });
+
+    // Global keyboard listener for external hardware keyboards (Tablets & Laptops)
+    window.addEventListener('keydown', (e) => {
+      // Ignore if user is typing in secret code input or modal inputs
+      const activeEl = document.activeElement;
+      if (activeEl && (activeEl.id === 'inputSecretCode' || activeEl.classList.contains('form-control'))) {
+        return;
+      }
+      if (!state.currentBundle) return;
+
+      const maxLimit = state.currentBundle.maxLimit || 100;
+      const inputs = document.querySelectorAll('.score-box');
+      const inp = inputs[state.activeRowIndex];
+      if (!inp) return;
+
+      if (e.key === 'Enter' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (inp.value !== '') {
+          commitScoreAtActiveRow(inp.value, true);
+        } else {
+          const nextIdx = state.activeRowIndex + 1;
+          setActiveRow(nextIdx);
+          focusScoreBox(nextIdx);
+        }
+        return;
+      }
+      if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const prevIdx = Math.max(0, state.activeRowIndex - 1);
+        setActiveRow(prevIdx);
+        focusScoreBox(prevIdx);
+        return;
+      }
+      if (e.key === 'a' || e.key === 'A') {
+        if (activeEl !== inp) {
+          e.preventDefault();
+          commitScoreAtActiveRow(0, true);
+        }
+      }
+    });
+
+    // =========================================================================
+    // Khmer Spoken Score Parser + Google AI Studio (Gemini 2.5 Flash) + WebSpeech
+    // =========================================================================
+    function parseKhmerSpokenScores(transcript, maxLimit) {
+      let s = String(transcript || '').trim().toLowerCase();
+      if (!s) return [];
+      if (/^(a|អេ|សូន្យ|សូន|0)$/i.test(s)) return [0];
+
+      // Convert Khmer digits
+      const khDigits = '០១២៣៤៥៦៧៨៩';
+      s = s.replace(/[០-៩]/g, ch => String(khDigits.indexOf(ch)));
+      s = s.replace(/ប្រាំ\s+(មួយ|ពីរ|ពិល|បី|បួន)/g, 'ប្រាំ$1');
+
+      const mapWords = [
+        ['មួយរយម្ភៃប្រាំ', 125], ['មួយរយ', 100], ['កៅសិប', 90], ['ប៉ែតសិប', 80],
+        ['ចិតសិប', 70], ['ហុកសិប', 60], ['ហាសិប', 50], ['សែសិប', 40],
+        ['សាមសិប', 30], ['ម្ភៃ', 20], ['ដប់ប្រាំបួន', 19], ['ដប់ប្រាំបី', 18],
+        ['ដប់ប្រាំពីរ', 17], ['ដប់ប្រាំមួយ', 16], ['ដប់ប្រាំ', 15], ['ដប់បួន', 14],
+        ['ដប់បី', 13], ['ដប់ពីរ', 12], ['ដប់មួយ', 11], ['ដប់', 10],
+        ['ប្រាំបួន', 9], ['ប្រាំបី', 8], ['ប្រាំពីរ', 7], ['ប្រាំពិល', 7], ['អំពិល', 7],
+        ['ប្រាំមួយ', 6], ['ប្រាំ', 5], ['បួន', 4], ['បី', 3], ['ពីរ', 2], ['ពី', 2], ['មួយ', 1],
+        ['សូន្យ', 0], ['អេ', 0]
+      ];
+      for (const [w, val] of mapWords) {
+        s = s.split(w).join(` ${val} `);
+      }
+      const tokens = (s.match(/\d+/g) || []).map(Number);
+      const results = [];
+      for (let i = 0; i < tokens.length; i++) {
+        const cur = tokens[i];
+        const nxt = tokens[i + 1];
+        if ([20, 30, 40, 50, 60, 70, 80, 90].includes(cur) && nxt >= 1 && nxt <= 9) {
+          results.push(cur + nxt);
+          i++;
+        } else if (cur >= 1 && cur <= 9 && nxt >= 0 && nxt <= 9 && (cur * 10 + nxt) <= maxLimit) {
+          results.push(cur * 10 + nxt);
+          i++;
+        } else if (cur <= maxLimit) {
+          results.push(cur);
+        }
+      }
+      return results;
+    }
+
+    // Call Google AI Studio (Gemini 2.5 Flash) with recorded audio blob
+    async function transcribeWithGeminiFlash(audioBlob, maxLimit, geminiKey) {
+      const base64Audio = await new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(String(reader.result).split(',')[1]);
+        reader.readAsDataURL(audioBlob);
+      });
+
+      const resp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${encodeURIComponent(geminiKey)}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              {
+                text: `អ្នកជាប្រព័ន្ធស្តាប់ពិន្ទុប្រឡងភាសាខ្មែរ។ សូមស្តាប់សំឡេងនេះ រួចបំប្លែងជាលេខពិន្ទុ (ចន្លោះ 0 ដល់ ${maxLimit})។ បើឮ "A" ឬ "អេ" ឬ "សូន្យ" គឺ 0។ សូមឆ្លើយតបតែ JSON Array នៃលេខប៉ុណ្ណោះ ឧទាហរណ៍: [39] ឬ [45, 50]។`
+              },
+              {
+                inlineData: {
+                  mimeType: audioBlob.type || 'audio/webm',
+                  data: base64Audio
+                }
+              }
+            ]
+          }],
+          generationConfig: {
+            temperature: 0,
+            responseMimeType: 'application/json'
+          }
+        })
+      });
+      if (!resp.ok) throw new Error(`Gemini HTTP ${resp.status}`);
+      const data = await resp.json();
+      const rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+      const parsed = JSON.parse(rawText);
+      return Array.isArray(parsed) ? parsed.map(Number).filter(n => Number.isFinite(n) && n >= 0 && n <= maxLimit) : [];
+    }
+
+    // Push scores to Supabase Cloud (sms_scores) & Local LAN Server (/api/mobile-scores)
+    async function syncScoresToSupabase() {
+      if (!state.currentBundle) {
+        showToast('សូមទាញយកអក្សរសម្ងាត់បន្ទប់ជាមុនសិន!', '#d97706');
+        return;
+      }
+      const cfg = getConfig();
+      const { studentsInRoom, activePeriodKey, foundSubCode, subDef } = state.currentBundle;
+      const nowIso = new Date().toISOString();
+      const rowsToUpsert = [];
+      const localScoresList = [];
+
+      studentsInRoom.forEach(stu => {
+        const sId = String(stu.studentId || stu.id);
+        const val = state.scores[sId]?.[activePeriodKey]?.[subDef.fullKey];
+        if (val !== undefined && val !== null && val !== '') {
+          rowsToUpsert.push({
+            student_id: sId,
+            period_key: activePeriodKey,
+            subject_code: subDef.fullKey,
+            score: Number(val),
+            updated_by: cfg.teacherName,
+            updated_at: nowIso
+          });
+          rowsToUpsert.push({
+            student_id: sId,
+            period_key: activePeriodKey,
+            subject_code: foundSubCode,
+            score: Number(val),
+            updated_by: cfg.teacherName,
+            updated_at: nowIso
+          });
+          localScoresList.push({
+            student_id: sId,
+            period_key: activePeriodKey,
+            subject_code: subDef.fullKey,
+            score: Number(val)
+          });
+        }
+      });
+
+      if (rowsToUpsert.length === 0) {
+        showToast('មិនទាន់មានពិន្ទុត្រូវ Sync ទេ!', '#d97706');
+        return;
+      }
+
+      // Persist to local cache immediately
+      try {
+        localStorage.setItem('sms_mobile_cached_scores', JSON.stringify(state.scores));
+      } catch (_) {}
+
+      let syncedCloud = false;
+      let syncedLocal = false;
+
+      // 1. LAN sync directly to local server if available
+      try {
+        const locRes = await fetch('/api/mobile-scores', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            periodKey: activePeriodKey,
+            subjectCode: subDef.fullKey,
+            scores: localScoresList
+          })
+        });
+        if (locRes.ok) syncedLocal = true;
+      } catch (_) {}
+
+      // 2. Cloud sync to Supabase
+      if (cfg.url && cfg.key) {
+        try {
+          const res = await fetch(`${cfg.url}/rest/v1/sms_scores?on_conflict=student_id,period_key,subject_code`, {
+            method: 'POST',
+            headers: {
+              'apikey': cfg.key,
+              'Authorization': `Bearer ${cfg.key}`,
+              'Content-Type': 'application/json',
+              'Prefer': 'resolution=merge-duplicates,return=minimal'
+            },
+            body: JSON.stringify(rowsToUpsert)
+          });
+          if (res.ok) syncedCloud = true;
+        } catch (e) {
+          console.warn('Supabase sync error:', e);
+        }
+      }
+
+      if (syncedCloud || syncedLocal) {
+        const dest = (syncedCloud && syncedLocal) ? 'Supabase Cloud & Local Server' : (syncedCloud ? 'Supabase Cloud' : 'Local Server');
+        showToast(`✅ បាន Sync ពិន្ទុ ${localScoresList.length} នាក់ ទៅកាន់ ${dest} ជោគជ័យ!`, '#16a34a');
+        playKhmerTts('ការបញ្ចូលជោគជ័យ');
+
+        const filledBanner = document.getElementById('roomFilledBanner');
+        if (filledBanner) {
+          filledBanner.style.display = 'flex';
+          filledBanner.className = 'room-already-filled-banner full';
+          filledBanner.innerHTML = `🎉 <strong>បន្ទប់នេះបាន Sync ពិន្ទុ (${localScoresList.length}/${studentsInRoom.length} នាក់) ទៅកាន់ Cloud/Server រួចរាល់!</strong>`;
+        }
+      } else {
+        showToast('⚠️ Sync មិនទាន់ជោគជ័យ! សូមពិនិត្យ Supabase Key ក្នុង «កំណត់ AI & Cloud» ឬបណ្តាញ Wi-Fi', '#dc2626');
+      }
+    }
+
+    // Wire up UI events
+    document.getElementById('btnFetchRoom').addEventListener('click', handleFetchRoom);
+    document.getElementById('inputSecretCode').addEventListener('keydown', e => {
+      if (e.key === 'Enter') handleFetchRoom();
+    });
+    document.getElementById('chkShowNames').addEventListener('change', renderStudentRows);
+    document.getElementById('btnSaveAndSync').addEventListener('click', syncScoresToSupabase);
+    document.getElementById('btnRefreshCloudMeta').addEventListener('click', async () => {
+      await loadExamMetaAndScores();
+      showToast('🔄 បានទាញអក្សរសម្ងាត់ថ្មីពី Cloud រួចរាល់!', '#059669');
+    });
+
+    // Settings Modal
+    document.getElementById('btnOpenSettings').addEventListener('click', () => {
+      const cfg = getConfig();
+      document.getElementById('cfgTeacherName').value = cfg.teacherName;
+      document.getElementById('cfgSupabaseUrl').value = cfg.url;
+      document.getElementById('cfgSupabaseKey').value = cfg.key;
+      document.getElementById('cfgVoiceEngine').value = cfg.voiceEngine;
+      document.getElementById('cfgGeminiKey').value = cfg.geminiKey;
+      document.getElementById('settingsModal').classList.add('open');
+    });
+    document.getElementById('btnCloseSettings').addEventListener('click', () => {
+      document.getElementById('settingsModal').classList.remove('open');
+    });
+    document.getElementById('btnSaveSettings').addEventListener('click', async () => {
+      const newCfg = {
+        teacherName: document.getElementById('cfgTeacherName').value.trim() || 'teacher_mobile',
+        url: document.getElementById('cfgSupabaseUrl').value.trim(),
+        key: document.getElementById('cfgSupabaseKey').value.trim(),
+        voiceEngine: document.getElementById('cfgVoiceEngine').value,
+        geminiKey: document.getElementById('cfgGeminiKey').value.trim()
+      };
+      localStorage.setItem('sms_mobile_ai_config', JSON.stringify(newCfg));
+      document.getElementById('settingsModal').classList.remove('open');
+      await loadExamMetaAndScores();
+      showToast('✅ បានរក្សាទុកការកំណត់ AI & Supabase Cloud!', '#16a34a');
+    });
+
+    // Microphone Toggle (Web Speech km-KH + Gemini 2.5 Flash)
+    let recognition = null;
+    document.getElementById('btnToggleMic').addEventListener('click', () => {
+      if (!state.currentBundle) {
+        showToast('សូមទាញយកអក្សរសម្ងាត់ជាមុនសិន!', '#d97706');
+        return;
+      }
+      const btn = document.getElementById('btnToggleMic');
+      const label = document.getElementById('btnMicLabel');
+      if (state.listening) {
+        state.listening = false;
+        if (recognition) { try { recognition.stop(); } catch (_) {} }
+        btn.classList.remove('listening');
+        label.textContent = 'និយាយពិន្ទុ (AI)';
+        return;
+      }
+
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRec) {
+        showToast('Browser នេះមិនគាំទ្រ Web Speech ទេ សូមបញ្ចូល Gemini API Key!', '#dc2626');
+        return;
+      }
+      state.listening = true;
+      btn.classList.add('listening');
+      label.textContent = 'កំពុងស្តាប់...';
+
+      recognition = new SpeechRec();
+      recognition.lang = 'km-KH';
+      recognition.continuous = true;
+      recognition.interimResults = false;
+      recognition.onresult = (event) => {
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            const text = event.results[i][0].transcript.trim();
+            const nums = parseKhmerSpokenScores(text, state.currentBundle.maxLimit);
+            document.getElementById('voiceStatusText').innerHTML = `🎙️ ឮថា៖ <strong>«${text}»</strong> ${nums.length ? `➔ <strong>${nums.join(', ')}</strong>` : ''}`;
+            nums.forEach(n => commitScoreAtActiveRow(n, true));
+          }
+        }
+      };
+      recognition.onend = () => {
+        if (state.listening) {
+          try { recognition.start(); } catch (_) {}
+        }
+      };
+      try { recognition.start(); } catch (_) {}
+    });
+
+    // Initial load
+    loadExamMetaAndScores();
+
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(() => console.log('PWA ServiceWorker registered'))
+          .catch(err => console.log('ServiceWorker registration failed: ', err));
+      });
+    }
+  </script>
+</body>
+</html>
+

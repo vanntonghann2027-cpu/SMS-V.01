@@ -1,0 +1,18120 @@
+/**
+ * ============================================================================
+ * ប្រព័ន្ធគ្រប់គ្រងពិន្ទុសិស្ស - SMS v0.1 (Student Management System)
+ * Complete Application Logic & Score Management Engine
+ * ============================================================================
+ */
+
+// Presets for all 8 grade levels according to MoEYS Cambodia curriculum
+const makeCurriculumSub = (code, name, maxScoreMonthly, coefMonthly, maxScoreSemester, coefSemester, isBonusMonthly, isBonusSemester, hoursSem1 = 1, hoursSem2 = 1, order = 1, scoreType = 'score', allowExemption = false) => ({
+  code,
+  name,
+  maxScore: maxScoreMonthly,
+  coef: isBonusMonthly ? 0 : coefMonthly,
+  maxScoreMonthly,
+  coefMonthly: isBonusMonthly ? 0 : coefMonthly,
+  maxScoreSemester,
+  coefSemester: isBonusSemester ? 0 : coefSemester,
+  isBonusMonthly: Boolean(isBonusMonthly),
+  isBonusSemester: Boolean(isBonusSemester),
+  hoursSem1,
+  hoursSem2,
+  order,
+  scoreType,
+  allowExemption,
+  enabled: true
+});
+
+const DEFAULT_CURRICULUM_DATA = {
+  grade_7: [
+    makeCurriculumSub('kh_dict', 'សរសេរតាមអាន', 40, 0.8, 40, 0.8, false, false, 1, 1, 1),
+    makeCurriculumSub('kh_essay', 'តែងសេចក្តី', 60, 1.2, 60, 1.2, false, false, 1, 1, 2),
+    makeCurriculumSub('reading_speed', 'ល្បឿនអំណាន', 100, 2, 100, 2, false, false, 1, 1, 3),
+    makeCurriculumSub('kh', 'ភាសាខ្មែរ', 100, 2, 100, 2, false, false, 1, 1, 4),
+    makeCurriculumSub('math', 'គណិតវិទ្យា', 100, 2, 100, 2, false, false, 1, 1, 5),
+    makeCurriculumSub('phy', 'រូបវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 6),
+    makeCurriculumSub('chem', 'គីមីវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 7),
+    makeCurriculumSub('bio', 'ជីវវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 8),
+    makeCurriculumSub('his', 'ប្រវត្តិវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 9),
+    makeCurriculumSub('ict', 'ព័ត៌មានវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 10),
+    makeCurriculumSub('moral', 'សីល-ពលរដ្ឋ', 50, 1, 50, 1, false, false, 1, 1, 11),
+    makeCurriculumSub('geo_env', 'ផែនដីវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 12),
+    makeCurriculumSub('geo', 'ភូមិវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 13),
+    makeCurriculumSub('home_ec', 'គេហវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 14),
+    makeCurriculumSub('sport', 'អប់រំកាយ', 50, 1, 50, 1, false, false, 1, 1, 15),
+    makeCurriculumSub('life_skills', 'បំណិនជីវិត', 50, 1, 50, 1, false, false, 1, 1, 16),
+    makeCurriculumSub('economics', 'សេដ្ឋកិច្ច', 50, 1, 50, 1, false, false, 1, 1, 17),
+    makeCurriculumSub('art', 'សិល្បៈ', 50, 1, 50, 1, false, false, 1, 1, 18),
+    makeCurriculumSub('agriculture', 'កសិកម្ម', 50, 1, 50, 1, false, false, 1, 1, 19),
+    makeCurriculumSub('eng', 'ភាសាបរទេស', 50, 1, 50, 1, false, false, 1, 1, 20)
+  ],
+  grade_8: [
+    makeCurriculumSub('kh_dict', 'សរសេរតាមអាន', 40, 0.8, 40, 0.8, false, false, 1, 1, 1),
+    makeCurriculumSub('kh_essay', 'តែងសេចក្តី', 60, 1.2, 60, 1.2, false, false, 1, 1, 2),
+    makeCurriculumSub('reading_speed', 'ល្បឿនអំណាន', 100, 2, 100, 2, false, false, 1, 1, 3),
+    makeCurriculumSub('kh', 'ភាសាខ្មែរ', 100, 2, 100, 2, false, false, 1, 1, 4),
+    makeCurriculumSub('math', 'គណិតវិទ្យា', 100, 2, 100, 2, false, false, 1, 1, 5),
+    makeCurriculumSub('phy', 'រូបវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 6),
+    makeCurriculumSub('chem', 'គីមីវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 7),
+    makeCurriculumSub('bio', 'ជីវវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 8),
+    makeCurriculumSub('his', 'ប្រវត្តិវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 9),
+    makeCurriculumSub('ict', 'ព័ត៌មានវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 10),
+    makeCurriculumSub('moral', 'សីល-ពលរដ្ឋ', 50, 1, 50, 1, false, false, 1, 1, 11),
+    makeCurriculumSub('geo_env', 'ផែនដីវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 12),
+    makeCurriculumSub('geo', 'ភូមិវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 13),
+    makeCurriculumSub('home_ec', 'គេហវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 14),
+    makeCurriculumSub('sport', 'អប់រំកាយ', 50, 1, 50, 1, false, false, 1, 1, 15),
+    makeCurriculumSub('life_skills', 'បំណិនជីវិត', 50, 1, 50, 1, false, false, 1, 1, 16),
+    makeCurriculumSub('economics', 'សេដ្ឋកិច្ច', 50, 1, 50, 1, false, false, 1, 1, 17),
+    makeCurriculumSub('art', 'សិល្បៈ', 50, 1, 50, 1, false, false, 1, 1, 18),
+    makeCurriculumSub('agriculture', 'កសិកម្ម', 50, 1, 50, 1, false, false, 1, 1, 19),
+    makeCurriculumSub('eng', 'ភាសាបរទេស', 50, 1, 50, 1, false, false, 1, 1, 20)
+  ],
+  grade_9: [
+    makeCurriculumSub('kh_dict', 'សរសេរតាមអាន', 40, 0.8, 40, 0.8, false, false, 1, 1, 1),
+    makeCurriculumSub('kh_essay', 'តែងសេចក្តី', 60, 1.2, 60, 1.2, false, false, 1, 1, 2),
+    makeCurriculumSub('reading_speed', 'ល្បឿនអំណាន', 100, 2, 100, 2, false, false, 1, 1, 3),
+    makeCurriculumSub('kh', 'ភាសាខ្មែរ', 100, 2, 100, 2, false, false, 1, 1, 4),
+    makeCurriculumSub('math', 'គណិតវិទ្យា', 100, 2, 100, 2, false, false, 1, 1, 5),
+    makeCurriculumSub('phy', 'រូបវិទ្យា', 35, 0.7, 35, 0.7, false, false, 1, 1, 6),
+    makeCurriculumSub('chem', 'គីមីវិទ្យា', 25, 0.5, 25, 0.5, false, false, 1, 1, 7),
+    makeCurriculumSub('bio', 'ជីវវិទ្យា', 35, 0.7, 35, 0.7, false, false, 1, 1, 8),
+    makeCurriculumSub('his', 'ប្រវត្តិវិទ្យា', 33, 0.66, 33, 0.66, false, false, 1, 1, 9),
+    makeCurriculumSub('ict', 'ព័ត៌មានវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 10),
+    makeCurriculumSub('moral', 'សីល-ពលរដ្ឋ', 35, 0.7, 35, 0.7, false, false, 1, 1, 11),
+    makeCurriculumSub('geo_env', 'ផែនដីវិទ្យា', 25, 0.5, 25, 0.5, false, false, 1, 1, 12),
+    makeCurriculumSub('geo', 'ភូមិវិទ្យា', 32, 0.64, 32, 0.64, false, false, 1, 1, 13),
+    makeCurriculumSub('home_ec', 'គេហវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 14),
+    makeCurriculumSub('sport', 'អប់រំកាយ', 50, 1, 50, 1, false, false, 1, 1, 15),
+    makeCurriculumSub('life_skills', 'បំណិនជីវិត', 50, 1, 50, 1, false, false, 1, 1, 16),
+    makeCurriculumSub('economics', 'សេដ្ឋកិច្ច', 50, 1, 50, 1, false, false, 1, 1, 17),
+    makeCurriculumSub('art', 'សិល្បៈ', 50, 1, 50, 1, false, false, 1, 1, 18),
+    makeCurriculumSub('agriculture', 'កសិកម្ម', 50, 1, 50, 1, false, false, 1, 1, 19),
+    makeCurriculumSub('eng', 'ភាសាបរទេស', 50, 0, 50, 0, true, true, 1, 1, 20)
+  ],
+  grade_10: [
+    makeCurriculumSub('kh', 'ភាសាខ្មែរ', 150, 3, 150, 3, false, false, 1, 1, 1),
+    makeCurriculumSub('math', 'គណិតវិទ្យា', 150, 3, 150, 3, false, false, 1, 1, 2),
+    makeCurriculumSub('phy', 'រូបវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 3),
+    makeCurriculumSub('chem', 'គីមីវិទ្យា', 37, 0.74, 37, 0.74, false, false, 1, 1, 4),
+    makeCurriculumSub('bio', 'ជីវវិទ្យា', 38, 0.76, 38, 0.76, false, false, 1, 1, 5),
+    makeCurriculumSub('his', 'ប្រវត្តិវិទ្យា', 37, 0.74, 37, 0.74, false, false, 1, 1, 6),
+    makeCurriculumSub('ict', 'ព័ត៌មានវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 7),
+    makeCurriculumSub('moral', 'សីល-ពលរដ្ឋ', 38, 0.76, 38, 0.76, false, false, 1, 1, 8),
+    makeCurriculumSub('geo_env', 'ផែនដីវិទ្យា', 25, 0.5, 25, 0.5, false, false, 1, 1, 9),
+    makeCurriculumSub('geo', 'ភូមិវិទ្យា', 38, 0.76, 38, 0.76, false, false, 1, 1, 10),
+    makeCurriculumSub('home_ec', 'គេហវិទ្យា', 37, 0.74, 37, 0.74, false, false, 1, 1, 11),
+    makeCurriculumSub('sport', 'អប់រំកាយ', 50, 1, 50, 1, false, false, 1, 1, 12),
+    makeCurriculumSub('life_skills', 'បំណិនជីវិត', 50, 1, 50, 1, false, false, 1, 1, 13),
+    makeCurriculumSub('economics', 'សេដ្ឋកិច្ច', 50, 1, 50, 1, false, false, 1, 1, 14),
+    makeCurriculumSub('art', 'សិល្បៈ', 50, 1, 50, 1, false, false, 1, 1, 15),
+    makeCurriculumSub('agriculture', 'កសិកម្ម', 50, 1, 50, 1, false, false, 1, 1, 16),
+    makeCurriculumSub('eng', 'ភាសាបរទេស', 100, 2, 100, 2, false, false, 1, 1, 17)
+  ],
+  grade_11_sci: [
+    makeCurriculumSub('kh', 'ភាសាខ្មែរ', 75, 1.5, 75, 1.5, false, false, 1, 1, 1),
+    makeCurriculumSub('math', 'គណិតវិទ្យា', 125, 2.5, 125, 2.5, false, false, 1, 1, 2),
+    makeCurriculumSub('phy', 'រូបវិទ្យា', 75, 1.5, 75, 1.5, false, false, 1, 1, 3),
+    makeCurriculumSub('chem', 'គីមីវិទ្យា', 75, 1.5, 75, 1.5, false, false, 1, 1, 4),
+    makeCurriculumSub('bio', 'ជីវវិទ្យា', 75, 1.5, 75, 1.5, false, false, 1, 1, 5),
+    makeCurriculumSub('his', 'ប្រវត្តិវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 6),
+    makeCurriculumSub('ict', 'ព័ត៌មានវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 7),
+    makeCurriculumSub('moral', 'សីល-ពលរដ្ឋ', 50, 1, 50, 1, false, false, 1, 1, 8),
+    makeCurriculumSub('geo_env', 'ផែនដីវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 9),
+    makeCurriculumSub('geo', 'ភូមិវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 10),
+    makeCurriculumSub('home_ec', 'គេហវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 11),
+    makeCurriculumSub('sport', 'អប់រំកាយ', 50, 1, 50, 1, false, false, 1, 1, 12),
+    makeCurriculumSub('life_skills', 'បំណិនជីវិត', 50, 1, 50, 1, false, false, 1, 1, 13),
+    makeCurriculumSub('economics', 'សេដ្ឋកិច្ច', 50, 1, 50, 1, false, false, 1, 1, 14),
+    makeCurriculumSub('art', 'សិល្បៈ', 50, 1, 50, 1, false, false, 1, 1, 15),
+    makeCurriculumSub('agriculture', 'កសិកម្ម', 50, 1, 50, 1, false, false, 1, 1, 16),
+    makeCurriculumSub('eng', 'ភាសាបរទេស', 50, 1, 50, 1, false, false, 1, 1, 17)
+  ],
+  grade_11_soc: [
+    makeCurriculumSub('kh', 'ភាសាខ្មែរ', 125, 2.5, 125, 2.5, false, false, 1, 1, 1),
+    makeCurriculumSub('math', 'គណិតវិទ្យា', 75, 1.5, 75, 1.5, false, false, 1, 1, 2),
+    makeCurriculumSub('phy', 'រូបវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 3),
+    makeCurriculumSub('chem', 'គីមីវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 4),
+    makeCurriculumSub('bio', 'ជីវវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 5),
+    makeCurriculumSub('his', 'ប្រវត្តិវិទ្យា', 75, 1.5, 75, 1.5, false, false, 1, 1, 6),
+    makeCurriculumSub('ict', 'ព័ត៌មានវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 7),
+    makeCurriculumSub('moral', 'សីល-ពលរដ្ឋ', 75, 1.5, 75, 1.5, false, false, 1, 1, 8),
+    makeCurriculumSub('geo_env', 'ផែនដីវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 9),
+    makeCurriculumSub('geo', 'ភូមិវិទ្យា', 75, 1.5, 75, 1.5, false, false, 1, 1, 10),
+    makeCurriculumSub('home_ec', 'គេហវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 11),
+    makeCurriculumSub('sport', 'អប់រំកាយ', 50, 1, 50, 1, false, false, 1, 1, 12),
+    makeCurriculumSub('life_skills', 'បំណិនជីវិត', 50, 1, 50, 1, false, false, 1, 1, 13),
+    makeCurriculumSub('economics', 'សេដ្ឋកិច្ច', 50, 1, 50, 1, false, false, 1, 1, 14),
+    makeCurriculumSub('art', 'សិល្បៈ', 50, 1, 50, 1, false, false, 1, 1, 15),
+    makeCurriculumSub('agriculture', 'កសិកម្ម', 50, 1, 50, 1, false, false, 1, 1, 16),
+    makeCurriculumSub('eng', 'ភាសាបរទេស', 50, 1, 50, 1, false, false, 1, 1, 17)
+  ],
+  grade_12_sci: [
+    makeCurriculumSub('kh', 'ភាសាខ្មែរ', 75, 1.5, 75, 1.5, false, false, 1, 1, 1),
+    makeCurriculumSub('math', 'គណិតវិទ្យា', 125, 2.5, 125, 2.5, false, false, 1, 1, 2),
+    makeCurriculumSub('phy', 'រូបវិទ្យា', 75, 1.5, 75, 1.5, false, false, 1, 1, 3),
+    makeCurriculumSub('chem', 'គីមីវិទ្យា', 75, 1.5, 75, 1.5, false, false, 1, 1, 4),
+    makeCurriculumSub('bio', 'ជីវវិទ្យា', 75, 1.5, 75, 1.5, false, false, 1, 1, 5),
+    makeCurriculumSub('his', 'ប្រវត្តិវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 6),
+    makeCurriculumSub('ict', 'ព័ត៌មានវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 7),
+    makeCurriculumSub('moral', 'សីល-ពលរដ្ឋ', 50, 1, 50, 1, false, false, 1, 1, 8),
+    makeCurriculumSub('geo_env', 'ផែនដីវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 9),
+    makeCurriculumSub('geo', 'ភូមិវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 10),
+    makeCurriculumSub('home_ec', 'គេហវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 11),
+    makeCurriculumSub('sport', 'អប់រំកាយ', 50, 1, 50, 1, false, false, 1, 1, 12),
+    makeCurriculumSub('life_skills', 'បំណិនជីវិត', 50, 1, 50, 1, false, false, 1, 1, 13),
+    makeCurriculumSub('economics', 'សេដ្ឋកិច្ច', 50, 1, 50, 1, false, false, 1, 1, 14),
+    makeCurriculumSub('art', 'សិល្បៈ', 50, 1, 50, 1, false, false, 1, 1, 15),
+    makeCurriculumSub('agriculture', 'កសិកម្ម', 50, 1, 50, 1, false, false, 1, 1, 16),
+    makeCurriculumSub('eng', 'ភាសាបរទេស', 50, 0, 50, 0, true, true, 1, 1, 17)
+  ],
+  grade_12_soc: [
+    makeCurriculumSub('kh', 'ភាសាខ្មែរ', 125, 2.5, 125, 2.5, false, false, 1, 1, 1),
+    makeCurriculumSub('math', 'គណិតវិទ្យា', 75, 1.5, 75, 1.5, false, false, 1, 1, 2),
+    makeCurriculumSub('phy', 'រូបវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 3),
+    makeCurriculumSub('chem', 'គីមីវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 4),
+    makeCurriculumSub('bio', 'ជីវវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 5),
+    makeCurriculumSub('his', 'ប្រវត្តិវិទ្យា', 75, 1.5, 75, 1.5, false, false, 1, 1, 6),
+    makeCurriculumSub('ict', 'ព័ត៌មានវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 7),
+    makeCurriculumSub('moral', 'សីល-ពលរដ្ឋ', 75, 1.5, 75, 1.5, false, false, 1, 1, 8),
+    makeCurriculumSub('geo_env', 'ផែនដីវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 9),
+    makeCurriculumSub('geo', 'ភូមិវិទ្យា', 75, 1.5, 75, 1.5, false, false, 1, 1, 10),
+    makeCurriculumSub('home_ec', 'គេហវិទ្យា', 50, 1, 50, 1, false, false, 1, 1, 11),
+    makeCurriculumSub('sport', 'អប់រំកាយ', 50, 1, 50, 1, false, false, 1, 1, 12),
+    makeCurriculumSub('life_skills', 'បំណិនជីវិត', 50, 1, 50, 1, false, false, 1, 1, 13),
+    makeCurriculumSub('economics', 'សេដ្ឋកិច្ច', 50, 1, 50, 1, false, false, 1, 1, 14),
+    makeCurriculumSub('art', 'សិល្បៈ', 50, 1, 50, 1, false, false, 1, 1, 15),
+    makeCurriculumSub('agriculture', 'កសិកម្ម', 50, 1, 50, 1, false, false, 1, 1, 16),
+    makeCurriculumSub('eng', 'ភាសាបរទេស', 50, 0, 50, 0, true, true, 1, 1, 17)
+  ]
+};
+
+const GRADE_PRESETS = {
+  grade_7: { code: 'grade_7', label: 'ថ្នាក់ទី៧', subjects: DEFAULT_CURRICULUM_DATA.grade_7 },
+  grade_8: { code: 'grade_8', label: 'ថ្នាក់ទី៨', subjects: DEFAULT_CURRICULUM_DATA.grade_8 },
+  grade_9: { code: 'grade_9', label: 'ថ្នាក់ទី៩', subjects: DEFAULT_CURRICULUM_DATA.grade_9 },
+  grade_10: { code: 'grade_10', label: 'ថ្នាក់ទី១០', subjects: DEFAULT_CURRICULUM_DATA.grade_10 },
+  grade_11_sci: { code: 'grade_11_sci', label: 'ថ្នាក់ទី១១ វិទ្យាសាស្ត្រ (11SC)', subjects: DEFAULT_CURRICULUM_DATA.grade_11_sci },
+  grade_11_soc: { code: 'grade_11_soc', label: 'ថ្នាក់ទី១១ វិទ្យាសាស្ត្រសង្គម (11SS)', subjects: DEFAULT_CURRICULUM_DATA.grade_11_soc },
+  grade_12_sci: { code: 'grade_12_sci', label: 'ថ្នាក់ទី១២ វិទ្យាសាស្ត្រ (12SC)', subjects: DEFAULT_CURRICULUM_DATA.grade_12_sci },
+  grade_12_soc: { code: 'grade_12_soc', label: 'ថ្នាក់ទី១២ វិទ្យាសាស្ត្រសង្គម (12SS)', subjects: DEFAULT_CURRICULUM_DATA.grade_12_soc }
+};
+
+// Section & Class presets for easy selection (7A, 7B, 11A, 11B, etc.)
+Object.assign(GRADE_PRESETS, {
+  grade_7a: { code: 'grade_7a', label: 'ថ្នាក់ទី 7A', subjects: GRADE_PRESETS.grade_7.subjects },
+  grade_7b: { code: 'grade_7b', label: 'ថ្នាក់ទី 7B', subjects: GRADE_PRESETS.grade_7.subjects },
+  grade_7c: { code: 'grade_7c', label: 'ថ្នាក់ទី 7C', subjects: GRADE_PRESETS.grade_7.subjects },
+  grade_8a: { code: 'grade_8a', label: 'ថ្នាក់ទី 8A', subjects: GRADE_PRESETS.grade_8.subjects },
+  grade_8b: { code: 'grade_8b', label: 'ថ្នាក់ទី 8B', subjects: GRADE_PRESETS.grade_8.subjects },
+  grade_9a: { code: 'grade_9a', label: 'ថ្នាក់ទី 9A', subjects: GRADE_PRESETS.grade_9.subjects },
+  grade_9b: { code: 'grade_9b', label: 'ថ្នាក់ទី 9B', subjects: GRADE_PRESETS.grade_9.subjects },
+  grade_10a: { code: 'grade_10a', label: 'ថ្នាក់ទី 10A', subjects: GRADE_PRESETS.grade_10.subjects },
+  grade_10b: { code: 'grade_10b', label: 'ថ្នាក់ទី 10B', subjects: GRADE_PRESETS.grade_10.subjects },
+  grade_11a: { code: 'grade_11a', label: 'ថ្នាក់ទី 11A (11SC វិទ្យាសាស្ត្រ)', subjects: GRADE_PRESETS.grade_11_sci.subjects },
+  grade_11b: { code: 'grade_11b', label: 'ថ្នាក់ទី 11B (11SS វិទ្យាសាស្ត្រសង្គម)', subjects: GRADE_PRESETS.grade_11_soc.subjects },
+  grade_12a: { code: 'grade_12a', label: 'ថ្នាក់ទី 12A (12SC វិទ្យាសាស្ត្រ)', subjects: GRADE_PRESETS.grade_12_sci.subjects },
+  grade_12b: { code: 'grade_12b', label: 'ថ្នាក់ទី 12B (12SS វិទ្យាសាស្ត្រសង្គម)', subjects: GRADE_PRESETS.grade_12_soc.subjects },
+  '11SC': GRADE_PRESETS.grade_11_sci,
+  '11SS': GRADE_PRESETS.grade_11_soc,
+  '12SC': GRADE_PRESETS.grade_12_sci,
+  '12SS': GRADE_PRESETS.grade_12_soc
+});
+
+// Default Active Subjects (Grade 12 Science)
+const DEFAULT_SUBJECTS = GRADE_PRESETS.grade_12_sci.subjects;
+
+// Standard Examination Matrix Subjects (Matching MoEYS standards & uploaded image)
+const EXAM_MATRIX_SUBJECTS = {
+  grade_7: [
+    { code: 'DI', name: 'សរសេរតាមអាន', fullKey: 'dictation', maxScore: 40 },
+    { code: 'LE', name: 'តែងសេចក្តី', fullKey: 'essay', maxScore: 60 },
+    { code: 'RD', name: 'ល្បឿនអំណាន', fullKey: 'reading', maxScore: 100 },
+    { code: 'K', name: 'ភាសាខ្មែរ', fullKey: 'kh', maxScore: 100 },
+    { code: 'M', name: 'គណិតវិទ្យា', fullKey: 'math', maxScore: 100 },
+    { code: 'P', name: 'រូបវិទ្យា', fullKey: 'phy', maxScore: 50 },
+    { code: 'C', name: 'គីមីវិទ្យា', fullKey: 'chem', maxScore: 50 },
+    { code: 'B', name: 'ជីវវិទ្យា', fullKey: 'bio', maxScore: 50 },
+    { code: 'H', name: 'ប្រវត្តិវិទ្យា', fullKey: 'his', maxScore: 50 },
+    { code: 'IT', name: 'ព័ត៌មានវិទ្យា', fullKey: 'ict', maxScore: 50 },
+    { code: 'MO', name: 'សីល-ពលរដ្ឋ', fullKey: 'moral', maxScore: 50 },
+    { code: 'ES', name: 'ផែនដីវិទ្យា', fullKey: 'geo_env', maxScore: 50 },
+    { code: 'G', name: 'ភូមិវិទ្យា', fullKey: 'geo', maxScore: 50 },
+    { code: 'HE', name: 'គេហវិទ្យា', fullKey: 'home_ec', maxScore: 50 },
+    { code: 'SP', name: 'អប់រំកាយ', fullKey: 'sport', maxScore: 50 },
+    { code: 'SK', name: 'បំណិនជីវិត', fullKey: 'life_skill', maxScore: 50 },
+    { code: 'EC', name: 'សេដ្ឋកិច្ច', fullKey: 'econ', maxScore: 50 },
+    { code: 'HC', name: 'អប់រំសុខភាព', fullKey: 'health', maxScore: 50 },
+    { code: 'AG', name: 'កសិកម្ម', fullKey: 'agri', maxScore: 50 },
+    { code: 'E', name: 'ភាសាបរទេស', fullKey: 'eng', maxScore: 50 },
+    { code: 'LB', name: 'បណ្ណាល័យ', fullKey: 'library', maxScore: 50 }
+  ],
+  grade_8: [
+    { code: 'DI', name: 'សរសេរតាមអាន', fullKey: 'dictation', maxScore: 40 },
+    { code: 'LE', name: 'តែងសេចក្តី', fullKey: 'essay', maxScore: 60 },
+    { code: 'RD', name: 'អំណាន', fullKey: 'reading', maxScore: 100 },
+    { code: 'K', name: 'ភាសាខ្មែរ', fullKey: 'kh', maxScore: 100 },
+    { code: 'M', name: 'គណិតវិទ្យា', fullKey: 'math', maxScore: 100 },
+    { code: 'P', name: 'រូបវិទ្យា', fullKey: 'phy', maxScore: 50 },
+    { code: 'C', name: 'គីមីវិទ្យា', fullKey: 'chem', maxScore: 50 },
+    { code: 'B', name: 'ជីវវិទ្យា', fullKey: 'bio', maxScore: 50 },
+    { code: 'H', name: 'ប្រវត្តិវិទ្យា', fullKey: 'his', maxScore: 50 },
+    { code: 'IT', name: 'ព័ត៌មានវិទ្យា', fullKey: 'ict', maxScore: 50 },
+    { code: 'MO', name: 'សីលធម៌-ពលរដ្ឋ', fullKey: 'moral', maxScore: 50 },
+    { code: 'ES', name: 'ផែនដីវិទ្យា', fullKey: 'geo_env', maxScore: 50 },
+    { code: 'G', name: 'ភូមិវិទ្យា', fullKey: 'geo', maxScore: 50 },
+    { code: 'HE', name: 'គេហវិទ្យា', fullKey: 'home_ec', maxScore: 50 }
+  ],
+  grade_9: [
+    { code: 'DI', name: 'សរសេរតាមអាន', fullKey: 'dictation', maxScore: 40 },
+    { code: 'LE', name: 'តែងសេចក្តី', fullKey: 'essay', maxScore: 60 },
+    { code: 'RD', name: 'អំណាន', fullKey: 'reading', maxScore: 100 },
+    { code: 'K', name: 'ភាសាខ្មែរ', fullKey: 'kh', maxScore: 100 },
+    { code: 'M', name: 'គណិតវិទ្យា', fullKey: 'math', maxScore: 100 },
+    { code: 'P', name: 'រូបវិទ្យា', fullKey: 'phy', maxScore: 35 },
+    { code: 'C', name: 'គីមីវិទ្យា', fullKey: 'chem', maxScore: 25 },
+    { code: 'B', name: 'ជីវវិទ្យា', fullKey: 'bio', maxScore: 35 },
+    { code: 'H', name: 'ប្រវត្តិវិទ្យា', fullKey: 'his', maxScore: 33 },
+    { code: 'IT', name: 'ព័ត៌មានវិទ្យា', fullKey: 'ict', maxScore: 50 },
+    { code: 'MO', name: 'សីលធម៌-ពលរដ្ឋ', fullKey: 'moral', maxScore: 35 },
+    { code: 'ES', name: 'ផែនដីវិទ្យា', fullKey: 'geo_env', maxScore: 25 },
+    { code: 'G', name: 'ភូមិវិទ្យា', fullKey: 'geo', maxScore: 32 },
+    { code: 'HE', name: 'គេហវិទ្យា', fullKey: 'home_ec', maxScore: 50 }
+  ],
+  grade_10: [
+    { code: 'DI', name: 'សរសេរតាមអាន', fullKey: 'dictation', maxScore: 40 },
+    { code: 'LE', name: 'តែងសេចក្តី', fullKey: 'essay', maxScore: 60 },
+    { code: 'RD', name: 'អំណាន', fullKey: 'reading', maxScore: 100 },
+    { code: 'K', name: 'ភាសាខ្មែរ', fullKey: 'kh', maxScore: 150 },
+    { code: 'M', name: 'គណិតវិទ្យា', fullKey: 'math', maxScore: 150 },
+    { code: 'P', name: 'រូបវិទ្យា', fullKey: 'phy', maxScore: 50 },
+    { code: 'C', name: 'គីមីវិទ្យា', fullKey: 'chem', maxScore: 37 },
+    { code: 'B', name: 'ជីវវិទ្យា', fullKey: 'bio', maxScore: 38 },
+    { code: 'H', name: 'ប្រវត្តិវិទ្យា', fullKey: 'his', maxScore: 37 },
+    { code: 'IT', name: 'ព័ត៌មានវិទ្យា', fullKey: 'ict', maxScore: 50 },
+    { code: 'MO', name: 'សីលធម៌ ពលរដ្ឋ', fullKey: 'moral', maxScore: 38 },
+    { code: 'ES', name: 'ផែនដីវិទ្យា', fullKey: 'geo_env', maxScore: 25 },
+    { code: 'G', name: 'ភូមិវិទ្យា', fullKey: 'geo', maxScore: 38 },
+    { code: 'HE', name: 'គេហវិទ្យា', fullKey: 'home_ec', maxScore: 37 }
+  ],
+  grade_11_sci: [
+    { code: 'DI', name: 'សរសេរតាមអាន', fullKey: 'dictation', maxScore: 40 },
+    { code: 'LE', name: 'តែងសេចក្តី', fullKey: 'essay', maxScore: 60 },
+    { code: 'RD', name: 'អំណាន', fullKey: 'reading', maxScore: 100 },
+    { code: 'K', name: 'ភាសាខ្មែរ', fullKey: 'kh', maxScore: 75 },
+    { code: 'M', name: 'គណិតវិទ្យា', fullKey: 'math', maxScore: 125 },
+    { code: 'P', name: 'រូបវិទ្យា', fullKey: 'phy', maxScore: 75 },
+    { code: 'C', name: 'គីមីវិទ្យា', fullKey: 'chem', maxScore: 75 },
+    { code: 'B', name: 'ជីវវិទ្យា', fullKey: 'bio', maxScore: 75 },
+    { code: 'H', name: 'ប្រវត្តិវិទ្យា', fullKey: 'his', maxScore: 50 },
+    { code: 'IT', name: 'ព័ត៌មានវិទ្យា', fullKey: 'ict', maxScore: 50 },
+    { code: 'MO', name: 'សីលធម៌ ពលរដ្ឋ', fullKey: 'moral', maxScore: 50 },
+    { code: 'ES', name: 'ផែនដីវិទ្យា', fullKey: 'geo_env', maxScore: 50 },
+    { code: 'G', name: 'ភូមិវិទ្យា', fullKey: 'geo', maxScore: 50 },
+    { code: 'HE', name: 'គេហវិទ្យា', fullKey: 'home_ec', maxScore: 50 }
+  ],
+  grade_11_soc: [
+    { code: 'DI', name: 'សរសេរតាមអាន', fullKey: 'dictation', maxScore: 40 },
+    { code: 'LE', name: 'តែងសេចក្តី', fullKey: 'essay', maxScore: 60 },
+    { code: 'RD', name: 'អំណាន', fullKey: 'reading', maxScore: 100 },
+    { code: 'K', name: 'ភាសាខ្មែរ', fullKey: 'kh', maxScore: 125 },
+    { code: 'M', name: 'គណិតវិទ្យា', fullKey: 'math', maxScore: 75 },
+    { code: 'P', name: 'រូបវិទ្យា', fullKey: 'phy', maxScore: 50 },
+    { code: 'C', name: 'គីមីវិទ្យា', fullKey: 'chem', maxScore: 50 },
+    { code: 'B', name: 'ជីវវិទ្យា', fullKey: 'bio', maxScore: 50 },
+    { code: 'H', name: 'ប្រវត្តិវិទ្យា', fullKey: 'his', maxScore: 75 },
+    { code: 'IT', name: 'ព័ត៌មានវិទ្យា', fullKey: 'ict', maxScore: 50 },
+    { code: 'MO', name: 'ពលរដ្ឋវិជ្ជា', fullKey: 'moral', maxScore: 75 },
+    { code: 'ES', name: 'ផែនដីវិទ្យា', fullKey: 'geo_env', maxScore: 50 },
+    { code: 'G', name: 'ភូមិវិទ្យា', fullKey: 'geo', maxScore: 75 },
+    { code: 'HE', name: 'គេហវិទ្យា', fullKey: 'home_ec', maxScore: 50 }
+  ],
+  grade_12_sci: [
+    { code: 'DI', name: 'សរសេរតាមអាន', fullKey: 'dictation', maxScore: 40 },
+    { code: 'LE', name: 'តែងសេចក្តី', fullKey: 'essay', maxScore: 60 },
+    { code: 'RD', name: 'អំណាន', fullKey: 'reading', maxScore: 100 },
+    { code: 'K', name: 'ភាសាខ្មែរ', fullKey: 'kh', maxScore: 75 },
+    { code: 'M', name: 'គណិតវិទ្យា', fullKey: 'math', maxScore: 125 },
+    { code: 'P', name: 'រូបវិទ្យា', fullKey: 'phy', maxScore: 75 },
+    { code: 'C', name: 'គីមីវិទ្យា', fullKey: 'chem', maxScore: 75 },
+    { code: 'B', name: 'ជីវវិទ្យា', fullKey: 'bio', maxScore: 75 },
+    { code: 'H', name: 'ប្រវត្តិវិទ្យា', fullKey: 'his', maxScore: 50 },
+    { code: 'IT', name: 'ព័ត៌មានវិទ្យា', fullKey: 'ict', maxScore: 50 },
+    { code: 'MO', name: 'សីលធម៌ ពលរដ្ឋ', fullKey: 'moral', maxScore: 50 },
+    { code: 'ES', name: 'ផែនដីវិទ្យា', fullKey: 'geo_env', maxScore: 50 },
+    { code: 'G', name: 'ភូមិវិទ្យា', fullKey: 'geo', maxScore: 50 },
+    { code: 'HE', name: 'គេហវិទ្យា', fullKey: 'home_ec', maxScore: 50 }
+  ],
+  grade_12_soc: [
+    { code: 'DI', name: 'សរសេរតាមអាន', fullKey: 'dictation', maxScore: 40 },
+    { code: 'LE', name: 'តែងសេចក្តី', fullKey: 'essay', maxScore: 60 },
+    { code: 'RD', name: 'អំណាន', fullKey: 'reading', maxScore: 100 },
+    { code: 'K', name: 'ភាសាខ្មែរ', fullKey: 'kh', maxScore: 125 },
+    { code: 'M', name: 'គណិតវិទ្យា', fullKey: 'math', maxScore: 75 },
+    { code: 'P', name: 'រូបវិទ្យា', fullKey: 'phy', maxScore: 50 },
+    { code: 'C', name: 'គីមីវិទ្យា', fullKey: 'chem', maxScore: 50 },
+    { code: 'B', name: 'ជីវវិទ្យា', fullKey: 'bio', maxScore: 50 },
+    { code: 'H', name: 'ប្រវត្តិវិទ្យា', fullKey: 'his', maxScore: 75 },
+    { code: 'IT', name: 'ព័ត៌មានវិទ្យា', fullKey: 'ict', maxScore: 50 },
+    { code: 'MO', name: 'ពលរដ្ឋវិជ្ជា', fullKey: 'moral', maxScore: 75 },
+    { code: 'ES', name: 'ផែនដីវិទ្យា', fullKey: 'geo_env', maxScore: 50 },
+    { code: 'G', name: 'ភូមិវិទ្យា', fullKey: 'geo', maxScore: 75 },
+    { code: 'HE', name: 'គេហវិទ្យា', fullKey: 'home_ec', maxScore: 50 }
+  ]
+};
+
+// All 21 Periods & Sections explicitly requested
+const PERIOD_DEFINITIONS = {
+  curriculum_setting: {
+    id: 'curriculum_setting',
+    title: 'ការកំណត់កម្មវិធីសិក្សា',
+    desc: 'កំណត់មុខវិជ្ជា ចំនួនម៉ោងបង្រៀន មេគុណ ពិន្ទុអតិបរមា និងពិន្ទុបន្ថែមតាមកម្រិតថ្នាក់នីមួយៗ',
+    icon: 'ri-book-read-line',
+    type: 'curriculum_setting'
+  },
+  student_info: {
+    id: 'student_info',
+    title: 'ព័ត៌មានសិស្ស',
+    desc: 'គ្រប់គ្រងបញ្ជីឈ្មោះ ភេទ អត្តលេខ និងប្រវត្តិរូបសិស្ស',
+    icon: 'ri-contacts-book-line',
+    type: 'profile'
+  },
+  overview_stats: {
+    id: 'overview_stats',
+    title: 'ផ្ទាំងស្ថិតិសង្ខេប',
+    desc: 'ទិដ្ឋភាពទូទៅនៃលទ្ធផលសិក្សា ការបែងចែកនិទ្ទេស និងតារាងកិត្តិយស',
+    icon: 'ri-dashboard-3-line',
+    type: 'overview'
+  },
+  test_early: {
+    id: 'test_early',
+    title: 'ពិន្ទុតេស្តដើមឆ្នាំ',
+    desc: 'កត់ត្រា និងវាយតម្លៃពិន្ទុតេស្តសមត្ថភាពដើមឆ្នាំសិក្សា',
+    icon: 'ri-file-chart-line',
+    type: 'grade'
+  },
+  m01: { id: 'm01', title: 'ពិន្ទុខែមករា', desc: 'កត់ត្រាពិន្ទុប្រចាំខែមករា', icon: 'ri-calendar-todo-line', type: 'grade', sem: 1 },
+  m02: { id: 'm02', title: 'ពិន្ទុខែកុម្ភៈ', desc: 'កត់ត្រាពិន្ទុប្រចាំខែកុម្ភៈ', icon: 'ri-calendar-todo-line', type: 'grade', sem: 1 },
+  m03: { id: 'm03', title: 'ពិន្ទុខែមីនា', desc: 'កត់ត្រាពិន្ទុប្រចាំខែមីនា', icon: 'ri-calendar-todo-line', type: 'grade', sem: 1 },
+  m04: { id: 'm04', title: 'ពិន្ទុខែមេសា', desc: 'កត់ត្រាពិន្ទុប្រចាំខែមេសា', icon: 'ri-calendar-todo-line', type: 'grade', sem: 1 },
+  m05: { id: 'm05', title: 'ពិន្ទុខែឧសភា', desc: 'កត់ត្រាពិន្ទុប្រចាំខែឧសភា', icon: 'ri-calendar-todo-line', type: 'grade', sem: 1 },
+  m06: { id: 'm06', title: 'ពិន្ទុខែមិថុនា', desc: 'កត់ត្រាពិន្ទុប្រចាំខែមិថុនា', icon: 'ri-calendar-todo-line', type: 'grade', sem: 1 },
+  m07: { id: 'm07', title: 'ពិន្ទុខែកក្កដា', desc: 'កត់ត្រាពិន្ទុប្រចាំខែកក្កដា', icon: 'ri-calendar-todo-line', type: 'grade', sem: 2 },
+  m08: { id: 'm08', title: 'ពិន្ទុខែសីហា', desc: 'កត់ត្រាពិន្ទុប្រចាំខែសីហា', icon: 'ri-calendar-todo-line', type: 'grade', sem: 2 },
+  m09: { id: 'm09', title: 'ពិន្ទុខែកញ្ញា', desc: 'កត់ត្រាពិន្ទុប្រចាំខែកញ្ញា', icon: 'ri-calendar-todo-line', type: 'grade', sem: 2 },
+  m10: { id: 'm10', title: 'ពិន្ទុខែតុលា', desc: 'កត់ត្រាពិន្ទុប្រចាំខែតុលា', icon: 'ri-calendar-todo-line', type: 'grade', sem: 2 },
+  m11: { id: 'm11', title: 'ពិន្ទុខែវិច្ឆិកា', desc: 'កត់ត្រាពិន្ទុប្រចាំខែវិច្ឆិកា', icon: 'ri-calendar-todo-line', type: 'grade', sem: 2 },
+  m12: { id: 'm12', title: 'ពិន្ទុខែធ្នូ', desc: 'កត់ត្រាពិន្ទុប្រចាំខែធ្នូ', icon: 'ri-calendar-todo-line', type: 'grade', sem: 2 },
+  sem1_exam: {
+    id: 'sem1_exam',
+    title: 'ពិន្ទុប្រឡងឆមាសទី១',
+    desc: 'កត់ត្រាពិន្ទុការប្រឡងបញ្ចប់ឆមាសទី១',
+    icon: 'ri-draft-line',
+    type: 'grade',
+    sem: 1
+  },
+  sem1_monthly_avg: {
+    id: 'sem1_monthly_avg',
+    title: 'ខែប្រចាំឆមាសទី១',
+    desc: 'មធ្យមភាគពិន្ទុបូកសរុបគ្រប់ខែក្នុងឆមាសទី១ (ចុច "គណនាស្វ័យប្រវត្តិ" ដើម្បីទាញពីខែមករា ដល់ មិថុនា)',
+    icon: 'ri-calculator-line',
+    type: 'grade',
+    sem: 1
+  },
+  sem1_overall: {
+    id: 'sem1_overall',
+    title: 'ប្រចាំឆមាសទី១',
+    desc: 'លទ្ធផលរួមឆមាសទី១ = (ខែប្រចាំឆមាសទី១ + ប្រឡងឆមាសទី១) / ២',
+    icon: 'ri-medal-line',
+    type: 'grade',
+    sem: 1
+  },
+  sem2_exam: {
+    id: 'sem2_exam',
+    title: 'ពិន្ទុប្រឡងឆមាសទី២',
+    desc: 'កត់ត្រាពិន្ទុការប្រឡងបញ្ចប់ឆមាសទី២',
+    icon: 'ri-draft-line',
+    type: 'grade',
+    sem: 2
+  },
+  sem2_monthly_avg: {
+    id: 'sem2_monthly_avg',
+    title: 'ខែឆមាសទី២',
+    desc: 'មធ្យមភាគពិន្ទុបូកសរុបគ្រប់ខែក្នុងឆមាសទី២ (ចុច "គណនាស្វ័យប្រវត្តិ" ដើម្បីទាញពីខែកក្កដា ដល់ ធ្នូ)',
+    icon: 'ri-calculator-line',
+    type: 'grade',
+    sem: 2
+  },
+  sem2_overall: {
+    id: 'sem2_overall',
+    title: 'ប្រចាំឆមាសទី២',
+    desc: 'លទ្ធផលរួមឆមាសទី២ = (ខែឆមាសទី២ + ប្រឡងឆមាសទី២) / ២',
+    icon: 'ri-medal-line',
+    type: 'grade',
+    sem: 2
+  },
+  yearly: {
+    id: 'yearly',
+    title: 'ប្រចាំឆ្នាំ',
+    desc: 'លទ្ធផលបញ្ចប់ឆ្នាំសិក្សាសរុប = (ប្រចាំឆមាសទី១ + ប្រចាំឆមាសទី២) / ២',
+    icon: 'ri-trophy-line',
+    type: 'grade',
+    isYearly: true
+  },
+  exam_date_config: {
+    id: 'exam_date_config',
+    title: 'ការកំណត់កាលបរិច្ឆេទប្រឡង',
+    desc: 'កំណត់កាលបរិច្ឆេទប្រឡង កាលបរិច្ឆេទប្រកាសលទ្ធផល និងកាលបរិច្ឆេទបិទការបញ្ចូលពិន្ទុតាមកម្រិតថ្នាក់',
+    icon: 'ri-calendar-check-2-line',
+    type: 'exam_date_config'
+  },
+  report_student: {
+    id: 'report_student',
+    title: 'របាយការណ៍សិស្ស',
+    desc: 'បញ្ជីសិស្ស ស្ថិតិតាមអាយុ ស្ថិតិចំនួនសិស្ស កាតសិស្ស ការផ្លាស់ប្ដូរថ្នាក់ និងការបោះបង់ការសិក្សា',
+    icon: 'ri-file-chart-2-line',
+    type: 'report'
+  },
+  report_study: {
+    id: 'report_study',
+    title: 'របាយការណ៍សិក្សា',
+    desc: 'លទ្ធផលសិក្សា តារាងកិត្តិយស ស្ថិតិនិទ្ទេស សិស្សរៀនខ្សោយ និងមធ្យមភាគតាមមុខវិជ្ជា',
+    icon: 'ri-file-chart-2-line',
+    type: 'report'
+  },
+  report_teacher: {
+    id: 'report_teacher',
+    title: 'របាយការណ៍របស់គ្រូ',
+    desc: 'ស្ថានភាពបញ្ចូលពិន្ទុតាមមុខវិជ្ជា និងសង្ខេបលទ្ធផលតាមថ្នាក់សម្រាប់គ្រូបន្ទុកថ្នាក់',
+    icon: 'ri-file-chart-2-line',
+    type: 'report'
+  },
+  exam_prep: {
+    id: 'exam_prep',
+    title: 'រៀបចំការប្រឡង',
+    desc: 'រៀបចំបញ្ជីឈ្មោះសិស្ស លេខបន្ទប់ លេខតុ អក្សរសម្ងាត់ និងបញ្ជីស្រង់អវត្តមានតាមបន្ទប់',
+    icon: 'ri-file-list-3-line',
+    type: 'exam'
+  },
+  exam_score_entry: {
+    id: 'exam_score_entry',
+    title: 'បញ្ចូលពិន្ទុប្រឡង',
+    desc: 'បញ្ចូលពិន្ទុប្រឡងតាមអក្សរសម្ងាត់ ឬតាមតារាងមុខវិជ្ជា និងពិនិត្យទិន្នន័យ',
+    icon: 'ri-edit-circle-line',
+    type: 'exam_score'
+  }
+};
+
+// Realistic Demo Data for Cambodian High School Students (30 Students)
+const INITIAL_DEMO_STUDENTS = [
+  { id: 'STU-001', khmerName: 'សុខ ចិន្តា', latinName: 'SOK CHINDA', gender: 'ស្រី', dob: '2008-03-12', class: '7A', classType: 'ទូទៅ', phone: '012 345 678', guardian: 'សុខ វិបុល', address: 'សង្កាត់ទួលទំពូង១ ខណ្ឌចំការមន ភ្នំពេញ', avatar: '' },
+  { id: 'STU-002', khmerName: 'រស់ វីរៈ', latinName: 'ROS VIRAK', gender: 'ប្រុស', dob: '2008-06-25', class: '7A', classType: 'ទូទៅ', phone: '098 765 432', guardian: 'រស់ សុផល', address: 'សង្កាត់បឹងកក់១ ខណ្ឌទួលគោក ភ្នំពេញ', avatar: '' },
+  { id: 'STU-003', khmerName: 'ចាន់ ស្រីនីន', latinName: 'CHAN SREYNIN', gender: 'ស្រី', dob: '2008-01-18', class: '7A', classType: 'ទូទៅ', phone: '010 889 900', guardian: 'ចាន់ ផល្លា', address: 'សង្កាត់ស្ទឹងមានជ័យ ខណ្ឌមានជ័យ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-004', khmerName: 'កែវ ពិសិដ្ឋ', latinName: 'KEO PISETH', gender: 'ប្រុស', dob: '2008-08-04', class: '7A', classType: 'ទូទៅ', phone: '077 112 233', guardian: 'កែវ សម្បត្តិ', address: 'សង្កាត់ចោមចៅ ខណ្ឌពោធិ៍សែនជ័យ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-005', khmerName: 'ហេង ធីតា', latinName: 'HENG THIDA', gender: 'ស្រី', dob: '2008-11-30', class: '7A', classType: 'ទូទៅ', phone: '085 445 566', guardian: 'ហេង គឹមសាន', address: 'សង្កាត់ផ្សារដេប៉ូ៣ ខណ្ឌទួលគោក ភ្នំពេញ', avatar: '' },
+  { id: 'STU-006', khmerName: 'លឹម គឹមហុង', latinName: 'LIM KIMHONG', gender: 'ប្រុស', dob: '2008-04-14', class: '7A', classType: 'ទូទៅ', phone: '097 555 6677', guardian: 'លឹម សេង', address: 'សង្កាត់បឹងត្របែក ខណ្ឌចំការមន ភ្នំពេញ', avatar: '' },
+  { id: 'STU-007', khmerName: 'មាស សុជាតា', latinName: 'MEAS SOCHEATA', gender: 'ស្រី', dob: '2008-09-09', class: '7A', classType: 'ទូទៅ', phone: '016 778 899', guardian: 'មាស វុទ្ធី', address: 'សង្កាត់ទួលសង្កែ ខណ្ឌឫស្សីកែវ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-008', khmerName: 'អ៊ុំ រតនៈ', latinName: 'OUM RATTANAK', gender: 'ប្រុស', dob: '2008-12-02', class: '7A', classType: 'ទូទៅ', phone: '011 334 455', guardian: 'អ៊ុំ ម៉ៅ', address: 'សង្កាត់ចាក់អង្រែលើ ខណ្ឌមានជ័យ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-009', khmerName: 'សេង បុប្ផា', latinName: 'SENG BOPHA', gender: 'ស្រី', dob: '2008-05-20', class: '7B', classType: 'ទូទៅ', phone: '069 223 344', guardian: 'សេង ហុក', address: 'សង្កាត់គីឡូម៉ែត្រលេខ៦ ខណ្ឌឫស្សីកែវ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-010', khmerName: 'ឃួន វិច្ឆិកា', latinName: 'KHUON VICHEKA', gender: 'ប្រុស', dob: '2008-07-15', class: '7B', classType: 'ទូទៅ', phone: '092 887 766', guardian: 'ឃួន ចំរើន', address: 'សង្កាត់ទួលស្វាយព្រៃ ខណ្ឌបឹងកេងកង ភ្នំពេញ', avatar: '' },
+  { id: 'STU-011', khmerName: 'ជា ដានីកា', latinName: 'CHEA DANIKA', gender: 'ស្រី', dob: '2008-02-14', class: '7B', classType: 'ទូទៅ', phone: '012 998 877', guardian: 'ជា សុខា', address: 'សង្កាត់ព្រែកប្រា ខណ្ឌច្បារអំពៅ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-012', khmerName: 'ប៊ុនថន វិសាល', latinName: 'BUNTHORN VISAL', gender: 'ប្រុស', dob: '2008-06-11', class: '7B', classType: 'ទូទៅ', phone: '093 456 789', guardian: 'ប៊ុនថន សុភ័ក្រ', address: 'សង្កាត់ទួលទំពូង២ ខណ្ឌចំការមន ភ្នំពេញ', avatar: '' },
+  { id: 'STU-013', khmerName: 'ម៉ៅ ស្រីពៅ', latinName: 'MAO SREYPOV', gender: 'ស្រី', dob: '2008-08-22', class: '7B', classType: 'ទូទៅ', phone: '088 123 4567', guardian: 'ម៉ៅ សារ៉ាត់', address: 'សង្កាត់ភ្នំពេញថ្មី ខណ្ឌសែនសុខ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-014', khmerName: 'សួស មករា', latinName: 'SUOS MAKARA', gender: 'ប្រុស', dob: '2008-01-01', class: '7B', classType: 'ទូទៅ', phone: '015 678 901', guardian: 'សួស ចាន់ដារា', address: 'សង្កាត់ទឹកល្អក់១ ខណ្ឌទួលគោក ភ្នំពេញ', avatar: '' },
+  { id: 'STU-015', khmerName: 'ព្រំ គន្ធា', latinName: 'PROM KUNTHEA', gender: 'ស្រី', dob: '2008-10-10', class: '7B', classType: 'ទូទៅ', phone: '078 234 567', guardian: 'ព្រំ សុវណ្ណ', address: 'សង្កាត់ចោមចៅ២ ខណ្ឌពោធិ៍សែនជ័យ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-016', khmerName: 'យិន សុវណ្ណ', latinName: 'YIN SOVANN', gender: 'ប្រុស', dob: '2008-03-29', class: '7B', classType: 'ទូទៅ', phone: '096 345 6789', guardian: 'យិន គង់', address: 'សង្កាត់បឹងកក់២ ខណ្ឌទួលគោក ភ្នំពេញ', avatar: '' },
+  { id: 'STU-017', khmerName: 'ឡុង ចរិយា', latinName: 'LONG CHORIYA', gender: 'ស្រី', dob: '2008-12-19', class: '11A', classType: 'វិទ្យាសាស្ត្រ', phone: '017 890 123', guardian: 'ឡុង សារិទ្ធ', address: 'សង្កាត់ដង្កោ ខណ្ឌដង្កោ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-018', khmerName: 'គង់ សុភ័ក្ត្រ', latinName: 'KONG SOPHEAK', gender: 'ប្រុស', dob: '2008-05-05', class: '11A', classType: 'វិទ្យាសាស្ត្រ', phone: '099 456 789', guardian: 'គង់ វណ្ណា', address: 'សង្កាត់ផ្សារថ្មី១ ខណ្ឌដូនពេញ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-019', khmerName: 'នួន សុផល', latinName: 'NUON SOPHAL', gender: 'ស្រី', dob: '2008-07-28', class: '11A', classType: 'វិទ្យាសាស្ត្រ', phone: '081 567 890', guardian: 'នួន ប៊ុនធឿន', address: 'សង្កាត់ព្រែកឯង ខណ្ឌច្បារអំពៅ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-020', khmerName: 'ឃុត ចាន់ថន', latinName: 'KHUT CHANTHORN', gender: 'ប្រុស', dob: '2008-09-14', class: '11A', classType: 'វិទ្យាសាស្ត្រ', phone: '086 678 901', guardian: 'ឃុត គឹមលី', address: 'សង្កាត់ទឹកថ្លា ខណ្ឌសែនសុខ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-021', khmerName: 'ទៀង ស្រីមុំ', latinName: 'TIENG SREYMOM', gender: 'ស្រី', dob: '2008-04-03', class: '11A', classType: 'វិទ្យាសាស្ត្រ', phone: '012 112 244', guardian: 'ទៀង សម្បត្តិ', address: 'សង្កាត់ផ្សារដើមថ្កូវ ខណ្ឌចំការមន ភ្នំពេញ', avatar: '' },
+  { id: 'STU-022', khmerName: 'អ៊ុច វឌ្ឍនៈ', latinName: 'OUCH VATTANAK', gender: 'ប្រុស', dob: '2008-11-17', class: '11A', classType: 'វិទ្យាសាស្ត្រ', phone: '095 223 355', guardian: 'អ៊ុច សុភាព', address: 'សង្កាត់កាកាប១ ខណ្ឌពោធិ៍សែនជ័យ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-023', khmerName: 'ពេជ្រ រចនា', latinName: 'PICH RACHANA', gender: 'ស្រី', dob: '2008-06-08', class: '11A', classType: 'វិទ្យាសាស្ត្រ', phone: '090 334 466', guardian: 'ពេជ្រ គឹមហុង', address: 'សង្កាត់ស្រះចក ខណ្ឌដូនពេញ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-024', khmerName: 'ហុង សុខណា', latinName: 'HONG SOKHNA', gender: 'ប្រុស', dob: '2008-08-30', class: '11B', classType: 'វិទ្យាសាស្ត្រសង្គម', phone: '087 445 577', guardian: 'ហុង ស៊ីណា', address: 'សង្កាត់បឹងទំពុន ខណ្ឌមានជ័យ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-025', khmerName: 'វ៉ាន់ សុខុម', latinName: 'VAN SOKHUM', gender: 'ស្រី', dob: '2008-03-24', class: '11B', classType: 'វិទ្យាសាស្ត្រសង្គម', phone: '070 556 688', guardian: 'វ៉ាន់ សុខេន', address: 'សង្កាត់ទួលសង្កែ២ ខណ្ឌឫស្សីកែវ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-026', khmerName: 'ស្រ៊ុន គឹមឡេង', latinName: 'SRUN KIMLENG', gender: 'ប្រុស', dob: '2008-10-05', class: '11B', classType: 'វិទ្យាសាស្ត្រសង្គម', phone: '010 667 799', guardian: 'ស្រ៊ុន ម៉េង', address: 'សង្កាត់គោកឃ្លាង ខណ្ឌសែនសុខ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-027', khmerName: 'ផន ម៉ាលី', latinName: 'PHORN MALY', gender: 'ស្រី', dob: '2008-02-18', class: '11B', classType: 'វិទ្យាសាស្ត្រសង្គម', phone: '011 778 800', guardian: 'ផន សារ៉េត', address: 'សង្កាត់ចោមចៅ៣ ខណ្ឌពោធិ៍សែនជ័យ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-028', khmerName: 'អ៊ុក សម្បត្តិ', latinName: 'OUK SAMBATH', gender: 'ប្រុស', dob: '2008-05-12', class: '11B', classType: 'វិទ្យាសាស្ត្រសង្គម', phone: '077 889 911', guardian: 'អ៊ុក ស៊ីថាត', address: 'សង្កាត់ស្ទឹងមានជ័យ២ ខណ្ឌមានជ័យ ភ្នំពេញ', avatar: '' },
+  { id: 'STU-029', khmerName: 'ឌុក ស្រីណែត', latinName: 'DUK SREYNET', gender: 'ស្រី', dob: '2008-07-07', class: '11B', classType: 'វិទ្យាសាស្ត្រសង្គម', phone: '018 990 022', guardian: 'ឌុក ស៊ីណាត', address: 'សង្កាត់ផ្សារដេប៉ូ១ ខណ្ឌទួលគោក ភ្នំពេញ', avatar: '' },
+  { id: 'STU-030', khmerName: 'ឈិត បញ្ញា', latinName: 'CHHIT PANHA', gender: 'ប្រុស', dob: '2008-09-25', class: '11B', classType: 'វិទ្យាសាស្ត្រសង្គម', phone: '061 102 030', guardian: 'ឈិត ប៊ុនលី', address: 'សង្កាត់បឹងកេងកង៣ ខណ្ឌបឹងកេងកង ភ្នំពេញ', avatar: '' }
+];
+
+// IndexedDB Storage & Backup Engine (Supports hundreds of MBs without browser quota limits)
+const AppStorage = {
+  dbName: 'SMS_Cambodia_DB',
+  dbVersion: 2,
+  _db: null,
+
+  async getDB() {
+    if (this._db) return this._db;
+    return new Promise((resolve) => {
+      if (typeof window === 'undefined' || !window.indexedDB) {
+        return resolve(null);
+      }
+      try {
+        const req = indexedDB.open(this.dbName, this.dbVersion);
+        req.onupgradeneeded = (e) => {
+          const db = e.target.result;
+          if (!db.objectStoreNames.contains('app_data')) {
+            db.createObjectStore('app_data');
+          }
+          if (!db.objectStoreNames.contains('backups')) {
+            db.createObjectStore('backups');
+          }
+          if (!db.objectStoreNames.contains('sqlite_db')) {
+            db.createObjectStore('sqlite_db');
+          }
+        };
+        req.onsuccess = (e) => {
+          this._db = e.target.result;
+          resolve(this._db);
+        };
+        req.onerror = () => resolve(null);
+      } catch (err) {
+        resolve(null);
+      }
+    });
+  },
+
+  async setItem(key, value) {
+    try {
+      const db = await this.getDB();
+      if (!db) return false;
+      return new Promise((resolve) => {
+        const tx = db.transaction('app_data', 'readwrite');
+        const store = tx.objectStore('app_data');
+        store.put(value, key);
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => resolve(false);
+      });
+    } catch (e) {
+      return false;
+    }
+  },
+
+  async getItem(key) {
+    try {
+      const db = await this.getDB();
+      if (!db) return null;
+      return new Promise((resolve) => {
+        const tx = db.transaction('app_data', 'readonly');
+        const store = tx.objectStore('app_data');
+        const req = store.get(key);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => resolve(null);
+      });
+    } catch (e) {
+      return null;
+    }
+  },
+
+  async removeItem(key) {
+    try {
+      const db = await this.getDB();
+      if (!db) return;
+      const tx = db.transaction('app_data', 'readwrite');
+      tx.objectStore('app_data').delete(key);
+    } catch (e) { }
+  },
+
+  async saveBackup(backupObj) {
+    try {
+      const db = await this.getDB();
+      if (!db) return false;
+      return new Promise((resolve) => {
+        const tx = db.transaction('backups', 'readwrite');
+        const store = tx.objectStore('backups');
+        store.put(backupObj, backupObj.id);
+        tx.oncomplete = () => {
+          // Keep maximum 25 latest backups
+          try {
+            const cleanTx = db.transaction('backups', 'readwrite');
+            const cleanStore = cleanTx.objectStore('backups');
+            const req = cleanStore.getAllKeys();
+            req.onsuccess = () => {
+              const keys = req.result || [];
+              if (keys.length > 25) {
+                keys.sort();
+                const toDel = keys.slice(0, keys.length - 25);
+                toDel.forEach(k => cleanStore.delete(k));
+              }
+            };
+          } catch (err) { }
+          resolve(true);
+        };
+        tx.onerror = () => resolve(false);
+      });
+    } catch (e) {
+      return false;
+    }
+  },
+
+  async listBackups() {
+    try {
+      const db = await this.getDB();
+      if (!db) return [];
+      return new Promise((resolve) => {
+        const tx = db.transaction('backups', 'readonly');
+        const store = tx.objectStore('backups');
+        const req = store.getAll();
+        req.onsuccess = () => {
+          const list = req.result || [];
+          list.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+          resolve(list);
+        };
+        req.onerror = () => resolve([]);
+      });
+    } catch (e) {
+      return [];
+    }
+  },
+
+  async deleteBackup(id) {
+    try {
+      const db = await this.getDB();
+      if (!db) return false;
+      return new Promise((resolve) => {
+        const tx = db.transaction('backups', 'readwrite');
+        const store = tx.objectStore('backups');
+        store.delete(id);
+        tx.oncomplete = () => resolve(true);
+        tx.onerror = () => resolve(false);
+      });
+    } catch (e) {
+      return false;
+    }
+  }
+};
+
+// Sample Scores Generator - returns empty scores object so the system starts completely clean for genuine data entry
+function generateSampleScores(students, subjects) {
+  return {};
+}
+
+// Application State
+class ScoreManagementApp {
+  constructor() {
+    this.storageKey = 'sms_cambodia_v01_data';
+    this.currentPeriod = 'student_info';
+    this.activeYear = '2026-2027';
+    this.activeClass = 'grade_12_sci';
+    this.activeSection = null;
+    this.searchQuery = '';
+    this.sectionFilter = 'ALL';
+    this.genderFilter = 'ALL';
+    this.mentionFilter = 'ALL';
+
+    // Temporary placeholders until async storage resolves
+    this.students = [];
+    this.subjects = [...DEFAULT_SUBJECTS];
+    this.scores = {};
+    this.examArrangements = [];
+    this.roomSubjectSecrets = {};
+    this.examConfigs = this.getDefaultExamConfigs();
+    this.activeScoreSubTab = 'bySecret';
+    this.activeScorePeriod = null; // When set, only this period accepts score entry!
+    this.classSections = this.getDefaultClassSections();
+    this.curriculumConfigs = this.getDefaultCurriculumConfigs();
+    this.sqliteDb = null;
+    this._voiceSecretListeningActive = true;
+    this._currentVoiceSecretActiveInput = null;
+    this._voiceSecretRecognition = null;
+    this._voiceSecretRecognitionRunning = false;
+    this._processedResultIndices = new Set();
+    this._voiceInterimScoreTimer = null;
+
+    this._voiceNameSecretListeningActive = true;
+    this._currentVoiceNameSecretActiveInput = null;
+    this._currentVoiceNameSecretStudentIndex = 0;
+    this._voiceNameSecretRecognition = null;
+    this._voiceNameSecretRecognitionRunning = false;
+    this._voiceNameStudentsInRoom = [];
+
+    // DOM Elements Cache
+    this.initDOMElements();
+
+    // Register Event Listeners
+    this.bindEvents();
+
+    // Async State Loading: IndexedDB first (guarantees imported students are never lost on refresh)
+    this.initStorageAndLoad();
+  }
+
+  async initStorageAndLoad() {
+    this.activeExamTab = 'examList';
+    let loadedData = null;
+
+    // 1. Try reading from high-capacity IndexedDB first!
+    try {
+      const dbData = await AppStorage.getItem(this.storageKey);
+      if (dbData && Array.isArray(dbData.students) && dbData.students.length > 0) {
+        loadedData = dbData;
+      }
+    } catch (e) {
+      console.warn('IndexedDB read warning:', e);
+    }
+
+    // 2. If not found in IndexedDB, try reading from localStorage
+    if (!loadedData) {
+      try {
+        const saved = localStorage.getItem(this.storageKey);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (parsed && Array.isArray(parsed.students) && parsed.students.length > 0) {
+            loadedData = parsed;
+            // Immediately sync into IndexedDB so it's permanently protected
+            AppStorage.setItem(this.storageKey, loadedData);
+          }
+        }
+      } catch (e) {
+        console.warn('LocalStorage read warning:', e);
+      }
+    }
+
+    // 3. If still not found, check the latest Auto Backup in IndexedDB!
+    if (!loadedData) {
+      try {
+        const backups = await AppStorage.listBackups();
+        if (backups && backups.length > 0 && backups[0].data && Array.isArray(backups[0].data.students) && backups[0].data.students.length > 0) {
+          loadedData = backups[0].data;
+          console.info('Restored from recent Auto-Backup:', backups[0].reason);
+        }
+      } catch (e) {
+        console.warn('Backup check warning:', e);
+      }
+    }
+
+    // 4. Apply loaded data or initialize default demo students
+    if (loadedData) {
+      this.applyParsedState(loadedData);
+    } else {
+      // First-time visit ever: initialize demo students
+      this.students = [...INITIAL_DEMO_STUDENTS];
+      this.subjects = [...DEFAULT_SUBJECTS];
+      this.scores = generateSampleScores(this.students, this.subjects);
+      this.examArrangements = [];
+      this.classSections = this.getDefaultClassSections();
+      this.examSubjectOrders = this.getDefaultExamSubjectOrders();
+      // Save initial demo (without triggering backup)
+      this.saveState(false);
+    }
+
+    // Render UI after guaranteed data load
+    this.autoDetectAndSetActivePeriod();
+    this.populateClassSectionToolbarFilter();
+    this.renderNavigation();
+    this.renderCurrentView();
+    this.updateKPIOverview();
+    this.updateActivePeriodUI();
+
+    // Initialize Auto-Backup timer & SQLite
+    this.initAutoBackupTimer();
+    this.initSQLiteEngine();
+  }
+
+
+  /**
+   * Migrate any legacy or inconsistent period keys in this.scores.
+   * Merges year_start / year_start_test -> test_early, sem1 -> sem1_exam, sem2 -> sem2_exam.
+   * Also ensures kh = essay + dictation for grade 7/8/9.
+   */
+  migrateLegacyPeriodScores() {
+    if (!this.scores) return;
+    Object.keys(this.scores).forEach(sId => {
+      const stuScores = this.scores[sId];
+      if (!stuScores) return;
+
+      // Migrate year_start / year_start_test -> test_early
+      const earlyScores = stuScores['year_start_test'] || stuScores['year_start'];
+      if (earlyScores) {
+        if (!stuScores['test_early']) stuScores['test_early'] = {};
+        Object.assign(stuScores['test_early'], earlyScores);
+      }
+      if (stuScores['test_early']) {
+        if (!stuScores['year_start_test']) stuScores['year_start_test'] = {};
+        Object.assign(stuScores['year_start_test'], stuScores['test_early']);
+      }
+
+      // Migrate sem1 -> sem1_exam
+      if (stuScores['sem1']) {
+        if (!stuScores['sem1_exam']) stuScores['sem1_exam'] = {};
+        Object.assign(stuScores['sem1_exam'], stuScores['sem1']);
+      }
+
+      // Migrate sem2 -> sem2_exam
+      if (stuScores['sem2']) {
+        if (!stuScores['sem2_exam']) stuScores['sem2_exam'] = {};
+        Object.assign(stuScores['sem2_exam'], stuScores['sem2']);
+      }
+
+      // Recalculate kh for grade 7/8/9 if essay or dictation exists
+      const stuObj = (this.students || []).find(s => s.id === sId);
+      const isG789 = stuObj && stuObj.class && /^(ថ្នាក់ទី\s*)?(7|8|9|[៧៨៩])/i.test(stuObj.class);
+      if (isG789) {
+        Object.keys(stuScores).forEach(pKey => {
+          const pd = stuScores[pKey];
+          if (pd && (pd['essay'] !== undefined || pd['dictation'] !== undefined)) {
+            const sum = (parseFloat(pd['essay']) || 0) + (parseFloat(pd['dictation']) || 0);
+            pd['kh'] = sum;
+            pd['K'] = sum;
+          }
+        });
+      }
+    });
+  }
+
+  cleanStudentName(name) {
+    if (!name) return '';
+    return String(name).replace(/\./g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  applyParsedState(parsed) {
+    let needsSaveAfterClean = false;
+    const rawStudents = (parsed.students && parsed.students.length > 0) ? parsed.students : INITIAL_DEMO_STUDENTS;
+    this.students = rawStudents.map(s => {
+      const stuClass = (s.class || '').trim();
+      const cleanedName = this.cleanStudentName(s.khmerName);
+      if (s.khmerName && s.khmerName !== cleanedName) needsSaveAfterClean = true;
+      const isLateId = Boolean(s.isLateEntry) || String(s.id || '').trim().startsWith('END-');
+      const isIncompleteLate = isLateId && !(cleanedName && String(s.gender || '').trim() && String(s.dob || '').trim());
+      if (isIncompleteLate) {
+        return {
+          ...s,
+          khmerName: cleanedName,
+          class: stuClass,
+          classType: s.classType || '',
+          section: s.section || '',
+          isLateEntry: true
+        };
+      }
+      const isLowerGrade = /^(ថ្នាក់ទី\s*)?(7|8|9|10|[៧៨៩]|១០)[A-Za-z]?$/i.test(stuClass) ||
+        /^(7|8|9|10)[A-Za-z]?$/i.test(stuClass);
+      let classType = s.classType;
+      if (isLowerGrade) {
+        classType = 'ទូទៅ';
+      } else if (!classType || classType === 'ទូទៅ') {
+        if (/^(11|12)[D-Z]/i.test(stuClass) || stuClass.includes('សង្គម') || stuClass.includes('soc')) {
+          classType = 'វិទ្យាសាស្ត្រសង្គម';
+        } else if (/^(11|12)[A-C]/i.test(stuClass) || stuClass.includes('វិទ្យាសាស្ត្រ') || stuClass.includes('sci')) {
+          classType = 'វិទ្យាសាស្ត្រ';
+        }
+      }
+      return {
+        ...s,
+        khmerName: cleanedName,
+        class: stuClass || 'ថ្នាក់ទី៧',
+        classType: classType || 'ទូទៅ',
+        section: s.section || ''
+      };
+    });
+    this.subjects = parsed.subjects || DEFAULT_SUBJECTS;
+    this.scores = parsed.scores || {};
+    // Clean ALL scores completely as requested by user for fresh academic score entry
+    if (!localStorage.getItem('sms_cleaned_all_scores_v4')) {
+      if (this.scores && Object.keys(this.scores).length > 0) {
+        this.createAutoBackup('បម្រុងទុកមុនពេលសម្អាតពិន្ទុទាំងអស់ (Initial All-Scores Clean)');
+      }
+      this.scores = {};
+      localStorage.setItem('sms_cleaned_all_scores_v4', 'true');
+      needsSaveAfterClean = true;
+    }
+    if (parsed.activeScorePeriod === 'year_start_test') parsed.activeScorePeriod = 'test_early';
+    if (parsed.examDateConfigs && parsed.examDateConfigs['year_start_test']) {
+      if (!parsed.examDateConfigs['test_early']) parsed.examDateConfigs['test_early'] = parsed.examDateConfigs['year_start_test'];
+    }
+    this.migrateLegacyPeriodScores();
+    this.examArrangements = (parsed.examArrangements || []).map(item => {
+      const cleanedItemName = this.cleanStudentName(item.khmerName);
+      if (item.khmerName && item.khmerName !== cleanedItemName) needsSaveAfterClean = true;
+      return {
+        ...item,
+        khmerName: cleanedItemName
+      };
+    });
+    if (needsSaveAfterClean) {
+      setTimeout(() => this.saveState(false), 100);
+    }
+    this.roomSubjectSecrets = parsed.roomSubjectSecrets || {};
+    // Normalize and upgrade existing secret codes to track (e.g. C11d -> C11SCd, C12d -> C12SCd)
+    if (this.roomSubjectSecrets) {
+      Object.keys(this.roomSubjectSecrets).forEach(gKey => {
+        const rooms = this.roomSubjectSecrets[gKey] || {};
+        Object.keys(rooms).forEach(rKey => {
+          const subs = rooms[rKey] || {};
+          Object.keys(subs).forEach(sc => {
+            if (subs[sc]) {
+              subs[sc] = this.upgradeSecretCodeToTrack(subs[sc], gKey);
+              subs[sc] = this.formatSecretCode(subs[sc]);
+            }
+          });
+        });
+      });
+    }
+    this.examConfigs = parsed.examConfigs || this.getDefaultExamConfigs();
+    this.examDateConfigs = parsed.examDateConfigs || {};
+    this.activeScorePeriod = parsed.activeScorePeriod || null;
+    this.classSections = parsed.classSections || this.getDefaultClassSections();
+    this.examSubjectOrders = parsed.examSubjectOrders || this.getDefaultExamSubjectOrders();
+    this.examLateStudentCounts = parsed.examLateStudentCounts || {};
+    this.examGradeSettings = parsed.examGradeSettings || {};
+    this.curriculumConfigs = parsed.curriculumConfigs || this.getDefaultCurriculumConfigs();
+    if (!this.curriculumConfigs || !this.curriculumConfigs.grade_7 || this.curriculumConfigs.grade_7.length < 15) {
+      this.curriculumConfigs = this.getDefaultCurriculumConfigs();
+    }
+  }
+
+  getDefaultCurriculumConfigs() {
+    return JSON.parse(JSON.stringify(DEFAULT_CURRICULUM_DATA));
+  }
+
+  getDefaultExamSubjectOrders() {
+    const g789Order = [
+      'តែងសេចក្តី', 'គណិតវិទ្យា', 'រូបវិទ្យា', 'គីមីវិទ្យា', 'ជីវវិទ្យា',
+      'ប្រវត្តិវិទ្យា', 'សីល-ពលរដ្ឋ', 'ផែនដីវិទ្យា', 'ភូមិវិទ្យា', 'ភាសាបរទេស', 'សរសេរតាមអាន'
+    ];
+    const g10Order = [
+      'ភាសាខ្មែរ', 'គណិតវិទ្យា', 'រូបវិទ្យា', 'គីមីវិទ្យា', 'ជីវវិទ្យា',
+      'ប្រវត្តិវិទ្យា', 'សីល-ពលរដ្ឋ', 'ផែនដីវិទ្យា', 'ភូមិវិទ្យា', 'ភាសាបរទេស'
+    ];
+    const sciOrder = [
+      'គណិតវិទ្យា', 'រូបវិទ្យា', 'គីមីវិទ្យា', 'ជីវវិទ្យា',
+      'ភាសាខ្មែរ', 'ប្រវត្តិវិទ្យា', 'ភាសាបរទេស'
+    ];
+    const socOrder = [
+      'ភាសាខ្មែរ', 'គណិតវិទ្យា', 'ប្រវត្តិវិទ្យា', 'ភូមិវិទ្យា',
+      'សីល-ពលរដ្ឋ', 'ផែនដីវិទ្យា', 'ភាសាបរទេស'
+    ];
+    return {
+      grade_7: [...g789Order],
+      grade_8: [...g789Order],
+      grade_9: [...g789Order],
+      grade_10: [...g10Order],
+      grade_11_sci: [...sciOrder],
+      grade_11_soc: [...socOrder],
+      grade_12_sci: [...sciOrder],
+      grade_12_soc: [...socOrder]
+    };
+  }
+
+  saveState(triggerBackup = false) {
+    const dataToSave = {
+      students: this.students,
+      subjects: this.subjects,
+      scores: this.scores,
+      examArrangements: this.examArrangements || [],
+      roomSubjectSecrets: this.roomSubjectSecrets || {},
+      examConfigs: this.examConfigs || this.getDefaultExamConfigs(),
+      examDateConfigs: this.examDateConfigs || {},
+      activeScorePeriod: this.activeScorePeriod || null,
+      classSections: this.classSections || [],
+      examSubjectOrders: this.examSubjectOrders || this.getDefaultExamSubjectOrders(),
+      examLateStudentCounts: this.examLateStudentCounts || {},
+      examGradeSettings: this.examGradeSettings || {},
+      curriculumConfigs: this.curriculumConfigs || this.getDefaultCurriculumConfigs(),
+      updatedAt: new Date().toISOString()
+    };
+
+    // 1. High-capacity IndexedDB (handles large datasets up to hundreds of MBs seamlessly)
+    AppStorage.setItem(this.storageKey, dataToSave);
+
+    // 2. Try saving to localStorage with QuotaExceeded protection
+    try {
+      localStorage.setItem(this.storageKey, JSON.stringify(dataToSave));
+    } catch (e) {
+      console.warn('LocalStorage quota exceeded (data safely backed up in IndexedDB).', e);
+      try {
+        const lightCopy = {
+          _storage: 'indexedDB',
+          studentsCount: this.students.length,
+          subjects: this.subjects,
+          classSections: this.classSections || [],
+          updatedAt: new Date().toISOString()
+        };
+        localStorage.setItem(this.storageKey + '_meta', JSON.stringify(lightCopy));
+      } catch (err) { }
+    }
+
+    // 3. Optional trigger backup
+    if (triggerBackup && this.students && this.students.length > 0) {
+      this.createAutoBackup('រក្សាទុកទិន្នន័យ');
+    }
+
+    // 4. Sync to SQLite
+    this.syncToSQLite();
+  }
+
+  async createAutoBackup(reason = 'បម្រុងទុកស្វ័យប្រវត្តិ') {
+    if (!this.students || this.students.length === 0) return;
+
+    const backupPayload = {
+      id: 'backup_' + Date.now(),
+      timestamp: new Date().toISOString(),
+      displayDate: new Date().toLocaleDateString('km-KH') + ' ' + new Date().toLocaleTimeString('km-KH'),
+      reason: reason,
+      studentCount: this.students.length,
+      data: {
+        students: this.students,
+        subjects: this.subjects,
+        scores: this.scores,
+        examArrangements: this.examArrangements || [],
+        examDateConfigs: this.examDateConfigs || {},
+        activeScorePeriod: this.activeScorePeriod || null,
+        classSections: this.classSections || [],
+        updatedAt: new Date().toISOString()
+      }
+    };
+
+    await AppStorage.saveBackup(backupPayload);
+    const lastBackupTimeBadge = document.getElementById('lastBackupTimeBadge');
+    if (lastBackupTimeBadge) {
+      lastBackupTimeBadge.textContent = 'ចុងក្រោយ: ' + new Date().toLocaleTimeString('km-KH');
+    }
+  }
+
+  getDefaultExamConfigs() {
+    const today = new Date().toISOString().split('T')[0];
+    const grades = ['grade_7', 'grade_8', 'grade_9', 'grade_10', 'grade_11_sci', 'grade_11_soc', 'grade_12_sci', 'grade_12_soc'];
+    const configs = {};
+    grades.forEach(g => {
+      configs[g] = {
+        period: 'sem1_exam',
+        date: today
+      };
+    });
+    return configs;
+  }
+
+  getExamConfigForGrade(gradeKey, periodKey = null) {
+    if (!this.examConfigs) this.examConfigs = this.getDefaultExamConfigs();
+    if (!this.examConfigs[gradeKey]) {
+      const today = new Date().toISOString().split('T')[0];
+      this.examConfigs[gradeKey] = { period: 'sem1_exam', date: today };
+    }
+    const targetPeriod = periodKey || this.activeScorePeriod || this.currentPeriod || (this.examConfigs[gradeKey] && this.examConfigs[gradeKey].period) || 'test_early';
+    if (this.examDateConfigs && this.examDateConfigs[targetPeriod] && this.examDateConfigs[targetPeriod][gradeKey]) {
+      const dCfg = this.examDateConfigs[targetPeriod][gradeKey];
+      if (dCfg && dCfg.examDate) {
+        return {
+          period: targetPeriod,
+          date: dCfg.examDate,
+          resultDate: dCfg.resultDate || '',
+          closeDate: dCfg.closeDate || ''
+        };
+      }
+    }
+    // Fallback: check if any grade in targetPeriod has configured examDate
+    if (this.examDateConfigs && this.examDateConfigs[targetPeriod]) {
+      for (const gk of Object.keys(this.examDateConfigs[targetPeriod])) {
+        const dCfg = this.examDateConfigs[targetPeriod][gk];
+        if (dCfg && dCfg.examDate) {
+          return {
+            period: targetPeriod,
+            date: dCfg.examDate,
+            resultDate: dCfg.resultDate || '',
+            closeDate: dCfg.closeDate || ''
+          };
+        }
+      }
+    }
+    return this.examConfigs[gradeKey];
+  }
+
+  setExamConfigForGrade(gradeKey, period, date, applyAll = false) {
+    if (!this.examConfigs) this.examConfigs = this.getDefaultExamConfigs();
+    const effectiveDate = date || new Date().toISOString().split('T')[0];
+    const effectivePeriod = period || 'sem1_exam';
+    if (applyAll) {
+      ['grade_7', 'grade_8', 'grade_9', 'grade_10', 'grade_11_sci', 'grade_11_soc', 'grade_12_sci', 'grade_12_soc'].forEach(g => {
+        this.examConfigs[g] = { period: effectivePeriod, date: effectiveDate };
+      });
+    } else {
+      this.examConfigs[gradeKey] = { period: effectivePeriod, date: effectiveDate };
+    }
+    this.saveState();
+  }
+
+  toKhmerNum(num) {
+    if (num === null || num === undefined) return '';
+    const khDigits = ['០', '១', '២', '៣', '៤', '៥', '៦', '៧', '៨', '៩'];
+    return String(num).split('').map(d => khDigits[parseInt(d, 10)] !== undefined ? khDigits[parseInt(d, 10)] : d).join('');
+  }
+
+  formatKhmerExamDate(dateStr) {
+    if (!dateStr) return '';
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return dateStr;
+    const year = parts[0];
+    const month = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+
+    const khmerMonths = [
+      '', 'មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា',
+      'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'
+    ];
+
+    const monthName = khmerMonths[month] || month;
+    return `ថ្ងៃទី${this.toKhmerNum(day)} ខែ${monthName} ឆ្នាំ${this.toKhmerNum(year)}`;
+  }
+
+  formatKhmerDocSolarDate(dateStr, location = 'ស្រីស្នំ') {
+    if (!dateStr) return '';
+    const parts = String(dateStr).split('-');
+    if (parts.length !== 3) return dateStr;
+    const year = parts[0];
+    const month = parseInt(parts[1], 10);
+    const day = parseInt(parts[2], 10);
+
+    const khmerMonths = [
+      '', 'មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា',
+      'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'
+    ];
+
+    const monthName = khmerMonths[month] || month;
+    const locPrefix = location ? `${location}, ` : '';
+    return `${locPrefix}ថ្ងៃទី ${this.toKhmerNum(day)} ខែ ${monthName} ឆ្នាំ ${this.toKhmerNum(year)}`;
+  }
+
+  getKhmerLunarDate(dateStr) {
+    let year = 2026, month = 8, day = 4;
+    if (dateStr) {
+      const parts = String(dateStr).split('-');
+      if (parts.length === 3) {
+        year = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10);
+        day = parseInt(parts[2], 10);
+      }
+    }
+
+    // 1. If MomentKH CDN API is loaded from Internet, try using it first
+    try {
+      if (typeof window !== 'undefined' && window.momentkh && typeof window.momentkh.fromGregorian === 'function') {
+        const res = window.momentkh.fromGregorian(year, month, day);
+        if (res && typeof window.momentkh.toString === 'function') {
+          return window.momentkh.toString(res);
+        }
+      }
+    } catch (err) {
+      // Fallback to built-in Chankitek calculation below
+    }
+
+    // 2. Built-in Cambodian Chankitek Lunar Calendar Engine
+    const weekdays = ['អាទិត្យ', 'ចន្ទ', 'អង្គារ', 'ពុធ', 'ព្រហស្បតិ៍', 'សុក្រ', 'សៅរ៍'];
+    const animalYears = [
+      'ជូត', 'ឆ្លូវ', 'ខាល', 'ថោះ', 'រោង', 'ម្សាញ់',
+      'មមី', 'មមែ', 'វក', 'រកា', 'ច', 'កុរ'
+    ];
+    const sakNames = [
+      'សំរឹទ្ធិស័ក', 'ឯកស័ក', 'ទោស័ក', 'ត្រីស័ក', 'ចត្វាស័ក',
+      'បញ្ចស័ក', 'ឆស័ក', 'សប្តស័ក', 'អដ្ឋស័ក', 'នព្វស័ក'
+    ];
+
+    const getAhargana = (be) => Math.floor((be * 292207 + 499) / 800) + 4;
+    const getKromathupul = (be) => 800 - ((be * 292207 + 499) % 800);
+    const getAvoman = (be) => (getAhargana(be) * 11 + 25) % 692;
+    const getBodithey = (be) => {
+      const ah = getAhargana(be);
+      return (Math.floor((ah * 11 + 25) / 692) + ah + 29) % 30;
+    };
+    const has366Days = (be) => getKromathupul(be) <= 207;
+    const isAthikameas = (be) => {
+      const b = getBodithey(be), bNext = getBodithey(be + 1);
+      if (b === 24 && bNext === 6) return true;
+      if (b === 25 && bNext === 5) return false;
+      return (b > 24 || b < 6);
+    };
+    const isChanthrathimeas = (be) => {
+      const a = getAvoman(be), aNext = getAvoman(be + 1);
+      if (has366Days(be)) {
+        if (a === 126 && aNext === 0) return false;
+        return a < 127;
+      } else {
+        if (isAthikameas(be)) return false;
+        if (isAthikameas(be - 1) && getAvoman(be - 1) === 137 && a === 0) return false;
+        return a < 138;
+      }
+    };
+    const getYearType = (be) => {
+      if (isAthikameas(be)) return 1;
+      if (isChanthrathimeas(be)) return 2;
+      if (isAthikameas(be - 1)) {
+        const has366Prev = has366Days(be - 1);
+        if ((!has366Prev && getAvoman(be - 1) < 138) || (has366Prev && getAvoman(be - 1) < 127)) return 2;
+      }
+      return 0;
+    };
+    const getMonthsOfYear = (be) => {
+      const yt = getYearType(be);
+      if (yt === 1) {
+        return [
+          { name: 'ចេត្រ', days: 29 }, { name: 'ពិសាខ', days: 30 }, { name: 'ជេស្ឋ', days: 29 },
+          { name: 'បឋមាសាឍ', days: 30 }, { name: 'ទុតិយាសាឍ', days: 30 }, { name: 'ស្រាពណ៍', days: 29 },
+          { name: 'ភទ្របទ', days: 30 }, { name: 'អស្សុជ', days: 29 }, { name: 'កត្តិក', days: 30 },
+          { name: 'មិគសិរ', days: 29 }, { name: 'បុស្ស', days: 30 }, { name: 'មាឃ', days: 29 }, { name: 'ផល្គុន', days: 30 }
+        ];
+      }
+      return [
+        { name: 'ចេត្រ', days: 29 }, { name: 'ពិសាខ', days: 30 }, { name: 'ជេស្ឋ', days: yt === 2 ? 30 : 29 },
+        { name: 'អាសាឍ', days: 30 }, { name: 'ស្រាពណ៍', days: 29 }, { name: 'ភទ្របទ', days: 30 },
+        { name: 'អស្សុជ', days: 29 }, { name: 'កត្តិក', days: 30 }, { name: 'មិគសិរ', days: 29 },
+        { name: 'បុស្ស', days: 30 }, { name: 'មាឃ', days: 29 }, { name: 'ផល្គុន', days: 30 }
+      ];
+    };
+
+    const targetUTC = Date.UTC(year, month - 1, day);
+    const epochUTC = Date.UTC(1899, 11, 31);
+    let diffDays = Math.round((targetUTC - epochUTC) / 86400000);
+    if (diffDays < 0) diffDays = 0;
+
+    let curBE = 2443;
+    let months = getMonthsOfYear(curBE);
+    let mIdx = months.findIndex(m => m.name === 'បុស្ស');
+    let dIdx = 0;
+
+    while (diffDays > 0) {
+      const remInMonth = months[mIdx].days - 1 - dIdx;
+      if (diffDays <= remInMonth) {
+        dIdx += diffDays;
+        diffDays = 0;
+      } else {
+        diffDays -= (remInMonth + 1);
+        dIdx = 0;
+        mIdx++;
+        if (mIdx >= months.length) {
+          curBE++;
+          months = getMonthsOfYear(curBE);
+          mIdx = 0;
+        }
+      }
+    }
+
+    const curMonth = months[mIdx].name;
+    const lunarDayNum = dIdx + 1;
+    const isKeot = lunarDayNum <= 15;
+    const phaseDay = isKeot ? lunarDayNum : (lunarDayNum - 15);
+    const phaseName = isKeot ? 'កើត' : 'រោច';
+
+    const pisakhIdx = months.findIndex(m => m.name === 'ពិសាខ');
+    const displayBE = (mIdx > pisakhIdx || (mIdx === pisakhIdx && lunarDayNum >= 16)) ? curBE : (curBE - 1);
+
+    const isAfterNewYear = (month > 4) || (month === 4 && day >= 14);
+    const animalBE = isAfterNewYear ? (year + 544) : (year + 543);
+    const animalName = animalYears[(animalBE + 4) % 12];
+    const jsYear = isAfterNewYear ? (year - 638) : (year - 639);
+    const sakName = sakNames[jsYear % 10];
+
+    const dow = weekdays[new Date(targetUTC).getUTCDay()];
+    return `ថ្ងៃ${dow} ${this.toKhmerNum(phaseDay)}${phaseName} ខែ${curMonth} ឆ្នាំ${animalName} ${sakName} ពុទ្ធសករាជ ${this.toKhmerNum(displayBE)}`;
+  }
+
+  getExamPeriodTitle(periodKey) {
+    const periodMap = {
+      sem1_exam: 'ប្រឡងឆមាសទី១',
+      sem2_exam: 'ប្រឡងឆមាសទី២',
+      test_early: 'តេស្តដើមឆ្នាំ',
+      year_start_test: 'តេស្តដើមឆ្នាំ',
+      m01: 'ប្រឡងខែមករា',
+      m02: 'ប្រឡងខែកុម្ភៈ',
+      m03: 'ប្រឡងខែមីនា',
+      m04: 'ប្រឡងខែមេសា',
+      m05: 'ប្រឡងខែឧសភា',
+      m06: 'ប្រឡងខែមិថុនា',
+      m07: 'ប្រឡងខែកក្កដា',
+      m08: 'ប្រឡងខែសីហា',
+      m09: 'ប្រឡងខែកញ្ញា',
+      m10: 'ប្រឡងខែតុលា',
+      m11: 'ប្រឡងខែវិច្ឆិកា',
+      m12: 'ប្រឡងខែធ្នូ'
+    };
+    return periodMap[periodKey] || 'ការប្រឡង';
+  }
+
+  // ──────────────────────────────────────────────────────────────────────────
+  // EXAM DATE CONFIG  (ការកំណត់កាលបរិច្ឆេទប្រឡង)
+  // ──────────────────────────────────────────────────────────────────────────
+
+  getDefaultExamDateConfigs() {
+    // { [periodKey]: { [gradeKey]: { examDate, resultDate, closeDate } } }
+    return {};
+  }
+
+  getExamDateConfig(periodKey, gradeKey) {
+    if (!this.examDateConfigs) this.examDateConfigs = {};
+    if (!this.examDateConfigs[periodKey]) this.examDateConfigs[periodKey] = {};
+    if (!this.examDateConfigs[periodKey][gradeKey]) {
+      this.examDateConfigs[periodKey][gradeKey] = { examDate: '', resultDate: '', closeDate: '' };
+    }
+    return this.examDateConfigs[periodKey][gradeKey];
+  }
+
+  renderExamDateConfigTable() {
+    const periodKey = this.examDateConfigPeriodSelect ? this.examDateConfigPeriodSelect.value : 'sem1_exam';
+    const periodTitle = this.getExamPeriodTitle(periodKey);
+
+    // Update badge
+    const badge = document.getElementById('examDateConfigActiveBadge');
+    if (badge) badge.innerHTML = `<span style="color:#dbeafe;font-size:0.85rem;font-weight:700;">📋 ${periodTitle}</span>`;
+
+    const grades = [
+      { key: 'grade_7', label: 'ថ្នាក់ទី៧' },
+      { key: 'grade_8', label: 'ថ្នាក់ទី៨' },
+      { key: 'grade_9', label: 'ថ្នាក់ទី៩' },
+      { key: 'grade_10', label: 'ថ្នាក់ទី១០' },
+      { key: 'grade_11_sci', label: 'ថ្នាក់ទី១១ វិទ្យាសាស្ត្រ (11SC)' },
+      { key: 'grade_11_soc', label: 'ថ្នាក់ទី១១ វិទ្យាសាស្ត្រសង្គម (11SS)' },
+      { key: 'grade_12_sci', label: 'ថ្នាក់ទី១២ វិទ្យាសាស្ត្រ (12SC)' },
+      { key: 'grade_12_soc', label: 'ថ្នាក់ទី១២ វិទ្យាសាស្ត្រសង្គម (12SS)' }
+    ];
+
+    const tbody = document.getElementById('examDateConfigTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+
+    const rowColors = ['#fff', '#f8faff'];
+
+    grades.forEach((g, idx) => {
+      const cfg = this.getExamDateConfig(periodKey, g.key);
+      const bg = rowColors[idx % 2];
+      const tr = document.createElement('tr');
+      tr.style.cssText = `background: ${bg}; border-bottom: 1px solid #e2e8f0; transition: background 0.15s;`;
+      tr.innerHTML = `
+        <td style="padding: 0.75rem 1.1rem; font-weight: 700; color: #1e3a8a; font-size: 0.9rem; border-right: 1px solid #e2e8f0; vertical-align: middle;">
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <span style="width: 8px; height: 8px; background: #3b82f6; border-radius: 50%; display: inline-block; flex-shrink: 0;"></span>
+            ${g.label}
+          </div>
+        </td>
+        <td style="padding: 0.65rem 0.85rem; text-align: center; border-right: 1px solid #e2e8f0; vertical-align: middle;">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
+            <input type="date"
+              class="edc-input edc-exam-date"
+              data-period="${periodKey}"
+              data-grade="${g.key}"
+              data-field="examDate"
+              value="${cfg.examDate || ''}"
+              style="width: 100%; max-width: 155px; height: 36px; border: 2px solid #bfdbfe; border-radius: 8px; padding: 0 0.6rem; font-size: 0.85rem; font-weight: 600; color: #1e40af; background: #eff6ff; outline: none; cursor: pointer; text-align: center;">
+          </div>
+        </td>
+        <td style="padding: 0.65rem 0.85rem; text-align: center; border-right: 1px solid #e2e8f0; vertical-align: middle;">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
+            <input type="date"
+              class="edc-input edc-result-date"
+              data-period="${periodKey}"
+              data-grade="${g.key}"
+              data-field="resultDate"
+              value="${cfg.resultDate || ''}"
+              style="width: 100%; max-width: 155px; height: 36px; border: 2px solid #bbf7d0; border-radius: 8px; padding: 0 0.6rem; font-size: 0.85rem; font-weight: 600; color: #065f46; background: #f0fdf4; outline: none; cursor: pointer; text-align: center;">
+          </div>
+        </td>
+        <td style="padding: 0.65rem 0.85rem; text-align: center; vertical-align: middle;">
+          <div style="display: flex; flex-direction: column; align-items: center; gap: 0.25rem;">
+            <input type="date"
+              class="edc-input edc-close-date"
+              data-period="${periodKey}"
+              data-grade="${g.key}"
+              data-field="closeDate"
+              value="${cfg.closeDate || ''}"
+              style="width: 100%; max-width: 155px; height: 36px; border: 2px solid #fde68a; border-radius: 8px; padding: 0 0.6rem; font-size: 0.85rem; font-weight: 600; color: #92400e; background: #fffbeb; outline: none; cursor: pointer; text-align: center;">
+          </div>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    // Show table, hide empty state
+    const emptyState = document.getElementById('examDateConfigEmptyState');
+    const tableWrap = document.getElementById('examDateConfigTableWrap');
+    if (emptyState) emptyState.style.display = 'none';
+    if (tableWrap) tableWrap.style.display = 'block';
+
+    // Live-update in memory on input change
+    tbody.querySelectorAll('.edc-input').forEach(inp => {
+      inp.addEventListener('change', () => {
+        const p = inp.getAttribute('data-period');
+        const gk = inp.getAttribute('data-grade');
+        const f = inp.getAttribute('data-field');
+        if (!this.examDateConfigs) this.examDateConfigs = {};
+        if (!this.examDateConfigs[p]) this.examDateConfigs[p] = {};
+        if (!this.examDateConfigs[p][gk]) this.examDateConfigs[p][gk] = {};
+        this.examDateConfigs[p][gk][f] = inp.value;
+      });
+    });
+  }
+
+  handleSaveExamDateConfigs() {
+    // Read all visible inputs and persist
+    const inputs = document.querySelectorAll('.edc-input');
+    if (!this.examDateConfigs) this.examDateConfigs = {};
+    const selectedPeriod = (this.examDateConfigPeriodSelect ? this.examDateConfigPeriodSelect.value : null) || 'test_early';
+    let hasExamDate = false;
+
+    inputs.forEach(inp => {
+      const p = inp.getAttribute('data-period');
+      const gk = inp.getAttribute('data-grade');
+      const f = inp.getAttribute('data-field');
+      if (!this.examDateConfigs[p]) this.examDateConfigs[p] = {};
+      if (!this.examDateConfigs[p][gk]) this.examDateConfigs[p][gk] = {};
+      this.examDateConfigs[p][gk][f] = inp.value;
+      if (f === 'examDate' && inp.value) {
+        hasExamDate = true;
+        if (!this.examConfigs) this.examConfigs = this.getDefaultExamConfigs();
+        if (!this.examConfigs[gk]) this.examConfigs[gk] = { period: p, date: inp.value };
+        this.examConfigs[gk].period = p;
+        this.examConfigs[gk].date = inp.value;
+      }
+    });
+
+    // Automatically set Active period based on configured exam date!
+    if (selectedPeriod && (hasExamDate || this.hasConfiguredExamDateForPeriod(selectedPeriod))) {
+      this.applyActivePeriod(selectedPeriod);
+    }
+
+    this.saveState();
+    const periodTitle = this.getExamPeriodTitle(selectedPeriod);
+    this.showToast(`បានរក្សាទុកកាលបរិច្ឆេទប្រឡង និងកំណត់ «${periodTitle}» ជាខែ/ឆមាស Active ដោយស្វ័យប្រវត្តិ!`, 'success');
+  }
+
+  hasConfiguredExamDateForPeriod(periodKey) {
+    if (!periodKey) return false;
+    if (this.examDateConfigs && this.examDateConfigs[periodKey]) {
+      const grades = Object.keys(this.examDateConfigs[periodKey]);
+      for (const g of grades) {
+        if (this.examDateConfigs[periodKey][g] && this.examDateConfigs[periodKey][g].examDate) {
+          return true;
+        }
+      }
+    }
+    if (this.examConfigs) {
+      const grades = Object.keys(this.examConfigs);
+      for (const g of grades) {
+        if (this.examConfigs[g] && this.examConfigs[g].period === periodKey && this.examConfigs[g].date) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  autoDetectAndSetActivePeriod() {
+    const periodDefs = typeof PERIOD_DEFINITIONS !== 'undefined' ? PERIOD_DEFINITIONS : {};
+    const allPeriods = Object.keys(periodDefs).filter(k => periodDefs[k] && periodDefs[k].type === 'grade');
+
+    // Priority 1: If activeScorePeriod is already set (by user in Exam Date Settings or storage), keep and apply it!
+    if (this.activeScorePeriod && periodDefs[this.activeScorePeriod]) {
+      this.applyActivePeriod(this.activeScorePeriod);
+      return this.activeScorePeriod;
+    }
+
+    // Priority 2: Check if today is within [examDate, closeDate] of any configured period in examDateConfigs
+    const today = new Date().toISOString().split('T')[0];
+    for (const p of allPeriods) {
+      if (this.examDateConfigs && this.examDateConfigs[p]) {
+        for (const gk of Object.keys(this.examDateConfigs[p])) {
+          const cfg = this.examDateConfigs[p][gk];
+          if (cfg && cfg.examDate) {
+            const start = cfg.examDate;
+            const end = cfg.closeDate || cfg.resultDate || cfg.examDate;
+            if (today >= start && today <= end) {
+              this.applyActivePeriod(p);
+              return p;
+            }
+          }
+        }
+      }
+    }
+
+    // Priority 3: Find any period that has a configured exam date in examDateConfigs
+    let bestPeriod = null;
+    let minDiff = Infinity;
+    for (const p of allPeriods) {
+      if (this.hasConfiguredExamDateForPeriod(p)) {
+        let pDate = null;
+        if (this.examDateConfigs && this.examDateConfigs[p]) {
+          for (const gk of Object.keys(this.examDateConfigs[p])) {
+            if (this.examDateConfigs[p][gk] && this.examDateConfigs[p][gk].examDate) {
+              pDate = this.examDateConfigs[p][gk].examDate;
+              break;
+            }
+          }
+        }
+        if (!pDate && this.examConfigs) {
+          for (const gk of Object.keys(this.examConfigs)) {
+            if (this.examConfigs[gk] && this.examConfigs[gk].period === p && this.examConfigs[gk].date) {
+              pDate = this.examConfigs[gk].date;
+              break;
+            }
+          }
+        }
+        if (pDate) {
+          const diff = Math.abs(new Date(today) - new Date(pDate));
+          if (diff < minDiff) {
+            minDiff = diff;
+            bestPeriod = p;
+          }
+        }
+      }
+    }
+
+    if (bestPeriod) {
+      this.applyActivePeriod(bestPeriod);
+      return bestPeriod;
+    }
+
+    // Fallback: test_early
+    this.applyActivePeriod('test_early');
+    return 'test_early';
+  }
+
+  applyActivePeriod(p) {
+    if (!p) return;
+    this.activeScorePeriod = p;
+    if (this.currentPeriod && (this.currentPeriod.startsWith('m') || this.currentPeriod.includes('sem') || this.currentPeriod === 'test_early' || this.currentPeriod === 'yearly')) {
+      this.currentPeriod = p;
+    }
+    if (this.periodHeaderSelect) this.periodHeaderSelect.value = p;
+    if (this.navMonthlyBtn) this.navMonthlyBtn.setAttribute('data-period', p);
+    if (this.examDateConfigPeriodSelect) this.examDateConfigPeriodSelect.value = p;
+    if (this.secretScorePeriodSelect) this.secretScorePeriodSelect.value = p;
+    if (this.voiceSecretScorePeriodSelect) this.voiceSecretScorePeriodSelect.value = p;
+    if (this.examScoreSubjectPeriodSelect) this.examScoreSubjectPeriodSelect.value = p;
+    this.updateActivePeriodUI();
+  }
+
+  handleCopyExamDateToAll() {
+    // Take first row values and copy to all grades
+    const tbody = document.getElementById('examDateConfigTableBody');
+    if (!tbody) return;
+    const firstRow = tbody.querySelector('tr');
+    if (!firstRow) { this.showToast('មិនមានទិន្នន័យដើម្បីចម្លងទេ!', 'warning'); return; }
+
+    const examDateInput = firstRow.querySelector('.edc-exam-date');
+    const resultDateInput = firstRow.querySelector('.edc-result-date');
+    const closeDateInput = firstRow.querySelector('.edc-close-date');
+
+    const examDate = examDateInput ? examDateInput.value : '';
+    const resultDate = resultDateInput ? resultDateInput.value : '';
+    const closeDate = closeDateInput ? closeDateInput.value : '';
+
+    tbody.querySelectorAll('tr').forEach(tr => {
+      const ed = tr.querySelector('.edc-exam-date');
+      const rd = tr.querySelector('.edc-result-date');
+      const cd = tr.querySelector('.edc-close-date');
+      if (ed) ed.value = examDate;
+      if (rd) rd.value = resultDate;
+      if (cd) cd.value = closeDate;
+    });
+
+    this.handleSaveExamDateConfigs();
+    this.showToast('បានចម្លងកាលបរិច្ឆេទទៅគ្រប់ថ្នាក់ទាំងអស់ជោគជ័យ!', 'success');
+  }
+
+  isPeriodActiveForScoring(periodKey) {
+    if (!this.activeScorePeriod) return true; // If no active period is set, all are open
+    if (this.activeScorePeriod === periodKey) return true;
+    if ((this.activeScorePeriod === 'test_early' && periodKey === 'year_start_test') ||
+      (this.activeScorePeriod === 'year_start_test' && periodKey === 'test_early')) {
+      return true;
+    }
+    return false;
+  }
+
+  handleToggleActiveExamPeriod() {
+    const periodSel = document.getElementById('examDateConfigPeriodSelect');
+    const selectedPeriod = periodSel ? periodSel.value : 'sem1_exam';
+
+    if (this.activeScorePeriod === selectedPeriod ||
+      (this.activeScorePeriod === 'test_early' && selectedPeriod === 'year_start_test') ||
+      (this.activeScorePeriod === 'year_start_test' && selectedPeriod === 'test_early')) {
+      this.activeScorePeriod = null;
+      this.showToast('បានដោះការកំណត់ Active! រាល់ខែទាំងអស់ត្រូវបានបើកដំណើរការបញ្ចូលពិន្ទុឡើងវិញ។', 'info');
+    } else {
+      this.applyActivePeriod(selectedPeriod);
+      const title = this.getExamPeriodTitle(selectedPeriod);
+      this.showToast(`បានកំណត់ «${title}» ជាខែ Active! រាល់ការបញ្ចូលពិន្ទុគឺបញ្ចូលតែខែនេះប៉ុណ្ណោះ ខែផ្សេងៗគឺត្រូវបានបិទ។`, 'success');
+    }
+
+    this.saveState();
+    this.updateActivePeriodUI();
+    this.renderCurrentView();
+  }
+
+  updateActivePeriodUI() {
+    const periodSel = document.getElementById('examDateConfigPeriodSelect');
+    const selectedPeriod = periodSel ? periodSel.value : 'sem1_exam';
+    const isCurrentActive = this.activeScorePeriod && (
+      this.activeScorePeriod === selectedPeriod ||
+      (this.activeScorePeriod === 'test_early' && selectedPeriod === 'year_start_test') ||
+      (this.activeScorePeriod === 'year_start_test' && selectedPeriod === 'test_early')
+    );
+
+    // Update Button
+    if (this.btnToggleActivePeriodText) {
+      if (isCurrentActive) {
+        this.btnToggleActivePeriodText.textContent = 'កំពុង Active (ចុចដោះចេញ)';
+        if (this.btnToggleActivePeriodIcon) this.btnToggleActivePeriodIcon.className = 'ri-checkbox-circle-fill';
+        if (this.btnToggleActiveExamPeriod) {
+          this.btnToggleActiveExamPeriod.style.background = 'linear-gradient(135deg, #059669, #047857)';
+          this.btnToggleActiveExamPeriod.style.boxShadow = '0 0 0 3px rgba(16,185,129,0.35)';
+        }
+      } else {
+        this.btnToggleActivePeriodText.textContent = '⚡ កំណត់ជាខែ Active';
+        if (this.btnToggleActivePeriodIcon) this.btnToggleActivePeriodIcon.className = 'ri-checkbox-circle-line';
+        if (this.btnToggleActiveExamPeriod) {
+          this.btnToggleActiveExamPeriod.style.background = 'linear-gradient(135deg, #0284c7, #0369a1)';
+          this.btnToggleActiveExamPeriod.style.boxShadow = '0 2px 10px rgba(2,132,199,0.35)';
+        }
+      }
+    }
+
+    // Update Active Period Label in Exam Date Config
+    if (this.currentActivePeriodLabel) {
+      if (this.activeScorePeriod) {
+        const activeTitle = this.getExamPeriodTitle(this.activeScorePeriod);
+        this.currentActivePeriodLabel.innerHTML = `<span style="color:#059669;">${activeTitle}</span> <span style="font-size:0.75rem; color:#b91c1c; font-weight:700;">(ខែផ្សេងៗគឺបិទ)</span>`;
+      } else {
+        this.currentActivePeriodLabel.textContent = 'គ្មាន (បើកទាំងអស់)';
+      }
+    }
+
+    // Update Global Header Pill
+    if (this.headerActivePeriodPill) {
+      if (this.activeScorePeriod) {
+        this.headerActivePeriodPill.style.display = 'inline-flex';
+        if (this.headerActivePeriodName) {
+          this.headerActivePeriodName.textContent = this.getExamPeriodTitle(this.activeScorePeriod);
+        }
+      } else {
+        this.headerActivePeriodPill.style.display = 'none';
+      }
+    }
+
+    // Sync header select and sidebar button with active period
+    if (this.activeScorePeriod) {
+      if (this.navMonthlyBtn) this.navMonthlyBtn.setAttribute('data-period', this.activeScorePeriod);
+      if (this.periodHeaderSelect && this.currentPeriod && (this.currentPeriod.startsWith('m') || this.currentPeriod.includes('sem') || this.currentPeriod === 'test_early' || this.currentPeriod === 'yearly')) {
+        this.periodHeaderSelect.value = this.activeScorePeriod;
+      }
+    }
+  }
+
+  initExamDateConfigEvents() {
+    const periodSel = document.getElementById('examDateConfigPeriodSelect');
+    const btnLoad = document.getElementById('btnLoadExamDateConfigTable');
+    const btnSave = document.getElementById('btnSaveExamDateConfigs');
+    const btnCopy = document.getElementById('btnCopyExamDateToAll');
+
+    if (periodSel) {
+      periodSel.addEventListener('change', () => {
+        const title = this.getExamPeriodTitle(periodSel.value);
+        const badge = document.getElementById('examDateConfigActiveBadge');
+        if (badge) badge.innerHTML = `<span style="color:#dbeafe;font-size:0.85rem;font-weight:700;">📋 ${title}</span>`;
+        this.updateActivePeriodUI();
+        // Auto-reload table if it's already open
+        const tableWrap = document.getElementById('examDateConfigTableWrap');
+        if (tableWrap && tableWrap.style.display !== 'none') {
+          this.renderExamDateConfigTable();
+        }
+      });
+    }
+
+    if (this.btnToggleActiveExamPeriod) {
+      this.btnToggleActiveExamPeriod.addEventListener('click', () => this.handleToggleActiveExamPeriod());
+    }
+    if (btnLoad) {
+      btnLoad.addEventListener('click', () => this.renderExamDateConfigTable());
+    }
+    if (btnSave) {
+      btnSave.addEventListener('click', () => this.handleSaveExamDateConfigs());
+    }
+    if (btnCopy) {
+      btnCopy.addEventListener('click', () => this.handleCopyExamDateToAll());
+    }
+
+    this.updateActivePeriodUI();
+  }
+
+  switchToExamDateConfigView() {
+    // Hide all view panels and nav items, then show exam date config panel
+    document.querySelectorAll('.view-panel').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+    const panel = document.getElementById('examDateConfigPanel');
+    if (panel) panel.style.display = 'block';
+    const btn = document.getElementById('navExamDateConfigBtn');
+    if (btn) btn.classList.add('active');
+  }
+
+  syncExamConfigControls(gradeKey) {
+    if (!gradeKey) gradeKey = this.examGradeSelect ? this.examGradeSelect.value : 'grade_7';
+
+    // 1. Check if arrangements are already saved in this.examArrangements for this grade
+    const savedForGrade = (this.examArrangements || []).filter(item => this.studentMatchesGrade(item, gradeKey));
+
+    // Load persisted custom grade settings if available
+    if (!this.examGradeSettings) {
+      try {
+        const raw = localStorage.getItem('sms_exam_grade_settings');
+        this.examGradeSettings = raw ? JSON.parse(raw) : {};
+      } catch (e) {
+        this.examGradeSettings = {};
+      }
+    }
+    const gradeSetting = this.examGradeSettings[gradeKey] || {};
+
+    let startRoom = 1;
+    let studentsPerRoom = 25;
+    let sortOrder = 'normal';
+    let lateCount = (this.examLateStudentCounts && this.examLateStudentCounts[gradeKey]) || 0;
+    if (lateCount === 0) {
+      const existingLateInGrade = (this.examArrangements || []).filter(
+        item => this.studentMatchesGrade(item, gradeKey) && this.isIncompleteLateStudent(item)
+      ).length;
+      if (existingLateInGrade > 0) {
+        lateCount = existingLateInGrade;
+        if (!this.examLateStudentCounts) this.examLateStudentCounts = {};
+        this.examLateStudentCounts[gradeKey] = lateCount;
+      }
+    }
+
+    if (savedForGrade.length > 0) {
+      // Recover room parameters directly from existing arrangements in the system
+      const roomNums = savedForGrade.map(i => parseInt(i.roomNumber, 10)).filter(n => !isNaN(n));
+      if (roomNums.length > 0) {
+        startRoom = Math.min(...roomNums);
+        // Determine students per room by counting students in the first room
+        const firstRoomCount = savedForGrade.filter(i => parseInt(i.roomNumber, 10) === startRoom).length;
+        if (firstRoomCount > 0) {
+          studentsPerRoom = firstRoomCount;
+        }
+      }
+      if (gradeSetting.sortOrder) sortOrder = gradeSetting.sortOrder;
+    } else if (gradeSetting.startRoom) {
+      // Restore from saved grade settings
+      startRoom = gradeSetting.startRoom;
+      studentsPerRoom = gradeSetting.studentsPerRoom || 25;
+      sortOrder = gradeSetting.sortOrder || 'normal';
+      if (gradeSetting.lateCount !== undefined) lateCount = gradeSetting.lateCount;
+    } else {
+      // Brand new arrangement for this grade:
+      // Auto-sequence startRoom after the maximum room already used by OTHER grades in the system
+      const otherGradeRooms = (this.examArrangements || [])
+        .filter(item => !this.studentMatchesGrade(item, gradeKey))
+        .map(item => parseInt(item.roomNumber, 10))
+        .filter(n => !isNaN(n) && n > 0);
+
+      if (otherGradeRooms.length > 0) {
+        startRoom = Math.max(...otherGradeRooms) + 1;
+      } else {
+        startRoom = 1;
+      }
+      studentsPerRoom = 25;
+      sortOrder = 'normal';
+    }
+
+    // Apply to UI inputs
+    if (this.examStartRoomInput) {
+      this.examStartRoomInput.value = startRoom;
+    }
+    if (this.examStudentsPerRoomInput) {
+      this.examStudentsPerRoomInput.value = studentsPerRoom;
+    }
+    if (this.examSortOrderSelect) {
+      this.examSortOrderSelect.value = sortOrder;
+    }
+    if (this.examLateStudentsInput) {
+      this.examLateStudentsInput.value = lateCount;
+    }
+  }
+
+  saveCurrentExamGradeSettings() {
+    const selectedGrade = this.examGradeSelect ? this.examGradeSelect.value : 'grade_7';
+    if (!this.examGradeSettings) this.examGradeSettings = {};
+    const late = Math.max(0, parseInt(this.examLateStudentsInput ? this.examLateStudentsInput.value : 0, 10) || 0);
+    this.examGradeSettings[selectedGrade] = {
+      startRoom: parseInt(this.examStartRoomInput ? this.examStartRoomInput.value : 1, 10) || 1,
+      studentsPerRoom: parseInt(this.examStudentsPerRoomInput ? this.examStudentsPerRoomInput.value : 25, 10) || 25,
+      sortOrder: this.examSortOrderSelect ? this.examSortOrderSelect.value : 'normal',
+      lateCount: late
+    };
+    if (!this.examLateStudentCounts) this.examLateStudentCounts = {};
+    this.examLateStudentCounts[selectedGrade] = late;
+    try {
+      localStorage.setItem('sms_exam_grade_settings', JSON.stringify(this.examGradeSettings));
+    } catch (e) { }
+  }
+
+  updateExamGradeDropdownLabels() {
+    const grades = [
+      { key: 'grade_7', label: 'ថ្នាក់ទី៧' },
+      { key: 'grade_8', label: 'ថ្នាក់ទី៨' },
+      { key: 'grade_9', label: 'ថ្នាក់ទី៩' },
+      { key: 'grade_10', label: 'ថ្នាក់ទី១០' },
+      { key: 'grade_11_sci', label: 'ថ្នាក់ទី១១ វិទ្យាសាស្ត្រ (11SC)' },
+      { key: 'grade_11_soc', label: 'ថ្នាក់ទី១១ វិទ្យាសាស្ត្រសង្គម (11SS)' },
+      { key: 'grade_12_sci', label: 'ថ្នាក់ទី១២ វិទ្យាសាស្ត្រ (12SC)' },
+      { key: 'grade_12_soc', label: 'ថ្នាក់ទី១២ វិទ្យាសាស្ត្រសង្គម (12SS)' }
+    ];
+
+    const selects = [this.examGradeSelect, this.examSecretGradeSelect, this.examAttendanceGradeSelect].filter(Boolean);
+
+    selects.forEach(selectEl => {
+      Array.from(selectEl.options).forEach(opt => {
+        if (opt.value === 'ALL') {
+          const totalInSystem = (this.students || []).filter(s => !this.isIncompleteLateStudent(s)).length;
+          opt.textContent = `គ្រប់កម្រិតថ្នាក់ (${totalInSystem} នាក់)`;
+          return;
+        }
+        const g = grades.find(x => x.key === opt.value);
+        if (!g) return;
+        const countInSystem = (this.students || []).filter(s => !this.isIncompleteLateStudent(s) && this.studentMatchesGrade(s, g.key)).length;
+        const savedCount = (this.examArrangements || []).filter(item => this.studentMatchesGrade(item, g.key)).length;
+        if (savedCount > 0) {
+          opt.textContent = `${g.label} (${countInSystem} នាក់ - រៀបរួច ${savedCount} នាក់)`;
+        } else if (countInSystem > 0) {
+          opt.textContent = `${g.label} (${countInSystem} នាក់)`;
+        } else {
+          opt.textContent = `${g.label} (0 នាក់)`;
+        }
+      });
+    });
+  }
+
+  initAutoBackupTimer() {
+    if (this._autoBackupInterval) clearInterval(this._autoBackupInterval);
+    // Periodically backup scores and full state every 3 minutes if students exist
+    this._autoBackupInterval = setInterval(() => {
+      if (this.students && this.students.length > 0) {
+        this.createAutoBackup('Auto-Backup ពិន្ទុតាមពេល (រៀងរាល់ ៣ នាទី)');
+        this.updateScoreAutoBackupBadge('saved');
+      }
+    }, 3 * 60 * 1000);
+
+    // Initial score auto-backup badge state
+    setTimeout(() => this.updateScoreAutoBackupBadge('active'), 500);
+
+    // Also backup on window unload / refresh
+    window.addEventListener('beforeunload', () => {
+      this.saveState(false);
+    });
+  }
+
+  scheduleScoreAutoBackup() {
+    if (this._scoreAutoBackupTimeout) {
+      clearTimeout(this._scoreAutoBackupTimeout);
+    }
+    this.updateScoreAutoBackupBadge('pending');
+    this._scoreAutoBackupTimeout = setTimeout(async () => {
+      const periodTitle = (PERIOD_DEFINITIONS[this.currentPeriod] && PERIOD_DEFINITIONS[this.currentPeriod].title) || this.currentPeriod || 'ពិន្ទុ';
+      await this.createAutoBackup(`Auto-Backup ពិន្ទុ (${periodTitle})`);
+      this.updateScoreAutoBackupBadge('saved');
+    }, 8000); // Debounced: 8 seconds after user finishes entering scores
+  }
+
+  updateScoreAutoBackupBadge(status, customTime = null) {
+    const badges = [
+      document.getElementById('scoreAutoBackupBadge'),
+      document.getElementById('secretScoreAutoBackupBadge'),
+      document.getElementById('subjectTableAutoBackupBadge')
+    ].filter(Boolean);
+
+    const nowStr = customTime || new Date().toLocaleTimeString('km-KH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    badges.forEach(badge => {
+      badge.classList.remove('pending', 'saved');
+      if (status === 'pending') {
+        badge.classList.add('pending');
+        badge.innerHTML = `<i class="ri-refresh-line ri-spin"></i> <span class="badge-text">Auto Backup: កំពុងរៀបចំ...</span>`;
+      } else if (status === 'saved') {
+        badge.classList.add('saved');
+        badge.innerHTML = `<i class="ri-checkbox-circle-line"></i> <span class="badge-text">Auto Backup: រួចរាល់ (${nowStr})</span>`;
+        if (badge._savedTimeout) clearTimeout(badge._savedTimeout);
+        badge._savedTimeout = setTimeout(() => {
+          if (badge.classList.contains('saved')) {
+            badge.classList.remove('saved');
+            badge.innerHTML = `<i class="ri-shield-check-line"></i> <span class="badge-text">Auto Backup ពិន្ទុ: សកម្ម (${nowStr})</span>`;
+          }
+        }, 8000);
+      } else {
+        badge.innerHTML = `<i class="ri-shield-check-line"></i> <span class="badge-text">Auto Backup ពិន្ទុ: សកម្ម</span>`;
+      }
+    });
+  }
+
+  async initSQLiteEngine() {
+    if (typeof window !== 'undefined' && window.initSqlJs) {
+      try {
+        if (!this.SQL) {
+          this.SQL = await window.initSqlJs({
+            locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.12.0/${file}`
+          });
+        }
+        this.sqliteDb = new this.SQL.Database();
+        this.createSQLiteTables();
+        this.syncToSQLite();
+        const badge = document.getElementById('sqliteStatusBadge');
+        if (badge) badge.innerHTML = '<i class="ri-checkbox-circle-fill"></i> SQLite WASM (Active)';
+      } catch (err) {
+        console.warn('SQLite wasm initialization failed, using SQL generator mode:', err);
+      }
+    }
+  }
+
+  createSQLiteTables() {
+    if (!this.sqliteDb) return;
+    try {
+      const ddl = `
+        CREATE TABLE IF NOT EXISTS administrative_divisions (
+          code TEXT PRIMARY KEY,
+          type TEXT NOT NULL,
+          name_khmer TEXT NOT NULL,
+          name_latin TEXT,
+          parent_code TEXT
+        );
+        CREATE TABLE IF NOT EXISTS students (
+          id TEXT PRIMARY KEY,
+          khmer_name TEXT NOT NULL,
+          latin_name TEXT,
+          gender TEXT,
+          dob TEXT,
+          class TEXT,
+          class_type TEXT,
+          phone TEXT,
+          guardian TEXT,
+          address TEXT,
+          province_code TEXT,
+          district_code TEXT,
+          commune_code TEXT,
+          village_code TEXT
+        );
+        CREATE TABLE IF NOT EXISTS subjects (
+          code TEXT PRIMARY KEY,
+          name TEXT,
+          max_score REAL,
+          coefficient REAL,
+          is_enabled INTEGER
+        );
+        CREATE TABLE IF NOT EXISTS scores (
+          student_id TEXT,
+          period_key TEXT,
+          subject_code TEXT,
+          score REAL,
+          PRIMARY KEY (student_id, period_key, subject_code)
+        );
+        CREATE TABLE IF NOT EXISTS exam_arrangements (
+          student_id TEXT PRIMARY KEY,
+          khmer_name TEXT,
+          room_number TEXT,
+          desk_number TEXT,
+          secret_code TEXT,
+          grade TEXT,
+          status TEXT
+        );
+        CREATE TABLE IF NOT EXISTS app_state (
+          key TEXT PRIMARY KEY,
+          value TEXT
+        );
+      `;
+      this.sqliteDb.run(ddl);
+
+      // Migrations for existing database instances
+      try { this.sqliteDb.run('ALTER TABLE students ADD COLUMN province_code TEXT;'); } catch (_) { }
+      try { this.sqliteDb.run('ALTER TABLE students ADD COLUMN district_code TEXT;'); } catch (_) { }
+      try { this.sqliteDb.run('ALTER TABLE students ADD COLUMN commune_code TEXT;'); } catch (_) { }
+      try { this.sqliteDb.run('ALTER TABLE students ADD COLUMN village_code TEXT;'); } catch (_) { }
+      try { this.sqliteDb.run('ALTER TABLE students ADD COLUMN pob_province_code TEXT;'); } catch (_) { }
+      try { this.sqliteDb.run('ALTER TABLE students ADD COLUMN pob_district_code TEXT;'); } catch (_) { }
+      try { this.sqliteDb.run('ALTER TABLE students ADD COLUMN pob_commune_code TEXT;'); } catch (_) { }
+      try { this.sqliteDb.run('ALTER TABLE students ADD COLUMN pob_village_code TEXT;'); } catch (_) { }
+    } catch (e) {
+      console.warn('createSQLiteTables error:', e);
+    }
+  }
+
+  syncToSQLite() {
+    if (!this.sqliteDb) return;
+    try {
+      this.createSQLiteTables();
+      this.sqliteDb.run('BEGIN TRANSACTION;');
+      this.sqliteDb.run('DELETE FROM students; DELETE FROM subjects; DELETE FROM scores; DELETE FROM exam_arrangements; DELETE FROM app_state;');
+
+      // Insert students safely (ensure no undefined bindings)
+      const insertStu = this.sqliteDb.prepare(`INSERT OR REPLACE INTO students VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);`);
+      (this.students || []).forEach(s => {
+        if (!s || !s.id) return;
+        insertStu.run([
+          String(s.id || ''),
+          String(s.khmerName || ''),
+          String(s.latinName || ''),
+          String(s.gender || ''),
+          String(s.dob || ''),
+          String(s.class || ''),
+          String(s.classType || ''),
+          String(s.phone || ''),
+          String(s.guardian || ''),
+          String(s.address || ''),
+          String(s.provinceCode || ''),
+          String(s.districtCode || ''),
+          String(s.communeCode || ''),
+          String(s.villageCode || '')
+        ]);
+      });
+      insertStu.free();
+
+      // Populate administrative_divisions if empty
+      try {
+        const countRes = this.sqliteDb.exec('SELECT count(*) FROM administrative_divisions;');
+        const count = countRes && countRes[0] && countRes[0].values[0] ? countRes[0].values[0][0] : 0;
+        if (count === 0 && window.CAMBODIA_GEOGRAPHY) {
+          const insertAdmin = this.sqliteDb.prepare('INSERT OR REPLACE INTO administrative_divisions VALUES (?, ?, ?, ?, ?);');
+          window.CAMBODIA_GEOGRAPHY.forEach(p => {
+            insertAdmin.run([String(p.c), 'ខេត្ត', p.n, '', '']);
+            (p.d || []).forEach(d => {
+              insertAdmin.run([String(d.c), d.t || 'ស្រុក', d.n, '', String(p.c)]);
+              (d.cm || []).forEach(cm => {
+                insertAdmin.run([String(cm.c), cm.t || 'ឃុំ', cm.n, '', String(d.c)]);
+                (cm.v || []).forEach(v => {
+                  insertAdmin.run([String(v.c), 'ភូមិ', v.n, '', String(cm.c)]);
+                });
+              });
+            });
+          });
+          insertAdmin.free();
+        }
+      } catch (err) {
+        console.warn('Sync administrative_divisions warning:', err);
+      }
+
+      // Insert subjects
+      const insertSub = this.sqliteDb.prepare(`INSERT OR REPLACE INTO subjects VALUES (?, ?, ?, ?, ?);`);
+      (this.subjects || []).forEach(sub => {
+        if (!sub || !sub.code) return;
+        insertSub.run([
+          String(sub.code || ''),
+          String(sub.name || ''),
+          Number(sub.maxScore) || 100,
+          Number(sub.coef) || 1,
+          sub.enabled ? 1 : 0
+        ]);
+      });
+      insertSub.free();
+
+      // Insert scores
+      const insertScore = this.sqliteDb.prepare(`INSERT OR REPLACE INTO scores VALUES (?, ?, ?, ?);`);
+      Object.keys(this.scores || {}).forEach(stuId => {
+        const periods = this.scores[stuId] || {};
+        Object.keys(periods).forEach(periodKey => {
+          const subs = periods[periodKey] || {};
+          Object.keys(subs).forEach(subCode => {
+            const val = subs[subCode];
+            if (val !== undefined && val !== null && val !== '' && !isNaN(parseFloat(val))) {
+              insertScore.run([String(stuId), String(periodKey), String(subCode), parseFloat(val)]);
+            }
+          });
+        });
+      });
+      insertScore.free();
+
+      // Insert exam arrangements
+      if (this.examArrangements && this.examArrangements.length > 0) {
+        const insertExam = this.sqliteDb.prepare(`INSERT OR REPLACE INTO exam_arrangements VALUES (?, ?, ?, ?, ?, ?, ?);`);
+        this.examArrangements.forEach(e => {
+          if (!e || !e.studentId) return;
+          insertExam.run([
+            String(e.studentId || ''),
+            String(e.khmerName || ''),
+            String(e.roomNumber || ''),
+            String(e.deskNumber || ''),
+            String(e.secretCode || ''),
+            String(e.grade || ''),
+            String(e.status || '')
+          ]);
+        });
+        insertExam.free();
+      }
+
+      // Save full lossless state JSON into app_state table inside SQLite (.db)
+      const fullStatePayload = {
+        students: this.students || [],
+        subjects: this.subjects || [],
+        scores: this.scores || {},
+        examArrangements: this.examArrangements || [],
+        roomSubjectSecrets: this.roomSubjectSecrets || {},
+        examConfigs: this.examConfigs || this.getDefaultExamConfigs(),
+        examDateConfigs: this.examDateConfigs || {},
+        activeScorePeriod: this.activeScorePeriod || null,
+        classSections: this.classSections || [],
+        examSubjectOrders: this.examSubjectOrders || this.getDefaultExamSubjectOrders(),
+        examLateStudentCounts: this.examLateStudentCounts || {},
+        updatedAt: new Date().toISOString()
+      };
+      const insertState = this.sqliteDb.prepare(`INSERT OR REPLACE INTO app_state VALUES (?, ?);`);
+      insertState.run(['full_state', JSON.stringify(fullStatePayload)]);
+      insertState.free();
+
+      this.sqliteDb.run('COMMIT;');
+    } catch (e) {
+      console.warn('SQLite sync warning:', e);
+      try {
+        this.sqliteDb.run('ROLLBACK;');
+      } catch (_) { }
+    }
+  }
+
+  async exportSQLiteFile() {
+    if (!this.sqliteDb) {
+      this.showToast('កំពុងរៀបចំទិន្នន័យ SQLite Database...', 'info');
+      await this.initSQLiteEngine();
+    }
+    this.syncToSQLite();
+    if (this.sqliteDb) {
+      try {
+        const binary = this.sqliteDb.export();
+        const blob = new Blob([binary], { type: 'application/x-sqlite3' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `SMS_Database_${new Date().toISOString().slice(0, 10)}.db`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        this.showToast('បានទាញយកឯកសារ SQLite Database (.db) ជោគជ័យ!', 'success');
+        return;
+      } catch (err) {
+        console.warn('export binary failed, falling back to SQL script:', err);
+      }
+    }
+    this.showToast('ប្រព័ន្ធកំពុងទាញយកឯកសារបម្រុងទុកជា SQL Script (.sql)...', 'info');
+    this.exportSQLDumpFile();
+  }
+
+  exportSQLDumpFile() {
+    let sql = `-- ============================================================================\n`;
+    sql += `-- SMS-V.01 Database Backup (SQLite & PostgreSQL Compatible)\n`;
+    sql += `-- Exported: ${new Date().toISOString()}\n`;
+    sql += `-- Total Students: ${this.students.length}\n`;
+    sql += `-- ============================================================================\n\n`;
+    sql += `PRAGMA foreign_keys = OFF;\nBEGIN TRANSACTION;\n\n`;
+
+    sql += `CREATE TABLE IF NOT EXISTS students (\n`;
+    sql += `  id TEXT PRIMARY KEY,\n  khmer_name TEXT NOT NULL,\n  latin_name TEXT,\n  gender TEXT,\n  dob TEXT,\n  class TEXT,\n  class_type TEXT,\n  phone TEXT,\n  guardian TEXT,\n  address TEXT\n);\n\n`;
+
+    const esc = (v) => (v ? String(v).replace(/'/g, "''") : '');
+
+    this.students.forEach(s => {
+      sql += `INSERT OR REPLACE INTO students (id, khmer_name, latin_name, gender, dob, class, class_type, phone, guardian, address) VALUES ('${esc(s.id)}', '${esc(s.khmerName)}', '${esc(s.latinName)}', '${esc(s.gender)}', '${esc(s.dob)}', '${esc(s.class)}', '${esc(s.classType)}', '${esc(s.phone)}', '${esc(s.guardian)}', '${esc(s.address)}');\n`;
+    });
+
+    sql += `\nCREATE TABLE IF NOT EXISTS subjects (\n`;
+    sql += `  code TEXT PRIMARY KEY,\n  name TEXT,\n  max_score REAL,\n  coefficient REAL,\n  is_enabled INTEGER\n);\n\n`;
+
+    this.subjects.forEach(sub => {
+      sql += `INSERT OR REPLACE INTO subjects (code, name, max_score, coefficient, is_enabled) VALUES ('${esc(sub.code)}', '${esc(sub.name)}', ${sub.maxScore}, ${sub.coef}, ${sub.enabled ? 1 : 0});\n`;
+    });
+
+    sql += `\nCREATE TABLE IF NOT EXISTS scores (\n`;
+    sql += `  student_id TEXT,\n  period_key TEXT,\n  subject_code TEXT,\n  score REAL,\n  PRIMARY KEY (student_id, period_key, subject_code)\n);\n\n`;
+
+    Object.keys(this.scores).forEach(stuId => {
+      const stuScores = this.scores[stuId] || {};
+      Object.keys(stuScores).forEach(periodKey => {
+        const pScores = stuScores[periodKey] || {};
+        Object.keys(pScores).forEach(subCode => {
+          const val = pScores[subCode];
+          if (val !== undefined && val !== null && val !== '') {
+            sql += `INSERT OR REPLACE INTO scores (student_id, period_key, subject_code, score) VALUES ('${esc(stuId)}', '${esc(periodKey)}', '${esc(subCode)}', ${val});\n`;
+          }
+        });
+      });
+    });
+
+    sql += `\nCOMMIT;\n`;
+
+    const blob = new Blob([sql], { type: 'application/sql;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `SMS_Database_Backup_${new Date().toISOString().slice(0, 10)}.sql`;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.showToast('បានទាញយកឯកសារ SQL Script (.sql) ជោគជ័យ!', 'success');
+  }
+
+  // ==========================================
+  // VOICE SCORE ASSISTANT (បញ្ចូលពិន្ទុដោយសម្លេង)
+  // ==========================================
+  parseKhmerSpokenNumber(text) {
+    if (!text) return null;
+    let raw = String(text).trim().toLowerCase();
+
+    // Remove filler words (ពិន្ទុ, បាន, សិស្ស, លេខ, ដាក់...)
+    raw = raw.replace(/^(ពិន្ទុ|បាន|សិស្ស|លេខ|ដាក់|ដាក់ពិន្ទុ|យក|ចេញ)\s*/g, '');
+
+    // Convert Khmer numerals ០-៩ to 0-9
+    const khmerDigits = { '០': '0', '១': '1', '២': '2', '៣': '3', '៤': '4', '៥': '5', '៦': '6', '៧': '7', '៨': '8', '៩': '9' };
+    let normalized = raw.replace(/[០-៩]/g, d => khmerDigits[d]);
+
+    // Common speech recognition homophones for Khmer numbers
+    // 10: ត័ប, តប់, ដប, ទ័ព, តាប់, ដាប់
+    normalized = normalized.replace(/(ត័ប|តប់|ដប|ទ័ព|តាប់|ដាប់)/g, 'ដប់');
+    // 20: ម្ភៃយ, ម្ភៃរ, ភៃ, ម្ភៃយ៍
+    normalized = normalized.replace(/(ម្ភៃយ|ម្ភៃរ|ភៃ|ម្ភៃយ៍)/g, 'ម្ភៃ');
+    // 70: ជិតសិប -> ចិតសិប
+    normalized = normalized.replace(/ជិតសិប/g, 'ចិតសិប');
+    // 40: ខ្សែសិប, សេសិប -> សែសិប
+    normalized = normalized.replace(/(ខ្សែសិប|សេសិប)/g, 'សែសិប');
+
+    // Handle Chrome speech transcription patterns like "4សិប", "4 សិប", "៤សិប", "4សិប5", "4សិបប្រាំ"
+    normalized = normalized.replace(/([1-9])\s*សិប\s*([0-9])/g, (m, t, o) => (parseInt(t) * 10 + parseInt(o)).toString());
+    normalized = normalized.replace(/([1-9])\s*សិប\s*(កន្លះ)/g, (m, t) => (parseInt(t) * 10 + 0.5).toString());
+    normalized = normalized.replace(/([1-9])\s*សិប/g, (m, t) => (parseInt(t) * 10).toString() + ' ');
+
+    // Handle digit-by-digit spaced numbers, e.g. "5 0" -> "50", "7 5" -> "75", "1 0 0" -> "100"
+    let cleanedDigits = normalized.replace(/(\d)\s+(\d)/g, '$1$2').replace(/(\d)\s+(\d)/g, '$1$2');
+
+    // Test direct numeric string (e.g. "40", "50", "45.5", "100")
+    const directMatch = cleanedDigits.match(/^(\d+(?:\.\d+)?)$/);
+    if (directMatch) {
+      return parseFloat(directMatch[1]);
+    }
+
+    // Handle decimal points with "ចុច" or "."
+    if (normalized.includes('ចុច') || (normalized.includes('.') && !/^\d+\.\d+$/.test(cleanedDigits))) {
+      const parts = normalized.split(/ចុច|\./);
+      if (parts.length >= 2) {
+        const intVal = this.parseKhmerSpokenNumber(parts[0]) || 0;
+        const decVal = this.parseKhmerSpokenNumber(parts[1]);
+        if (decVal !== null) {
+          const decFactor = decVal < 10 ? decVal / 10 : (decVal < 100 ? decVal / 100 : decVal / 1000);
+          return intVal + decFactor;
+        }
+        return intVal;
+      }
+    }
+
+    // Convert spaced single-digit words, e.g. "ប្រាំ សូន្យ" -> "50", "បួន សូន្យ" -> "40"
+    const digitWordMap = {
+      'សូន្យ': '0', 'មួយ': '1', 'ពីរ': '2', 'បី': '3', 'បួន': '4',
+      'ប្រាំ': '5', 'ប្រាំមួយ': '6', 'ប្រាំពីរ': '7', 'ប្រាំបី': '8', 'ប្រាំបួន': '9'
+    };
+    const wordsArr = raw.split(/\s+/).filter(Boolean);
+    if (wordsArr.length >= 2 && wordsArr.length <= 3 && wordsArr.every(w => digitWordMap[w] !== undefined)) {
+      const combined = wordsArr.map(w => digitWordMap[w]).join('');
+      return parseFloat(combined);
+    }
+
+    let num = 0;
+    let hasMatch = false;
+    let remaining = normalized;
+
+    if (remaining.includes('មួយរយ') || remaining.includes('រយ') || remaining.includes('100')) {
+      num += 100;
+      hasMatch = true;
+      remaining = remaining.replace(/មួយរយ|រយ|100/, '');
+    }
+
+    const tens = [
+      { word: 'កៅសិប', val: 90 }, { word: '90', val: 90 },
+      { word: 'ប៉ែតសិប', val: 80 }, { word: '80', val: 80 },
+      { word: 'ចិតសិប', val: 70 }, { word: '70', val: 70 },
+      { word: 'ហុកសិប', val: 60 }, { word: '60', val: 60 },
+      { word: 'ហាសិប', val: 50 }, { word: '50', val: 50 },
+      { word: 'សែសិប', val: 40 }, { word: '40', val: 40 },
+      { word: 'សាមសិប', val: 30 }, { word: '30', val: 30 },
+      { word: 'ម្ភៃ', val: 20 }, { word: '20', val: 20 },
+      { word: 'ដប់', val: 10 }, { word: '10', val: 10 },
+      // Colloquial / Fast Spoken Shorthand (e.g. ហាប្រាំ = 55, ហាកន្លះ = 50.5, ហុកប្រាំ = 65, ប៉ែត = 80...)
+      { word: 'កៅ', val: 90 },
+      { word: 'ប៉ែត', val: 80 },
+      { word: 'ចិត', val: 70 },
+      { word: 'ហុក', val: 60 },
+      { word: 'ហា', val: 50 },
+      { word: 'សែ', val: 40 },
+      { word: 'សាម', val: 30 }
+    ];
+
+    for (const t of tens) {
+      if (remaining.includes(t.word)) {
+        num += t.val;
+        hasMatch = true;
+        remaining = remaining.replace(t.word, '');
+        break;
+      }
+    }
+
+    const ones = [
+      { word: 'ប្រាំបួន', val: 9 },
+      { word: 'ប្រាំបី', val: 8 },
+      { word: 'ប្រាំពីរ', val: 7 },
+      { word: 'ប្រាំមួយ', val: 6 },
+      { word: 'ប្រាំ', val: 5 },
+      { word: 'បួន', val: 4 },
+      { word: 'បី', val: 3 },
+      { word: 'ពីរ', val: 2 },
+      { word: 'មួយ', val: 1 },
+      { word: 'សូន្យ', val: 0 }
+    ];
+
+    for (const o of ones) {
+      if (remaining.includes(o.word)) {
+        num += o.val;
+        hasMatch = true;
+        remaining = remaining.replace(o.word, '');
+        break;
+      }
+    }
+
+    // Handle "កន្លះ" (+0.5)
+    if (raw.includes('កន្លះ') || normalized.includes('កន្លះ')) {
+      num += 0.5;
+      hasMatch = true;
+    }
+
+    if (!hasMatch) {
+      const fallback = cleanedDigits.match(/(\d+(?:\.\d+)?)/);
+      if (fallback) return parseFloat(fallback[1]);
+    }
+
+    return hasMatch ? num : null;
+  }
+
+  playAudioChime(freq = 620, duration = 0.12) {
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return;
+      if (!this._voiceAudioCtx) this._voiceAudioCtx = new AudioCtx();
+      const ctx = this._voiceAudioCtx;
+      if (ctx.state === 'suspended') ctx.resume();
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(0.12, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start();
+      osc.stop(ctx.currentTime + duration);
+    } catch (e) { }
+  }
+
+  openVoiceScoreModal(defaultSubject = null, defaultGrade = null, defaultPeriod = null) {
+    if (!this.voiceScoreModal) {
+      this.voiceScoreModal = document.getElementById('voiceScoreModal');
+    }
+    if (!this.voiceScoreModal) return;
+
+    const targetGrade = defaultGrade || this.activeClass || 'grade_7';
+    const targetPeriod = defaultPeriod || (
+      this.currentPeriod && !['student_info', 'overview_stats', 'curriculum_setting'].includes(this.currentPeriod)
+        ? this.currentPeriod
+        : 'test_early'
+    );
+
+    if (this.voiceScoreGradeSelect) this.voiceScoreGradeSelect.value = targetGrade;
+    if (this.voiceScorePeriodSelect) this.voiceScorePeriodSelect.value = targetPeriod;
+
+    this.syncVoiceScoreModalSubjects();
+    if (defaultSubject && this.voiceScoreSubjectSelect) {
+      this.voiceScoreSubjectSelect.value = defaultSubject;
+      this.updateVoiceScoreInputLimits();
+    }
+
+    this.syncVoiceScoreModalSections();
+    this.updateVoiceStudentList();
+
+    this._voiceSessionRecentScores = [];
+    this.renderVoiceRecentScoresList();
+    this.hideVoiceNotice();
+
+    this.voiceScoreModal.classList.add('open');
+    setTimeout(() => {
+      if (this.voiceScoreInput) {
+        this.voiceScoreInput.focus();
+        this.voiceScoreInput.select();
+      }
+    }, 150);
+  }
+
+  closeVoiceScoreModal() {
+    this.stopVoiceRecognition();
+    if (this.voiceScoreModal) {
+      this.voiceScoreModal.classList.remove('open');
+    }
+    this.renderCurrentView();
+  }
+
+  syncVoiceScoreModalSubjects() {
+    if (!this.voiceScoreSubjectSelect) return;
+    const gradeKey = this.voiceScoreGradeSelect ? this.voiceScoreGradeSelect.value : (this.activeClass || 'grade_7');
+    const period = this.voiceScorePeriodSelect ? this.voiceScorePeriodSelect.value : 'test_early';
+    const isSemester = ['sem1_exam', 'sem2_exam', 'sem1_overall', 'sem2_overall'].includes(period);
+
+    const activeSubjects = this.getActiveSubjectsForGrade(gradeKey, isSemester);
+    const prevSub = this.voiceScoreSubjectSelect.value;
+
+    this.voiceScoreSubjectSelect.innerHTML = '';
+    activeSubjects.forEach(sub => {
+      const opt = document.createElement('option');
+      opt.value = sub.code;
+      opt.setAttribute('data-max', sub.maxScore);
+      opt.textContent = `${sub.name} (ពិន្ទុពេញ ${sub.maxScore}${sub.coefficient ? ` x${sub.coefficient}` : ''})`;
+      if (sub.code === prevSub) opt.selected = true;
+      this.voiceScoreSubjectSelect.appendChild(opt);
+    });
+
+    if (!this.voiceScoreSubjectSelect.value && activeSubjects.length > 0) {
+      this.voiceScoreSubjectSelect.value = activeSubjects[0].code;
+    }
+
+    this.updateVoiceScoreInputLimits();
+  }
+
+  updateVoiceScoreInputLimits() {
+    if (!this.voiceScoreSubjectSelect) return;
+    const opt = this.voiceScoreSubjectSelect.selectedOptions[0];
+    const maxScore = opt ? parseFloat(opt.getAttribute('data-max') || '100') : 100;
+    if (this.voiceScoreMaxBadge) {
+      this.voiceScoreMaxBadge.textContent = `អតិបរមា: ${maxScore}`;
+    }
+    if (this.voiceScoreInput) {
+      this.voiceScoreInput.max = maxScore;
+    }
+  }
+
+  syncVoiceScoreModalSections() {
+    if (!this.voiceScoreSectionSelect) return;
+    const gradeKey = this.voiceScoreGradeSelect ? this.voiceScoreGradeSelect.value : (this.activeClass || 'grade_7');
+    const classList = this.getClassListForGradeKey(gradeKey);
+
+    const prevSection = this.voiceScoreSectionSelect.value;
+    this.voiceScoreSectionSelect.innerHTML = '<option value="ALL">-- គ្រប់ថ្នាក់ --</option>';
+    classList.forEach(clsName => {
+      const opt = document.createElement('option');
+      opt.value = clsName;
+      opt.textContent = `ថ្នាក់ ${clsName}`;
+      if (clsName === prevSection) opt.selected = true;
+      this.voiceScoreSectionSelect.appendChild(opt);
+    });
+  }
+
+  updateVoiceStudentList() {
+    const gradeKey = this.voiceScoreGradeSelect ? this.voiceScoreGradeSelect.value : (this.activeClass || 'grade_7');
+    const section = this.voiceScoreSectionSelect ? this.voiceScoreSectionSelect.value : 'ALL';
+
+    let list = (this.students || []).filter(s => {
+      const matchG = this.studentMatchesGrade(s, gradeKey);
+      if (!matchG) return false;
+      if (section !== 'ALL' && s.class !== section) return false;
+      return true;
+    });
+
+    // Natural sort by Class then Student ID / Name
+    list.sort((a, b) => {
+      if (a.class !== b.class) return (a.class || '').localeCompare(b.class || '', 'km');
+      return (a.khmerName || '').localeCompare(b.khmerName || '', 'km');
+    });
+
+    this._voiceStudentList = list;
+    this._currentVoiceStudentIndex = 0;
+    this.selectVoiceStudent(0);
+  }
+
+  selectVoiceStudent(index) {
+    const list = this._voiceStudentList || [];
+    if (list.length === 0) {
+      if (this.voiceStudentName) this.voiceStudentName.textContent = 'មិនមានសិស្សក្នុងថ្នាក់នេះឡើយ';
+      if (this.voiceStudentAvatar) this.voiceStudentAvatar.textContent = '?';
+      if (this.voiceStudentIdText) this.voiceStudentIdText.textContent = 'អត្តលេខ: --';
+      if (this.voiceStudentIndexText) this.voiceStudentIndexText.textContent = 'លំដាប់: ០ / ០';
+      if (this.voiceStudentCurrentScoreText) this.voiceStudentCurrentScoreText.textContent = 'ពិន្ទុបច្ចុប្បន្ន: គ្មាន';
+      if (this.voiceScoreInput) this.voiceScoreInput.value = '';
+      return;
+    }
+
+    if (index < 0) index = 0;
+    if (index >= list.length) index = list.length - 1;
+    this._currentVoiceStudentIndex = index;
+    const stu = list[index];
+
+    const initial = stu.khmerName ? stu.khmerName.trim().charAt(0) : 'ស';
+    if (this.voiceStudentAvatar) this.voiceStudentAvatar.textContent = initial;
+    if (this.voiceStudentName) this.voiceStudentName.textContent = stu.khmerName || stu.id;
+    if (this.voiceStudentGenderBadge) {
+      this.voiceStudentGenderBadge.textContent = stu.gender || 'មិនស្គាល់';
+      this.voiceStudentGenderBadge.className = `gender-badge ${stu.gender === 'ស្រី' ? 'gender-female' : 'gender-male'}`;
+    }
+    if (this.voiceStudentClassBadge) this.voiceStudentClassBadge.textContent = stu.class || 'ទូទៅ';
+    if (this.voiceStudentIdText) this.voiceStudentIdText.textContent = `អត្តលេខ: ${stu.id}`;
+    if (this.voiceStudentIndexText) this.voiceStudentIndexText.textContent = `លំដាប់: ${index + 1} / ${list.length}`;
+
+    // Read current score in active period and active subject
+    const period = this.voiceScorePeriodSelect ? this.voiceScorePeriodSelect.value : 'test_early';
+    const subCode = this.voiceScoreSubjectSelect ? this.voiceScoreSubjectSelect.value : '';
+    const stuScores = (this.scores[stu.id] && this.scores[stu.id][period]) || {};
+    const curScore = this.getSubjectScore(stuScores, subCode);
+
+    if (this.voiceStudentCurrentScoreText) {
+      if (curScore !== undefined && curScore !== null && curScore !== '') {
+        this.voiceStudentCurrentScoreText.textContent = `ពិន្ទុបច្ចុប្បន្ន: ${curScore}`;
+        this.voiceStudentCurrentScoreText.style.color = '#059669';
+      } else {
+        this.voiceStudentCurrentScoreText.textContent = `ពិន្ទុបច្ចុប្បន្ន: មិនទាន់មាន`;
+        this.voiceStudentCurrentScoreText.style.color = '#94a3b8';
+      }
+    }
+
+    if (this.voiceScoreInput) {
+      this.voiceScoreInput.value = (curScore !== undefined && curScore !== null && curScore !== '') ? curScore : '';
+      this.voiceScoreInput.focus();
+      this.voiceScoreInput.select();
+    }
+  }
+
+  navigateVoiceStudent(direction) {
+    const list = this._voiceStudentList || [];
+    if (list.length === 0) return;
+    let nextIdx = (this._currentVoiceStudentIndex || 0) + direction;
+    if (nextIdx >= list.length) {
+      this.showToast('បានមកដល់សិស្សចុងក្រោយនៃបញ្ជីហើយ!', 'info');
+      nextIdx = 0; // Wrap around to first
+    } else if (nextIdx < 0) {
+      nextIdx = list.length - 1;
+    }
+    this.selectVoiceStudent(nextIdx);
+  }
+
+  saveCurrentVoiceScore() {
+    const list = this._voiceStudentList || [];
+    if (list.length === 0 || this._currentVoiceStudentIndex === undefined) return;
+    const stu = list[this._currentVoiceStudentIndex];
+    if (!stu) return;
+
+    const period = this.voiceScorePeriodSelect ? this.voiceScorePeriodSelect.value : 'test_early';
+    const subCode = this.voiceScoreSubjectSelect ? this.voiceScoreSubjectSelect.value : '';
+    if (!subCode) {
+      this.showToast('សូមជ្រើសរើសមុខវិជ្ជាជាមុនសិន!', 'warning');
+      return;
+    }
+
+    const opt = this.voiceScoreSubjectSelect.selectedOptions[0];
+    const maxScore = opt ? parseFloat(opt.getAttribute('data-max') || '100') : 100;
+
+    const raw = String(this.voiceScoreInput.value || '').trim();
+    let numVal = null;
+    if (raw !== '') {
+      numVal = parseFloat(raw);
+      if (isNaN(numVal) || numVal < 0 || numVal > maxScore) {
+        this.voiceScoreInput.style.borderColor = '#e11d48';
+        this.showVoiceNotice(`ពិន្ទុមិនត្រឹមត្រូវ! ត្រូវចន្លោះពី 0 ដល់ ${maxScore}`, 'error');
+        this.playAudioChime(250, 0.25);
+        this.voiceScoreInput.focus();
+        return;
+      }
+    }
+
+    // Save score into this.scores
+    this.setSubjectScore(stu.id, period, subCode, numVal);
+
+    // Auto-calculate Khmer if applicable for Grade 7/8/9
+    const gradeKey = this.voiceScoreGradeSelect ? this.voiceScoreGradeSelect.value : (this.activeClass || 'grade_7');
+    if (['grade_7', 'grade_8', 'grade_9'].includes(gradeKey) && ['kh_dict', 'kh_essay'].includes(subCode)) {
+      this.autoCalcKhmerScore(stu.id, period, gradeKey);
+    }
+
+    this.saveState();
+    this.scheduleScoreAutoBackup();
+    this.playAudioChime(750, 0.12);
+
+    // Record to session recent history
+    if (!this._voiceSessionRecentScores) this._voiceSessionRecentScores = [];
+    this._voiceSessionRecentScores.unshift({
+      studentName: stu.khmerName || stu.id,
+      studentId: stu.id,
+      studentClass: stu.class,
+      subjectCode: subCode,
+      score: numVal !== null ? numVal : 'លុប',
+      maxScore: maxScore,
+      time: new Date().toLocaleTimeString('km-KH', { hour: '2-digit', minute: '2-digit', second: '2-digit' })
+    });
+    this.renderVoiceRecentScoresList();
+
+    this.showVoiceNotice(`✓ បានរក្សាទុកពិន្ទុ ${numVal !== null ? numVal : '០'} ជូនសិស្ស «${stu.khmerName}»`, 'success');
+
+    // Auto Next Student if Hands-Free toggle is on
+    const autoNext = this.voiceHandsFreeToggle ? this.voiceHandsFreeToggle.checked : true;
+    if (autoNext) {
+      setTimeout(() => {
+        this.navigateVoiceStudent(1);
+      }, 400);
+    }
+  }
+
+  startVoiceRecognition(mode = 'score') {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('កម្មវិធីរុករក (Browser) របស់អ្នកមិនគាំទ្រ Web Speech API ឡើយ។ សូមប្រើប្រាស់ Google Chrome ឬ Microsoft Edge ដើម្បីប្រើមុខងារសម្លេងនេះ!');
+      return;
+    }
+
+    if (this._voiceRecognitionActive) {
+      this.stopVoiceRecognition();
+      return;
+    }
+
+    try {
+      this._voiceRecognition = new SpeechRecognition();
+      this._voiceRecognition.lang = 'km-KH';
+      this._voiceRecognition.interimResults = false;
+      this._voiceRecognition.maxAlternatives = 3;
+
+      this._voiceRecognitionActive = true;
+      this._voiceRecognitionMode = mode;
+
+      if (this.voiceListeningBanner) {
+        this.voiceListeningBanner.style.display = 'flex';
+        if (this.voiceListeningStatusText) {
+          this.voiceListeningStatusText.textContent = mode === 'search'
+            ? 'កំពុងស្តាប់... សូមនិយាយឈ្មោះសិស្សឥឡូវនេះ (ឧ. "សុខា")'
+            : 'កំពុងស្តាប់... សូមនិយាយពិន្ទុឥឡូវនេះ (ឧ. "ហាសិប", "៧៥")';
+        }
+      }
+
+      if (mode === 'score' && this.btnVoiceMicInputScore) {
+        this.btnVoiceMicInputScore.classList.add('listening');
+        if (this.voiceMicButtonText) this.voiceMicButtonText.textContent = 'កំពុងស្តាប់... ចុចដើម្បីបិទ';
+      } else if (mode === 'search' && this.btnVoiceMicSearchStudent) {
+        this.btnVoiceMicSearchStudent.style.background = '#e11d48';
+      }
+
+      this.playAudioChime(880, 0.15);
+
+      this._voiceRecognition.onresult = (event) => {
+        if (!event.results || !event.results[0]) return;
+        this.playAudioChime(660, 0.12);
+
+        if (this._voiceRecognitionMode === 'search') {
+          const transcript = event.results[0][0].transcript;
+          this.handleVoiceStudentSearchResult(transcript);
+        } else {
+          let chosenTranscript = event.results[0][0].transcript;
+          let chosenNum = null;
+          for (let a = 0; a < event.results[0].length; a++) {
+            const t = (event.results[0][a].transcript || '').trim();
+            const num = this.parseKhmerSpokenNumber(t);
+            if (num !== null && !isNaN(num)) {
+              chosenTranscript = t;
+              chosenNum = num;
+              break;
+            }
+          }
+          this.handleVoiceScoreResult(chosenTranscript, chosenNum);
+        }
+      };
+
+      this._voiceRecognition.onerror = (event) => {
+        console.warn('Voice recognition error:', event.error);
+        if (event.error === 'network') {
+          this.showVoiceNotice('⚠️ មិនមាន Internet សម្រាប់ការស្តាប់សម្លេងលើ Browser នេះឡើយ។ លោកគ្រូអ្នកគ្រូអាចវាយលេខពិន្ទុ រួចចុច Enter ដើម្បីលោតទៅសិស្សបន្ទាប់ (Auto Next) 100% ដោយមិនបាច់មាន Internet ឡើយ!', 'warning');
+        } else if (event.error === 'not-allowed') {
+          this.showVoiceNotice('សូមចុច "Allow" ដើម្បីអនុញ្ញាតឱ្យ Browser ប្រើប្រាស់មេក្រូហ្វូន (Microphone)!', 'warning');
+        } else if (event.error !== 'no-speech') {
+          this.showVoiceNotice(`បញ្ហាសម្លេង៖ ${event.error}`, 'warning');
+        }
+        this.stopVoiceRecognition();
+      };
+
+      this._voiceRecognition.onend = () => {
+        this.stopVoiceRecognition();
+      };
+
+      this._voiceRecognition.start();
+    } catch (err) {
+      console.warn('SpeechRecognition start failed:', err);
+      this.stopVoiceRecognition();
+    }
+  }
+
+  stopVoiceRecognition() {
+    this._voiceRecognitionActive = false;
+    if (this._voiceRecognition) {
+      try { this._voiceRecognition.abort(); } catch (e) { }
+      this._voiceRecognition = null;
+    }
+
+    if (this.voiceListeningBanner) this.voiceListeningBanner.style.display = 'none';
+    if (this.btnVoiceMicInputScore) {
+      this.btnVoiceMicInputScore.classList.remove('listening');
+      if (this.voiceMicButtonText) this.voiceMicButtonText.textContent = 'ចុចដើម្បីនិយាយពិន្ទុ';
+    }
+    if (this.btnVoiceMicSearchStudent) {
+      this.btnVoiceMicSearchStudent.style.background = '#7c3aed';
+    }
+  }
+
+  handleVoiceScoreResult(transcript, preParsedNum = null) {
+    const raw = String(transcript || '').trim();
+
+    // Check voice navigation commands
+    if (/(បន្ទាប់|ទៅមុខ|next)/i.test(raw)) {
+      this.showVoiceNotice('បញ្ជាសម្លេង៖ «សិស្សបន្ទាប់»', 'info');
+      this.navigateVoiceStudent(1);
+      return;
+    }
+    if (/(ថយក្រោយ|មុន|ត្រឡប់|back|previous)/i.test(raw)) {
+      this.showVoiceNotice('បញ្ជាសម្លេង៖ «សិស្សមុន»', 'info');
+      this.navigateVoiceStudent(-1);
+      return;
+    }
+    if (/(រក្សាទុក|save)/i.test(raw)) {
+      this.saveCurrentVoiceScore();
+      return;
+    }
+
+    const parsedNum = preParsedNum !== null ? preParsedNum : this.parseKhmerSpokenNumber(raw);
+    if (parsedNum !== null && !isNaN(parsedNum)) {
+      const opt = this.voiceScoreSubjectSelect.selectedOptions[0];
+      const maxScore = opt ? parseFloat(opt.getAttribute('data-max') || '100') : 100;
+
+      if (parsedNum > maxScore) {
+        this.showVoiceNotice(`ពិន្ទុដែលនិយាយ (${parsedNum}) លើសពីពិន្ទុអតិបរមា (${maxScore})!`, 'error');
+        this.playAudioChime(250, 0.25);
+        return;
+      }
+
+      if (this.voiceScoreInput) {
+        this.voiceScoreInput.value = parsedNum;
+      }
+      this.showVoiceNotice(`សម្លេងបានចាប់យកពិន្ទុ៖ ${parsedNum} (ពីពាក្យ «${raw}»)`, 'success');
+
+      // Auto save if hands free
+      if (this.voiceHandsFreeToggle && this.voiceHandsFreeToggle.checked) {
+        this.saveCurrentVoiceScore();
+      }
+    } else {
+      this.showVoiceNotice(`មិនអាចបកប្រែពិន្ទុពីសម្លេង «${raw}» ឡើយ សូមសាកល្បងម្ដងទៀត!`, 'warning');
+      this.playAudioChime(300, 0.2);
+    }
+  }
+
+  handleVoiceStudentSearchResult(transcript) {
+    const query = String(transcript || '').trim().toLowerCase();
+    this.showVoiceNotice(`សម្លេងឈ្មោះដែលចាប់បាន៖ «${query}»`, 'info');
+    if (this.voiceStudentSearchInput) this.voiceStudentSearchInput.value = query;
+
+    const list = this._voiceStudentList || [];
+    const cleanQ = query.replace(/\s+/g, '');
+
+    const foundIdx = list.findIndex(s => {
+      const name = (s.khmerName || '').toLowerCase().replace(/\s+/g, '');
+      const sid = (s.id || '').toLowerCase();
+      return name.includes(cleanQ) || sid.includes(cleanQ);
+    });
+
+    if (foundIdx !== -1) {
+      this.selectVoiceStudent(foundIdx);
+      this.showVoiceNotice(`✓ បានរកឃើញសិស្ស៖ «${list[foundIdx].khmerName}»`, 'success');
+    } else {
+      this.handleVoiceStudentSearch(query);
+    }
+  }
+
+  handleVoiceStudentSearch(query) {
+    const dropdown = this.voiceStudentSearchResults;
+    if (!dropdown) return;
+
+    if (!query) {
+      dropdown.style.display = 'none';
+      return;
+    }
+
+    const cleanQ = query.toLowerCase().replace(/\s+/g, '');
+    const list = this._voiceStudentList || [];
+    const matches = list.filter(s => {
+      const name = (s.khmerName || '').toLowerCase().replace(/\s+/g, '');
+      const sid = (s.id || '').toLowerCase();
+      return name.includes(cleanQ) || sid.includes(cleanQ);
+    }).slice(0, 8);
+
+    if (matches.length === 0) {
+      dropdown.innerHTML = '<div style="padding: 0.75rem; text-align: center; color: #94a3b8; font-size: 0.85rem;">រកមិនឃើញសិស្សដែលមានឈ្មោះ ឬអត្តលេខនេះឡើយ</div>';
+      dropdown.style.display = 'block';
+      return;
+    }
+
+    dropdown.innerHTML = '';
+    matches.forEach(stu => {
+      const idx = list.findIndex(s => s.id === stu.id);
+      const item = document.createElement('div');
+      item.className = 'voice-search-item';
+      item.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <strong style="color: #1e1b4b;">${stu.khmerName}</strong>
+          <span class="gender-badge ${stu.gender === 'ស្រី' ? 'gender-female' : 'gender-male'}" style="font-size: 0.7rem;">${stu.gender}</span>
+          <span class="badge-room-tag" style="font-size: 0.7rem;">${stu.class || ''}</span>
+        </div>
+        <span style="font-size: 0.75rem; color: #64748b; font-weight: 600;">${stu.id}</span>
+      `;
+      item.addEventListener('click', () => {
+        this.selectVoiceStudent(idx);
+        dropdown.style.display = 'none';
+        if (this.voiceStudentSearchInput) this.voiceStudentSearchInput.value = '';
+        if (this.btnClearVoiceStudentSearch) this.btnClearVoiceStudentSearch.style.display = 'none';
+      });
+      dropdown.appendChild(item);
+    });
+    dropdown.style.display = 'block';
+  }
+
+  showVoiceNotice(msg, type = 'info') {
+    const alertEl = this.voiceNoticeAlert;
+    if (!alertEl) return;
+    alertEl.textContent = msg;
+    alertEl.style.display = 'block';
+    if (type === 'success') {
+      alertEl.style.background = '#f0fdf4';
+      alertEl.style.color = '#15803d';
+      alertEl.style.border = '1px solid #bbf7d0';
+    } else if (type === 'error') {
+      alertEl.style.background = '#fef2f2';
+      alertEl.style.color = '#b91c1c';
+      alertEl.style.border = '1px solid #fecaca';
+    } else if (type === 'warning') {
+      alertEl.style.background = '#fffbeb';
+      alertEl.style.color = '#b45309';
+      alertEl.style.border = '1px solid #fde68a';
+    } else {
+      alertEl.style.background = '#eff6ff';
+      alertEl.style.color = '#1d4ed8';
+      alertEl.style.border = '1px solid #bfdbfe';
+    }
+
+    if (this._voiceNoticeTimeout) clearTimeout(this._voiceNoticeTimeout);
+    this._voiceNoticeTimeout = setTimeout(() => {
+      this.hideVoiceNotice();
+    }, 6000);
+  }
+
+  hideVoiceNotice() {
+    if (this.voiceNoticeAlert) this.voiceNoticeAlert.style.display = 'none';
+  }
+
+  renderVoiceRecentScoresList() {
+    const listEl = this.voiceRecentScoresList;
+    if (!listEl) return;
+    const scores = this._voiceSessionRecentScores || [];
+
+    if (this.voiceSessionCountBadge) {
+      this.voiceSessionCountBadge.textContent = `បញ្ចូលបាន ${scores.length} នាក់`;
+    }
+
+    if (scores.length === 0) {
+      listEl.innerHTML = '<div style="text-align: center; color: #94a3b8; font-size: 0.8rem; padding: 0.5rem;">មិនទាន់មានពិន្ទុបញ្ចូលក្នុងវេននេះឡើយ</div>';
+      return;
+    }
+
+    listEl.innerHTML = '';
+    scores.forEach((item, idx) => {
+      const row = document.createElement('div');
+      row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 0.35rem 0.65rem; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 0.82rem;';
+      row.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <span style="font-weight: 700; color: #7c3aed;">#${idx + 1}</span>
+          <strong style="color: #1e293b;">${item.studentName}</strong>
+          <span class="badge-room-tag" style="font-size: 0.7rem; padding: 1px 5px;">${item.studentClass || ''}</span>
+          <span style="color: #64748b; font-size: 0.75rem;">(${item.studentId})</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.65rem;">
+          <span style="font-weight: 800; color: #059669; font-size: 0.95rem;">${item.score} / ${item.maxScore}</span>
+          <span style="font-size: 0.72rem; color: #94a3b8;">${item.time}</span>
+        </div>
+      `;
+      listEl.appendChild(row);
+    });
+  }
+
+  // ==========================================
+  // PERIOD SCORE CLEANER & BACKUP MANAGER
+  // ==========================================
+  openPeriodScoreManagerModal(defaultPeriod = null) {
+    if (!this.periodScoreModal) {
+      this.periodScoreModal = document.getElementById('periodScoreModal');
+    }
+    if (!this.periodScoreModal) return;
+
+    const targetPeriod = defaultPeriod || (
+      this.currentPeriod && !['student_info', 'overview_stats', 'curriculum_setting'].includes(this.currentPeriod)
+        ? this.currentPeriod
+        : 'test_early'
+    );
+
+    if (this.periodScoreSelectPeriod) {
+      this.periodScoreSelectPeriod.value = targetPeriod;
+    }
+    if (this.periodScoreSelectGrade) {
+      this.periodScoreSelectGrade.value = this.activeClass || 'ALL';
+    }
+
+    this.updatePeriodScoreManagerStats();
+    this.periodScoreModal.classList.add('open');
+  }
+
+  closePeriodScoreManagerModal() {
+    if (this.periodScoreModal) {
+      this.periodScoreModal.classList.remove('open');
+    }
+  }
+
+  updatePeriodScoreManagerStats() {
+    const period = this.periodScoreSelectPeriod ? this.periodScoreSelectPeriod.value : 'test_early';
+    const grade = this.periodScoreSelectGrade ? this.periodScoreSelectGrade.value : 'ALL';
+
+    const targetStudents = (this.students || []).filter(s => {
+      if (grade === 'ALL') return true;
+      return this.studentMatchesGrade(s, grade);
+    });
+
+    let studentWithScores = 0;
+    const subjectsWithScores = new Set();
+    let totalScoreEntries = 0;
+
+    targetStudents.forEach(stu => {
+      const stuScores = this.scores[stu.id];
+      if (!stuScores) return;
+
+      let hasScoreForStu = false;
+
+      const checkPeriod = (pKey) => {
+        const pScores = stuScores[pKey];
+        if (!pScores || typeof pScores !== 'object') return;
+        Object.keys(pScores).forEach(subCode => {
+          const val = pScores[subCode];
+          if (val !== undefined && val !== null && val !== '') {
+            hasScoreForStu = true;
+            subjectsWithScores.add(subCode);
+            totalScoreEntries++;
+          }
+        });
+      };
+
+      if (period === 'ALL') {
+        Object.keys(stuScores).forEach(pKey => checkPeriod(pKey));
+      } else {
+        checkPeriod(period);
+        // Also check alias keys for early test or semester exams
+        if (period === 'test_early') {
+          checkPeriod('year_start_test');
+          checkPeriod('year_start');
+        } else if (period === 'sem1_exam') {
+          checkPeriod('sem1');
+        } else if (period === 'sem2_exam') {
+          checkPeriod('sem2');
+        }
+      }
+
+      if (hasScoreForStu) {
+        studentWithScores++;
+      }
+    });
+
+    if (this.periodScoreStatsStudents) {
+      this.periodScoreStatsStudents.textContent = `${studentWithScores} នាក់`;
+    }
+    if (this.periodScoreStatsSubjects) {
+      this.periodScoreStatsSubjects.textContent = `${subjectsWithScores.size} មុខ`;
+    }
+    if (this.periodScoreStatsEntries) {
+      this.periodScoreStatsEntries.textContent = totalScoreEntries.toLocaleString();
+    }
+  }
+
+  handlePeriodScoreBackup() {
+    const period = this.periodScoreSelectPeriod ? this.periodScoreSelectPeriod.value : 'test_early';
+    const grade = this.periodScoreSelectGrade ? this.periodScoreSelectGrade.value : 'ALL';
+
+    const targetStudents = (this.students || []).filter(s => {
+      if (grade === 'ALL') return true;
+      return this.studentMatchesGrade(s, grade);
+    });
+
+    const exportData = {
+      exportType: 'SMS_PERIOD_SCORE_BACKUP',
+      exportedAt: new Date().toISOString(),
+      academicYear: this.activeYear || '2026-2027',
+      period: period,
+      grade: grade,
+      studentCount: targetStudents.length,
+      scores: {}
+    };
+
+    targetStudents.forEach(stu => {
+      const stuScores = this.scores[stu.id];
+      if (!stuScores) return;
+
+      if (period === 'ALL') {
+        exportData.scores[stu.id] = JSON.parse(JSON.stringify(stuScores));
+      } else {
+        exportData.scores[stu.id] = {};
+        if (stuScores[period]) {
+          exportData.scores[stu.id][period] = JSON.parse(JSON.stringify(stuScores[period]));
+        }
+        if (period === 'test_early') {
+          if (stuScores['year_start_test']) exportData.scores[stu.id]['year_start_test'] = JSON.parse(JSON.stringify(stuScores['year_start_test']));
+          if (stuScores['year_start']) exportData.scores[stu.id]['year_start'] = JSON.parse(JSON.stringify(stuScores['year_start']));
+        } else if (period === 'sem1_exam') {
+          if (stuScores['sem1']) exportData.scores[stu.id]['sem1'] = JSON.parse(JSON.stringify(stuScores['sem1']));
+        } else if (period === 'sem2_exam') {
+          if (stuScores['sem2']) exportData.scores[stu.id]['sem2'] = JSON.parse(JSON.stringify(stuScores['sem2']));
+        }
+      }
+    });
+
+    const jsonStr = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const dateStr = new Date().toISOString().slice(0, 10);
+    a.download = `SMS_Backup_Scores_${period}_${grade}_${dateStr}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.showToast(`បានទាញយក Backup ពិន្ទុ (${period}) ជោគជ័យ!`, 'success');
+  }
+
+  async handlePeriodScoreClear() {
+    const period = this.periodScoreSelectPeriod ? this.periodScoreSelectPeriod.value : 'test_early';
+    const grade = this.periodScoreSelectGrade ? this.periodScoreSelectGrade.value : 'ALL';
+
+    const periodName = (PERIOD_DEFINITIONS[period] && PERIOD_DEFINITIONS[period].title) || (period === 'ALL' ? 'គ្រប់ខែ និងឆមាសទាំងអស់' : period);
+    const gradeName = (GRADE_PRESETS[grade] && GRADE_PRESETS[grade].label) || (grade === 'ALL' ? 'គ្រប់កម្រិតថ្នាក់' : grade);
+
+    const targetStudents = (this.students || []).filter(s => {
+      if (grade === 'ALL') return true;
+      return this.studentMatchesGrade(s, grade);
+    });
+
+    const confirmMsg = `⚠️ តើអ្នកពិតជាចង់សម្អាតពិន្ទុចេញមែនទេ?\n\n• ខែ/សម័យប្រឡង៖ ${periodName}\n• កម្រិតថ្នាក់៖ ${gradeName}\n• សិស្សដែលត្រូវសម្អាត៖ ${targetStudents.length} នាក់\n\nចំណាំ៖ ប្រព័ន្ធនឹងបង្កើត Backup សុវត្ថិភាពមួយដោយស្វ័យប្រវត្តិកាលមុននឹងលុប។`;
+
+    if (!confirm(confirmMsg)) {
+      return;
+    }
+
+    // 1. Auto Backup snapshot before clearing
+    await this.createAutoBackup(`មុនពេលសម្អាតពិន្ទុ ${periodName} (${gradeName})`);
+
+    // 2. Clear scores
+    let clearedCount = 0;
+    targetStudents.forEach(stu => {
+      const stuScores = this.scores[stu.id];
+      if (!stuScores) return;
+
+      if (period === 'ALL') {
+        this.scores[stu.id] = {};
+        clearedCount++;
+      } else {
+        let hadScores = false;
+        if (stuScores[period]) {
+          delete stuScores[period];
+          hadScores = true;
+        }
+        if (period === 'test_early') {
+          if (stuScores['year_start_test']) { delete stuScores['year_start_test']; hadScores = true; }
+          if (stuScores['year_start']) { delete stuScores['year_start']; hadScores = true; }
+        } else if (period === 'sem1_exam') {
+          if (stuScores['sem1']) { delete stuScores['sem1']; hadScores = true; }
+        } else if (period === 'sem2_exam') {
+          if (stuScores['sem2']) { delete stuScores['sem2']; hadScores = true; }
+        }
+        if (hadScores) clearedCount++;
+      }
+    });
+
+    // 3. Save state
+    await this.saveState(false);
+
+    // 4. Update UI
+    this.updatePeriodScoreManagerStats();
+    this.renderCurrentView();
+    this.updateKPIOverview();
+
+    this.showToast(`បានសម្អាតពិន្ទុ (${periodName}) ចំនួន ${clearedCount} នាក់ដោយជោគជ័យ!`, 'success');
+    this.closePeriodScoreManagerModal();
+  }
+
+  async handleWipeAllScoresEverywhere() {
+    const confirmMsg = `⚠️ តើអ្នកពិតជាចង់សម្អាតពិន្ទុទាំងអស់ (គ្រប់ខែ គ្រប់ឆមាស និងគ្រប់កម្រិតថ្នាក់) ចេញពីប្រព័ន្ធមែនទេ?\n\n• ពិន្ទុសិស្សទាំងអស់នឹងត្រូវសម្អាតឱ្យនៅទទេ (០ ពិន្ទុ) សម្រាប់ចាប់ផ្តើមបញ្ចូលពិន្ទុពិតប្រាកដ\n• បញ្ជីឈ្មោះសិស្ស ថ្នាក់រៀន និងកម្មវិធីសិក្សានៅរក្សាដដែល ១០០%\n\nចំណាំ៖ ប្រព័ន្ធនឹងបង្កើត Auto Backup សុវត្ថិភាពមួយមុនពេលសម្អាត។`;
+    if (!confirm(confirmMsg)) return;
+
+    await this.createAutoBackup('មុនពេលសម្អាតពិន្ទុទាំងអស់ (Wipe All Scores 100%)');
+    this.scores = {};
+    await this.saveState(false);
+    this.updatePeriodScoreManagerStats();
+    this.renderCurrentView();
+    this.updateKPIOverview();
+    this.showToast('បានសម្អាតពិន្ទុទាំងអស់ចេញពីប្រព័ន្ធដោយជោគជ័យ!', 'success');
+    this.closePeriodScoreManagerModal();
+  }
+
+  async openBackupModal() {
+    const modal = document.getElementById('backupModal');
+    if (!modal) return;
+    const countEl = document.getElementById('backupModalStudentCount');
+    if (countEl) countEl.textContent = `សិស្សសរុប: ${this.students.length} នាក់`;
+    await this.renderBackupHistoryTable();
+    modal.classList.add('open');
+  }
+
+  closeBackupModal() {
+    const modal = document.getElementById('backupModal');
+    if (modal) modal.classList.remove('open');
+  }
+
+  async renderBackupHistoryTable() {
+    const tbody = document.getElementById('backupHistoryTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 1rem; color: var(--text-muted);">កំពុងផ្ទុកប្រវត្តិ...</td></tr>';
+
+    const backups = await AppStorage.listBackups();
+    if (!backups || backups.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 1.5rem; color: var(--text-muted);"><i class="ri-inbox-line" style="font-size: 1.5rem; display:block; margin-bottom: 0.25rem;"></i>មិនទាន់មានប្រវត្តិ Auto Backup ឡើយ</td></tr>';
+      return;
+    }
+
+    tbody.innerHTML = '';
+    backups.forEach((b, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="text-align: center; font-weight: 600;">${idx + 1}</td>
+        <td><strong style="color: var(--primary);">${b.displayDate || b.timestamp}</strong></td>
+        <td><span>${b.reason || 'Auto-Backup'}</span></td>
+        <td style="text-align: center;"><span class="badge-room-tag">${b.studentCount || 0} នាក់</span></td>
+        <td style="text-align: center;">
+          <button type="button" class="btn btn-outline btn-sm btn-restore-backup" data-id="${b.id}" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; color: #15803d; border-color: #86efac;" title="ស្តារមកចំណុចនេះ">
+            <i class="ri-restart-line"></i> ស្តារ
+          </button>
+          <button type="button" class="btn btn-outline btn-sm btn-del-backup" data-id="${b.id}" style="padding: 0.2rem 0.4rem; font-size: 0.75rem; color: #dc2626; border-color: #fca5a5;" title="លុប">
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+
+    tbody.querySelectorAll('.btn-restore-backup').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        this.restoreFromBackup(id);
+      });
+    });
+
+    tbody.querySelectorAll('.btn-del-backup').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const id = e.currentTarget.getAttribute('data-id');
+        if (confirm('តើអ្នកពិតជាចង់លុបចំណុច Backup នេះមែនទេ?')) {
+          await AppStorage.deleteBackup(id);
+          this.renderBackupHistoryTable();
+          this.showToast('បានលុបចំណុច Backup រួចរាល់!', 'info');
+        }
+      });
+    });
+  }
+
+  async restoreFromBackup(backupId) {
+    const backups = await AppStorage.listBackups();
+    const target = backups.find(b => b.id === backupId);
+    if (!target || !target.data) {
+      this.showToast('រកមិនឃើញទិន្នន័យ Backup នេះឡើយ!', 'error');
+      return;
+    }
+
+    if (confirm(`តើអ្នកពិតជាចង់ស្តារទិន្នន័យត្រឡប់ទៅចំណុច "${target.displayDate}" (${target.studentCount} នាក់) មែនទេ?`)) {
+      this.applyParsedState(target.data);
+      this.saveState(false);
+      this.renderNavigation();
+      this.renderCurrentView();
+      this.updateKPIOverview();
+      this.closeBackupModal();
+      this.showToast(`បានស្តារទិន្នន័យត្រឡប់មកវិញជោគជ័យ (${target.studentCount} នាក់)!`, 'success');
+    }
+  }
+
+  extractStateFromSQLiteDb(db) {
+    // 1. Check if full_state JSON snapshot exists in app_state table
+    try {
+      const stateRes = db.exec(`SELECT value FROM app_state WHERE key = 'full_state' LIMIT 1;`);
+      if (stateRes && stateRes.length > 0 && stateRes[0].values && stateRes[0].values.length > 0) {
+        const rawJson = stateRes[0].values[0][0];
+        if (rawJson) {
+          const parsed = JSON.parse(rawJson);
+          if (parsed && Array.isArray(parsed.students) && parsed.students.length > 0) {
+            return parsed;
+          }
+        }
+      }
+    } catch (_) {
+      // app_state table may not exist in older or external .db files; fall back to relational tables
+    }
+
+    // 2. Reconstruct state from relational tables (students, subjects, scores, exam_arrangements)
+    const reconstructed = {};
+
+    // Read students
+    try {
+      let stuRows = null;
+      try {
+        const fullRes = db.exec(`SELECT id, khmer_name, latin_name, gender, dob, class, class_type, phone, guardian, address, province_code, district_code, commune_code, village_code FROM students;`);
+        if (fullRes && fullRes.length > 0 && fullRes[0].values) {
+          reconstructed.students = fullRes[0].values.map(row => ({
+            id: row[0] || '',
+            khmerName: row[1] || '',
+            latinName: row[2] || '',
+            gender: row[3] || '',
+            dob: row[4] || '',
+            class: row[5] || '',
+            classType: row[6] || '',
+            phone: row[7] || '',
+            guardian: row[8] || '',
+            address: row[9] || '',
+            provinceCode: row[10] || '',
+            districtCode: row[11] || '',
+            communeCode: row[12] || '',
+            villageCode: row[13] || ''
+          }));
+        }
+      } catch (_) {
+        // Fallback for older schemas without geography columns
+        const stuRes = db.exec(`SELECT id, khmer_name, latin_name, gender, dob, class, class_type, phone, guardian, address FROM students;`);
+        if (stuRes && stuRes.length > 0 && stuRes[0].values) {
+          reconstructed.students = stuRes[0].values.map(row => ({
+            id: row[0] || '',
+            khmerName: row[1] || '',
+            latinName: row[2] || '',
+            gender: row[3] || '',
+            dob: row[4] || '',
+            class: row[5] || '',
+            classType: row[6] || '',
+            phone: row[7] || '',
+            guardian: row[8] || '',
+            address: row[9] || ''
+          }));
+        }
+      }
+    } catch (e) {
+      console.warn('Error reading students table from SQLite:', e);
+    }
+
+    // Read subjects
+    try {
+      const subRes = db.exec(`SELECT code, name, max_score, coefficient, is_enabled FROM subjects;`);
+      if (subRes && subRes.length > 0 && subRes[0].values && subRes[0].values.length > 0) {
+        reconstructed.subjects = subRes[0].values.map(row => ({
+          code: row[0] || '',
+          name: row[1] || '',
+          maxScore: parseFloat(row[2]) || 100,
+          coef: parseFloat(row[3]) || 1,
+          enabled: Boolean(row[4])
+        }));
+      }
+    } catch (_) { }
+
+    // Read scores
+    try {
+      const scoreRes = db.exec(`SELECT student_id, period_key, subject_code, score FROM scores;`);
+      if (scoreRes && scoreRes.length > 0 && scoreRes[0].values) {
+        const scoresObj = {};
+        scoreRes[0].values.forEach(row => {
+          const [stuId, periodKey, subCode, scoreVal] = row;
+          if (!stuId || !periodKey || !subCode) return;
+          if (!scoresObj[stuId]) scoresObj[stuId] = {};
+          if (!scoresObj[stuId][periodKey]) scoresObj[stuId][periodKey] = {};
+          scoresObj[stuId][periodKey][subCode] = parseFloat(scoreVal) || 0;
+        });
+        reconstructed.scores = scoresObj;
+      }
+    } catch (_) { }
+
+    // Read exam_arrangements
+    try {
+      const examRes = db.exec(`SELECT student_id, khmer_name, room_number, desk_number, secret_code, grade, status FROM exam_arrangements;`);
+      if (examRes && examRes.length > 0 && examRes[0].values) {
+        const stuMap = new Map((reconstructed.students || []).map(s => [s.id, s]));
+        reconstructed.examArrangements = examRes[0].values.map(row => {
+          const stu = stuMap.get(row[0]) || {};
+          return {
+            studentId: row[0] || '',
+            khmerName: row[1] || stu.khmerName || '',
+            latinName: stu.latinName || '',
+            gender: stu.gender || '',
+            dob: stu.dob || '',
+            roomNumber: row[2] || '01',
+            deskNumber: row[3] || '01',
+            secretCode: row[4] || '',
+            grade: row[5] || stu.class || '',
+            class: stu.class || row[5] || '',
+            classType: stu.classType || '',
+            status: row[6] || 'ធម្មតា'
+          };
+        });
+      }
+    } catch (_) { }
+
+    return reconstructed;
+  }
+
+  async handleRestoreBackupFile(file) {
+    if (!file) return;
+    const fileName = file.name.toLowerCase();
+
+    if (fileName.endsWith('.json')) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const parsed = JSON.parse(e.target.result);
+          if (parsed && Array.isArray(parsed.students)) {
+            if (confirm(`បានរកឃើញទិន្នន័យសិស្ស ${parsed.students.length} នាក់។ តើអ្នកចង់ស្តារទិន្នន័យនេះមែនទេ?`)) {
+              this.applyParsedState(parsed);
+              this.saveState(true);
+              this.renderNavigation();
+              this.renderCurrentView();
+              this.updateKPIOverview();
+              this.closeBackupModal();
+              this.showToast(`បានស្តារទិន្នន័យពីឯកសារ JSON ជោគជ័យ!`, 'success');
+            }
+          } else {
+            this.showToast('ឯកសារ JSON មិនត្រូវទម្រង់ទិន្នន័យសិស្សឡើយ!', 'error');
+          }
+        } catch (err) {
+          this.showToast('មិនអាចអានឯកសារ JSON បានឡើយ!', 'error');
+        }
+      };
+      reader.readAsText(file);
+    } else if (fileName.endsWith('.db') || fileName.endsWith('.sqlite') || fileName.endsWith('.sqlite3')) {
+      if (!this.SQL) {
+        await this.initSQLiteEngine();
+      }
+      if (!this.SQL) {
+        this.showToast('មិនអាចដំណើរការម៉ាស៊ីន SQLite WASM បានឡើយ!', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const uint8Array = new Uint8Array(e.target.result);
+          const importedDb = new this.SQL.Database(uint8Array);
+          const parsed = this.extractStateFromSQLiteDb(importedDb);
+          importedDb.close();
+
+          if (!parsed.students || parsed.students.length === 0) {
+            this.showToast('ឯកសារ SQLite (.db) នេះមិនមានទិន្នន័យសិស្សនៅខាងក្នុងឡើយ (0 នាក់)!', 'warning');
+            return;
+          }
+
+          if (confirm(`បានរកឃើញទិន្នន័យសិស្ស ${parsed.students.length} នាក់ ពីឯកសារ SQLite (.db)។ តើអ្នកចង់ស្តារទិន្នន័យនេះមែនទេ?`)) {
+            this.applyParsedState(parsed);
+            this.saveState(true);
+            this.syncToSQLite();
+            this.renderNavigation();
+            this.renderCurrentView();
+            this.updateKPIOverview();
+            this.closeBackupModal();
+            this.showToast(`បានស្តារទិន្នន័យសិស្ស ${parsed.students.length} នាក់ ពីឯកសារ SQLite (.db) ជោគជ័យ!`, 'success');
+          }
+        } catch (err) {
+          console.error('SQLite .db restore error:', err);
+          this.showToast('មិនអាចអានឯកសារ SQLite (.db) បានឡើយ! សូមពិនិត្យទម្រង់ឯកសារ។', 'error');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else if (fileName.endsWith('.sql')) {
+      if (!this.SQL) {
+        await this.initSQLiteEngine();
+      }
+      if (!this.SQL) {
+        this.showToast('មិនអាចដំណើរការម៉ាស៊ីន SQLite WASM បានឡើយ!', 'error');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const sqlText = e.target.result;
+          const tempDb = new this.SQL.Database();
+          tempDb.run(sqlText);
+          const parsed = this.extractStateFromSQLiteDb(tempDb);
+          tempDb.close();
+
+          if (!parsed.students || parsed.students.length === 0) {
+            this.showToast('ឯកសារ SQL (.sql) នេះមិនមានទិន្នន័យសិស្សនៅខាងក្នុងឡើយ (0 នាក់)!', 'warning');
+            return;
+          }
+
+          if (confirm(`បានរកឃើញទិន្នន័យសិស្ស ${parsed.students.length} នាក់ ពីឯកសារ SQL (.sql)។ តើអ្នកចង់ស្តារទិន្នន័យនេះមែនទេ?`)) {
+            this.applyParsedState(parsed);
+            this.saveState(true);
+            this.syncToSQLite();
+            this.renderNavigation();
+            this.renderCurrentView();
+            this.updateKPIOverview();
+            this.closeBackupModal();
+            this.showToast(`បានស្តារទិន្នន័យសិស្ស ${parsed.students.length} នាក់ ពីឯកសារ SQL (.sql) ជោគជ័យ!`, 'success');
+          }
+        } catch (err) {
+          console.error('SQL script restore error:', err);
+          this.showToast('មិនអាចអានឯកសារ SQL (.sql) បានឡើយ!', 'error');
+        }
+      };
+      reader.readAsText(file);
+    } else {
+      this.showToast('សូមជ្រើសរើសឯកសារប្រភេទ .db, .sqlite, .sql ឬ .json!', 'error');
+    }
+  }
+
+  getDefaultClassSections() {
+    return [
+      { id: 'grade_7', name: '7', type: 'general', gradeLevel: 'grade_7', sections: ['A', 'B', 'C'], status: 'active' },
+      { id: 'grade_8', name: '8', type: 'general', gradeLevel: 'grade_8', sections: ['A', 'B', 'C'], status: 'active' },
+      { id: 'grade_9', name: '9', type: 'general', gradeLevel: 'grade_9', sections: ['A', 'B', 'C'], status: 'active' },
+      { id: 'grade_10', name: '10', type: 'general', gradeLevel: 'grade_10', sections: ['A', 'B', 'C'], status: 'active' },
+      { id: 'grade_11_sci', name: '11 វិទ្យាសាស្ត្រ', type: 'science', gradeLevel: 'grade_11_sci', sections: ['A', 'B', 'C'], status: 'active' },
+      { id: 'grade_11_soc', name: '11 វិទ្យាសាស្ត្រសង្គម', type: 'social', gradeLevel: 'grade_11_soc', sections: ['D', 'E'], status: 'active' },
+      { id: 'grade_12_sci', name: '12 វិទ្យាសាស្ត្រ', type: 'science', gradeLevel: 'grade_12_sci', sections: ['A', 'B', 'C'], status: 'active' },
+      { id: 'grade_12_soc', name: '12 វិទ្យាសាស្ត្រសង្គម', type: 'social', gradeLevel: 'grade_12_soc', sections: ['D', 'E'], status: 'active' }
+    ];
+  }
+
+  initDOMElements() {
+    // Header & Sidebar
+    this.sidebar = document.getElementById('appSidebar');
+    this.sidebarToggleBtn = document.getElementById('sidebarToggleBtn');
+    this.themeToggleBtn = document.getElementById('themeToggleBtn');
+    this.academicYearSelect = document.getElementById('academicYearSelect');
+    this.classSelect = document.getElementById('classSelect');
+    this.sidebarStudentCount = document.getElementById('sidebarStudentCount');
+
+    // View Titles, Dropdowns & Badges
+    this.currentViewTitle = document.getElementById('currentViewTitle');
+    this.currentViewDesc = document.getElementById('currentViewDesc');
+    this.currentPeriodIcon = document.getElementById('currentPeriodIcon');
+    this.periodHeaderSelectWrapper = document.getElementById('periodHeaderSelectWrapper');
+    this.periodHeaderSelect = document.getElementById('periodHeaderSelect');
+    this.navMonthlyBtn = document.getElementById('navMonthlyBtn');
+    this.navSem1Btn = document.getElementById('navSem1Btn');
+    this.navSem2Btn = document.getElementById('navSem2Btn');
+    this.navYearlyBtn = document.getElementById('navYearlyBtn');
+    this.studentViewActions = document.getElementById('studentViewActions');
+    this.gradeViewActions = document.getElementById('gradeViewActions');
+
+    // KPI Stat Values & Labels
+    this.statsCardsSection = document.getElementById('statsCardsSection');
+    this.tableToolbar = document.getElementById('tableToolbar') || document.querySelector('.table-toolbar');
+    this.statLabelTotal = document.getElementById('statLabelTotal');
+    this.statLabelPassed = document.getElementById('statLabelPassed');
+    this.statLabelFailed = document.getElementById('statLabelFailed');
+    this.statLabelAverage = document.getElementById('statLabelAverage');
+
+    this.statTotalStudents = document.getElementById('statTotalStudents');
+    this.statFemaleStudents = document.getElementById('statFemaleStudents');
+    this.statPassedStudents = document.getElementById('statPassedStudents');
+    this.statPassRate = document.getElementById('statPassRate');
+    this.statFailedStudents = document.getElementById('statFailedStudents');
+    this.statFailRate = document.getElementById('statFailRate');
+    this.statClassAverage = document.getElementById('statClassAverage');
+    this.statTopStudent = document.getElementById('statTopStudent');
+
+    // Panels
+    this.studentInfoPanel = document.getElementById('studentInfoPanel');
+    this.gradeSheetPanel = document.getElementById('gradeSheetPanel');
+    this.overviewStatsPanel = document.getElementById('overviewStatsPanel');
+    this.curriculumConfigPanel = document.getElementById('curriculumConfigPanel');
+    this.curriculumGradeSelect = document.getElementById('curriculumGradeSelect');
+    this.curriculumProgramSelect = document.getElementById('curriculumProgramSelect');
+    this.curriculumConfigTableBody = document.getElementById('curriculumConfigTableBody');
+    this.btnAddCurriculumSubject = document.getElementById('btnAddCurriculumSubject');
+    this.btnSaveCurriculumConfig = document.getElementById('btnSaveCurriculumConfig');
+    this.btnResetCurriculumConfig = document.getElementById('btnResetCurriculumConfig');
+    this.navCurriculumSettingBtn = document.getElementById('navCurriculumSettingBtn');
+    this.periodHelperBanner = document.getElementById('periodHelperBanner');
+    this.periodHelperText = document.getElementById('periodHelperText');
+
+    // Tables
+    this.studentTableBody = document.getElementById('studentTableBody');
+    this.gradeTableHead = document.getElementById('gradeTableHead');
+    this.gradeTableBody = document.getElementById('gradeTableBody');
+
+    // Filters & Search
+    this.searchInput = document.getElementById('searchInput');
+    this.clearSearchBtn = document.getElementById('clearSearchBtn');
+    this.classSectionFilterEl = document.getElementById('classSectionFilter');
+    this.genderFilterEl = document.getElementById('genderFilter');
+    this.mentionFilterEl = document.getElementById('mentionFilter');
+    this.mentionFilterWrapper = document.getElementById('mentionFilterWrapper');
+
+    // Auto Class Assign Modal Elements (ការបែងចែកថ្នាក់ស្វ័យប្រវត្តិ)
+    this.autoClassAssignModal = document.getElementById('autoClassAssignModal');
+    this.btnOpenAutoClassAssignModal = document.getElementById('btnOpenAutoClassAssignModal');
+    this.btnCloseAutoClassAssignModal = document.getElementById('btnCloseAutoClassAssignModal');
+    this.btnCancelAutoClassAssignModal = document.getElementById('btnCancelAutoClassAssignModal');
+    this.assignStageSelect = document.getElementById('assignStageSelect');
+    this.assignGradeSelect = document.getElementById('assignGradeSelect');
+    this.assignMethodSelect = document.getElementById('assignMethodSelect');
+    this.assignCapacityGroup = document.getElementById('assignCapacityGroup');
+    this.assignMaxPerClassInput = document.getElementById('assignMaxPerClassInput');
+    this.assignClassListInput = document.getElementById('assignClassListInput');
+    this.btnPreviewAutoClassAssign = document.getElementById('btnPreviewAutoClassAssign');
+    this.assignSummaryStats = document.getElementById('assignSummaryStats');
+    this.assignPreviewClassFilter = document.getElementById('assignPreviewClassFilter');
+    this.assignPreviewTableBody = document.getElementById('assignPreviewTableBody');
+    this.btnPrintClassAssignment = document.getElementById('btnPrintClassAssignment');
+    this.btnExportClassAssignmentCSV = document.getElementById('btnExportClassAssignmentCSV');
+    this.btnUndoClassAssignment = document.getElementById('btnUndoClassAssignment');
+    this.btnConfirmClassAssignment = document.getElementById('btnConfirmClassAssignment');
+    this.pendingClassAssignments = [];
+
+    // Modals
+    this.studentModal = document.getElementById('studentModal');
+    this.studentForm = document.getElementById('studentForm');
+    this.studentClassTypeInput = document.getElementById('studentClassTypeInput');
+    this.subjectModal = document.getElementById('subjectModal');
+    this.transcriptModal = document.getElementById('transcriptModal');
+    this.singleTranscriptContent = document.getElementById('singleTranscriptContent');
+    this.toastContainer = document.getElementById('toastContainer');
+
+    // Student Import Modal Elements
+    this.importStudentModal = document.getElementById('importStudentModal');
+    this.btnOpenImportStudentModal = document.getElementById('btnOpenImportStudentModal');
+    this.btnCloseImportModal = document.getElementById('btnCloseImportModal');
+    this.btnCancelImportModal = document.getElementById('btnCancelImportModal');
+    this.btnDownloadImportTemplate = document.getElementById('btnDownloadImportTemplate');
+    this.studentFileDropzone = document.getElementById('studentFileDropzone');
+    this.importStudentFileInput = document.getElementById('importStudentFileInput');
+    this.importPreviewContainer = document.getElementById('importPreviewContainer');
+    this.importCountBadge = document.getElementById('importCountBadge');
+    this.importPreviewCount = this.importCountBadge;
+    this.importFileNameBadge = document.getElementById('importFileNameBadge');
+    this.importFileStatus = this.importFileNameBadge;
+    this.importPreviewTableBody = document.getElementById('importPreviewTableBody');
+    this.importPreviewBody = this.importPreviewTableBody;
+    this.btnConfirmImportStudents = document.getElementById('btnConfirmImportStudents');
+    this.importDefaultClass = document.getElementById('importDefaultClass');
+    this.importDefaultGrade = this.importDefaultClass;
+    this.importDefaultClassType = document.getElementById('importDefaultClassType');
+    this.btnTplGrade7 = document.getElementById('btnTplGrade7');
+    this.btnTplGrade89 = document.getElementById('btnTplGrade89');
+    this.btnTplGrade1012 = document.getElementById('btnTplGrade1012');
+    this.btnTplFull = document.getElementById('btnTplFull');
+    this.parsedStudentsToImport = [];
+    this.parsedImportStudents = [];
+
+    // Student Export Modal Elements
+    this.btnExportStudentsCSV = document.getElementById('btnExportStudentsCSV');
+    this.exportStudentModal = document.getElementById('exportStudentModal');
+    this.btnCloseExportModal = document.getElementById('btnCloseExportModal');
+    this.btnCancelExportModal = document.getElementById('btnCancelExportModal');
+    this.btnConfirmExportExcel = document.getElementById('btnConfirmExportExcel');
+    this.btnConfirmExportCSV = document.getElementById('btnConfirmExportCSV');
+    this.exportGradeTemplateSelect = document.getElementById('exportGradeTemplateSelect');
+    this.exportClassScopeSelect = document.getElementById('exportClassScopeSelect');
+    this.exportColumnsPreviewText = document.getElementById('exportColumnsPreviewText');
+
+    // Exam Preparation Elements (ការរៀបចំការប្រឡង)
+    this.examDateConfigPanel = document.getElementById('examDateConfigPanel');
+    this.reportsPanel = document.getElementById('reportsPanel');
+    this.examDateConfigPeriodSelect = document.getElementById('examDateConfigPeriodSelect');
+    this.btnLoadExamDateConfigTable = document.getElementById('btnLoadExamDateConfigTable');
+    this.btnSaveExamDateConfigs = document.getElementById('btnSaveExamDateConfigs');
+    this.btnCopyExamDateToAll = document.getElementById('btnCopyExamDateToAll');
+    this.btnToggleActiveExamPeriod = document.getElementById('btnToggleActiveExamPeriod');
+    this.btnToggleActivePeriodText = document.getElementById('btnToggleActivePeriodText');
+    this.btnToggleActivePeriodIcon = document.getElementById('btnToggleActivePeriodIcon');
+    this.currentActivePeriodLabel = document.getElementById('currentActivePeriodLabel');
+    this.headerActivePeriodPill = document.getElementById('headerActivePeriodPill');
+    this.headerActivePeriodName = document.getElementById('headerActivePeriodName');
+    this.gradeTableLockedBanner = document.getElementById('gradeTableLockedBanner');
+    this.gradeTableLockedBannerText = document.getElementById('gradeTableLockedBannerText');
+    this.navExamDateConfigBtn = document.getElementById('navExamDateConfigBtn');
+
+    this.examPrepPanel = document.getElementById('examPrepPanel');
+    this.tabExamListBtn = document.getElementById('tabExamListBtn');
+    this.tabExamSecretBtn = document.getElementById('tabExamSecretBtn');
+    this.tabExamAttendanceBtn = document.getElementById('tabExamAttendanceBtn');
+    this.tabExamScoreEntryBtn = document.getElementById('tabExamScoreEntryBtn');
+    this.examTabListContent = document.getElementById('examTabListContent');
+    this.examTabSecretContent = document.getElementById('examTabSecretContent');
+    this.examTabAttendanceContent = document.getElementById('examTabAttendanceContent');
+    this.examTabScoreEntryContent = document.getElementById('examTabScoreEntryContent');
+
+    // Tab 1 Elements
+    this.examGradeSelect = document.getElementById('examGradeSelect');
+    this.examSortOrderSelect = document.getElementById('examSortOrderSelect');
+    this.examStartRoomInput = document.getElementById('examStartRoomInput');
+    this.examStudentsPerRoomInput = document.getElementById('examStudentsPerRoomInput');
+    this.examLateStudentsInput = document.getElementById('examLateStudentsInput');
+    this.btnAssignExamRooms = document.getElementById('btnAssignExamRooms');
+    this.btnExportExamListCSV = document.getElementById('btnExportExamListCSV');
+    this.btnResetExamArrangement = document.getElementById('btnResetExamArrangement');
+    this.examArrangementTableBody = document.getElementById('examArrangementTableBody');
+    this.examEmptyNotice = document.getElementById('examEmptyNotice');
+
+    // Tab 2 Elements: Secret Code Matrix (Image 1)
+    this.examSecretGradeSelect = document.getElementById('examSecretGradeSelect');
+    this.examSecretPrintSubjectSelect = document.getElementById('examSecretPrintSubjectSelect');
+    this.btnToggleSecretSubjectDropdown = document.getElementById('btnToggleSecretSubjectDropdown');
+    this.secretSubjectCheckboxMenu = document.getElementById('secretSubjectCheckboxMenu');
+    this.secretSubjectDropdownLabel = document.getElementById('secretSubjectDropdownLabel');
+    this.btnGenerateSecretCodes = document.getElementById('btnGenerateSecretCodes');
+    this.btnSaveSecretMatrix = document.getElementById('btnSaveSecretMatrix');
+    this.btnPrintSecretCodes = document.getElementById('btnPrintSecretCodes');
+    this.examSecretMatrixTable = document.getElementById('examSecretMatrixTable');
+    this.examSecretMatrixHead = document.getElementById('examSecretMatrixHead');
+    this.examSecretMatrixBody = document.getElementById('examSecretMatrixBody');
+    this.examSecretEmptyNotice = document.getElementById('examSecretEmptyNotice');
+
+    // Tab 3 Elements: Attendance & Door Lists
+    this.examAttendanceGradeSelect = document.getElementById('examAttendanceGradeSelect');
+    this.examAttendanceRoomSelect = document.getElementById('examAttendanceRoomSelect');
+    this.examDocTypeSelect = document.getElementById('examDocTypeSelect');
+    this.examShowSignatureSelect = document.getElementById('examShowSignatureSelect');
+    this.examDirectorNameInput = document.getElementById('examDirectorNameInput');
+
+    // Signature & Director Customization Elements
+    this.btnOpenSignatureSettingsModal = document.getElementById('btnOpenSignatureSettingsModal');
+    this.signatureSettingsModal = document.getElementById('signatureSettingsModal');
+    this.btnCloseSigSettingsModal = document.getElementById('btnCloseSigSettingsModal');
+    this.btnSaveSigSettingsModal = document.getElementById('btnSaveSigSettingsModal');
+    this.btnResetAllSigSettings = document.getElementById('btnResetAllSigSettings');
+
+    this.sigImageFileInput = document.getElementById('sigImageFileInput');
+    this.btnUploadSigImage = document.getElementById('btnUploadSigImage');
+    this.btnResetSigImage = document.getElementById('btnResetSigImage');
+
+    this.sigImgScaleRange = document.getElementById('sigImgScaleRange');
+    this.sigImgScaleBadge = document.getElementById('sigImgScaleBadge');
+    this.btnSigImgScaleDec = document.getElementById('btnSigImgScaleDec');
+    this.btnSigImgScaleInc = document.getElementById('btnSigImgScaleInc');
+
+    this.sigImgOffsetXRange = document.getElementById('sigImgOffsetXRange');
+    this.sigImgOffsetXBadge = document.getElementById('sigImgOffsetXBadge');
+    this.btnSigImgXDec = document.getElementById('btnSigImgXDec');
+    this.btnSigImgXInc = document.getElementById('btnSigImgXInc');
+
+    this.sigImgOffsetYRange = document.getElementById('sigImgOffsetYRange');
+    this.sigImgOffsetYBadge = document.getElementById('sigImgOffsetYBadge');
+    this.btnSigImgYDec = document.getElementById('btnSigImgYDec');
+    this.btnSigImgYInc = document.getElementById('btnSigImgYInc');
+
+    this.sigRoleTitleInput = document.getElementById('sigRoleTitleInput');
+    this.sigDirectorNameModalInput = document.getElementById('sigDirectorNameModalInput');
+
+    this.sigTextSizeRange = document.getElementById('sigTextSizeRange');
+    this.sigTextSizeBadge = document.getElementById('sigTextSizeBadge');
+    this.btnSigTextSizeDec = document.getElementById('btnSigTextSizeDec');
+    this.btnSigTextSizeInc = document.getElementById('btnSigTextSizeInc');
+
+    this.sigTextColorPicker = document.getElementById('sigTextColorPicker');
+    this.sigTextColorHex = document.getElementById('sigTextColorHex');
+
+    this.sigTextOffsetXRange = document.getElementById('sigTextOffsetXRange');
+    this.sigTextOffsetXBadge = document.getElementById('sigTextOffsetXBadge');
+    this.btnSigTextXDec = document.getElementById('btnSigTextXDec');
+    this.btnSigTextXInc = document.getElementById('btnSigTextXInc');
+
+    this.sigTextOffsetYRange = document.getElementById('sigTextOffsetYRange');
+    this.sigTextOffsetYBadge = document.getElementById('sigTextOffsetYBadge');
+    this.btnSigTextYDec = document.getElementById('btnSigTextYDec');
+    this.btnSigTextYInc = document.getElementById('btnSigTextYInc');
+
+    this.sigPreviewRoleTitle = document.getElementById('sigPreviewRoleTitle');
+    this.sigPreviewImg = document.getElementById('sigPreviewImg');
+    this.sigPreviewDirectorName = document.getElementById('sigPreviewDirectorName');
+
+    this.loadSigConfig();
+    this.syncSigControlsFromState();
+
+    this.btnPrintAttendanceDoc = document.getElementById('btnPrintAttendanceDoc');
+    this.btnExportAttendanceCSV = document.getElementById('btnExportAttendanceCSV');
+    this.examDocPrintableArea = document.getElementById('examDocPrintableArea');
+
+    // Exam Score Entry Panel Elements (បញ្ចូលពិន្ទុប្រឡង)
+    this.examScorePanel = document.getElementById('examScorePanel');
+    this.navExamScoreEntryBtn = document.getElementById('navExamScoreEntryBtn');
+    this.subtabSecretCodeScoreBtn = document.getElementById('subtabSecretCodeScoreBtn');
+    this.subtabVoiceSecretCodeScoreBtn = document.getElementById('subtabVoiceSecretCodeScoreBtn');
+    this.subtabSubjectScoreBtn = document.getElementById('subtabSubjectScoreBtn');
+    this.subtabSemesterAvgBtn = document.getElementById('subtabSemesterAvgBtn');
+    this.subtabAuditSecretBtn = document.getElementById('subtabAuditSecretBtn');
+    this.scoreSubViewSecret = document.getElementById('scoreSubViewSecret');
+    this.scoreSubViewVoiceSecret = document.getElementById('scoreSubViewVoiceSecret');
+    this.scoreSubViewSubject = document.getElementById('scoreSubViewSubject');
+    this.scoreSubViewAvg = document.getElementById('scoreSubViewAvg');
+    this.scoreSubViewAudit = document.getElementById('scoreSubViewAudit');
+
+    // Sub-view 1: By Secret Code
+    this.secretScorePeriodSelect = document.getElementById('secretScorePeriodSelect');
+    this.inputSearchSecretCode = document.getElementById('inputSearchSecretCode');
+    this.btnFetchSecretRoomScores = document.getElementById('btnFetchSecretRoomScores');
+    this.btnSaveSecretRoomScores = document.getElementById('btnSaveSecretRoomScores');
+    this.chkShowStudentInfoSecret = document.getElementById('chkShowStudentInfoSecret');
+    this.secretScoreActiveRoomInfo = document.getElementById('secretScoreActiveRoomInfo');
+    this.secretScoreInputTable = document.getElementById('secretScoreInputTable');
+    this.secretScoreInputTableBody = document.getElementById('secretScoreInputTableBody');
+
+    // Sub-view: By Secret Code with Voice (បញ្ចូលតាមអក្សរសម្ងាត់ ដោយប្រើសម្លេង)
+    this.voiceSecretScorePeriodSelect = document.getElementById('voiceSecretScorePeriodSelect');
+    this.inputSearchVoiceSecretCode = document.getElementById('inputSearchVoiceSecretCode');
+    this.btnFetchVoiceSecretRoomScores = document.getElementById('btnFetchVoiceSecretRoomScores');
+    this.btnSaveVoiceSecretRoomScores = document.getElementById('btnSaveVoiceSecretRoomScores');
+    this.chkShowStudentInfoVoiceSecret = document.getElementById('chkShowStudentInfoVoiceSecret');
+    this.btnToggleVoiceSecretListening = document.getElementById('btnToggleVoiceSecretListening');
+    this.voiceSecretMicBtnText = document.getElementById('voiceSecretMicBtnText');
+    this.voiceSecretFeedbackMode = document.getElementById('voiceSecretFeedbackMode');
+    if (this.voiceSecretFeedbackMode) {
+      try {
+        const savedMode = localStorage.getItem('sms_voice_feedback_mode');
+        if (savedMode) this.voiceSecretFeedbackMode.value = savedMode;
+      } catch (_) { }
+      this.voiceSecretFeedbackMode.addEventListener('change', () => {
+        try { localStorage.setItem('sms_voice_feedback_mode', this.voiceSecretFeedbackMode.value); } catch (_) { }
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        this._voiceTtsSpeaking = false;
+      });
+    }
+    this.voiceSecretListeningBanner = document.getElementById('voiceSecretListeningBanner');
+    this.voiceSecretStatusText = document.getElementById('voiceSecretStatusText');
+    this.voiceSecretActiveTargetBadge = document.getElementById('voiceSecretActiveTargetBadge');
+    this.voiceSecretActiveRoomInfo = document.getElementById('voiceSecretActiveRoomInfo');
+    this.voiceSecretScoreInputTable = document.getElementById('voiceSecretScoreInputTable');
+    this.voiceSecretScoreInputTableBody = document.getElementById('voiceSecretScoreInputTableBody');
+
+    // Sub-view: By Secret Code with Student Name Reading (សម្លេង + អានឈ្មោះសិស្ស)
+    this.subtabVoiceNameSecretScoreBtn = document.getElementById('subtabVoiceNameSecretScoreBtn');
+    this.scoreSubViewVoiceNameSecret = document.getElementById('scoreSubViewVoiceNameSecret');
+    this.inputSearchVoiceNameSecretCode = document.getElementById('inputSearchVoiceNameSecretCode');
+    this.btnFetchVoiceNameSecretRoomScores = document.getElementById('btnFetchVoiceNameSecretRoomScores');
+    this.btnSaveVoiceNameSecretRoomScores = document.getElementById('btnSaveVoiceNameSecretRoomScores');
+    this.btnToggleVoiceNameSecretListening = document.getElementById('btnToggleVoiceNameSecretListening');
+    this.voiceNameSecretMicBtnText = document.getElementById('voiceNameSecretMicBtnText');
+    this.voiceNameSecretWorkflowMode = document.getElementById('voiceNameSecretWorkflowMode');
+    this.voiceNameSecretFeedbackMode = document.getElementById('voiceNameSecretFeedbackMode');
+    if (this.voiceNameSecretFeedbackMode) {
+      try {
+        const savedMode = localStorage.getItem('sms_voice_name_feedback_mode');
+        if (savedMode) this.voiceNameSecretFeedbackMode.value = savedMode;
+      } catch (_) { }
+      this.voiceNameSecretFeedbackMode.addEventListener('change', () => {
+        try { localStorage.setItem('sms_voice_name_feedback_mode', this.voiceNameSecretFeedbackMode.value); } catch (_) { }
+        if (window.speechSynthesis) window.speechSynthesis.cancel();
+        this._voiceTtsSpeaking = false;
+      });
+    }
+    this.voiceNameSecretListeningBanner = document.getElementById('voiceNameSecretListeningBanner');
+    this.voiceNameSecretStatusText = document.getElementById('voiceNameSecretStatusText');
+    this.voiceNameSecretActiveTargetBadge = document.getElementById('voiceNameSecretActiveTargetBadge');
+    this.voiceNameSecretActiveRoomInfo = document.getElementById('voiceNameSecretActiveRoomInfo');
+    this.voiceNameSecretScoreInputTable = document.getElementById('voiceNameSecretScoreInputTable');
+    this.voiceNameSecretScoreInputTableBody = document.getElementById('voiceNameSecretScoreInputTableBody');
+    this.btnVoiceNameSecretRepeat = document.getElementById('btnVoiceNameSecretRepeat');
+    this.btnVoiceNameSecretSkip = document.getElementById('btnVoiceNameSecretSkip');
+    this.btnVoiceNameSecretTestAudio = document.getElementById('btnVoiceNameSecretTestAudio');
+    this.btnAddMisplacedStudentVoiceName = document.getElementById('btnAddMisplacedStudentVoiceName');
+    this.btnAddMisplacedStudentSecret = document.getElementById('btnAddMisplacedStudentSecret');
+
+    // Misplaced Student Modal Elements (សិស្សច្រឡំបន្ទប់/លេខតុ)
+    this.misplacedStudentModal = document.getElementById('misplacedStudentModal');
+    this.inputSearchMisplacedStudent = document.getElementById('inputSearchMisplacedStudent');
+    this.btnFilterMisplacedStudent = document.getElementById('btnFilterMisplacedStudent');
+    this.misplacedStudentResultsTableBody = document.getElementById('misplacedStudentResultsTableBody');
+    this.btnCloseMisplacedStudentModal = document.getElementById('btnCloseMisplacedStudentModal');
+    this.btnCloseMisplacedStudentModalBtn = document.getElementById('btnCloseMisplacedStudentModalBtn');
+
+    // Sub-view 2: By Subject Sheet
+    this.examScoreSubjectGradeSelect = document.getElementById('examScoreSubjectGradeSelect');
+    this.examScoreSubjectPeriodSelect = document.getElementById('examScoreSubjectPeriodSelect');
+    this.examScoreSubjectClassSelect = document.getElementById('examScoreSubjectClassSelect');
+    this.examScoreSubjectFilterSelect = document.getElementById('examScoreSubjectFilterSelect');
+    this.btnSaveSubjectTableScores = document.getElementById('btnSaveSubjectTableScores');
+    this.examSubjectScoresTable = document.getElementById('examSubjectScoresTable');
+    this.examSubjectScoresHead = document.getElementById('examSubjectScoresHead');
+    this.examSubjectScoresBody = document.getElementById('examSubjectScoresBody');
+
+    // Sub-view 4: Audit Matrix (Image 2)
+    this.examAuditMatrixHead = document.getElementById('examAuditMatrixHead');
+    this.examAuditMatrixBody = document.getElementById('examAuditMatrixBody');
+    this.examAuditGradeSelect = document.getElementById('examAuditGradeSelect');
+    this.btnAuditCheckStatus = document.getElementById('btnAuditCheckStatus');
+    this.btnPrintAuditMatrix = document.getElementById('btnPrintAuditMatrix');
+
+    // Class Section Modal Elements
+    this.classSectionModal = document.getElementById('classSectionModal');
+    this.btnOpenClassSectionSettings = document.getElementById('btnOpenClassSectionSettings');
+    this.btnCloseClassSectionModal = document.getElementById('btnCloseClassSectionModal');
+    this.sectionGradeSelect = document.getElementById('sectionGradeSelect');
+    this.btnAddClassSection = document.getElementById('btnAddClassSection');
+    this.classSectionConfigBody = document.getElementById('classSectionConfigBody');
+    this.btnSaveClassSectionConfig = document.getElementById('btnSaveClassSectionConfig');
+
+    // Exam Subject Order Modal Elements (កំណត់លំដាប់មុខវិជ្ជាប្រឡង)
+    this.examSubjectOrderModal = document.getElementById('examSubjectOrderModal');
+    this.btnOpenExamSubjectOrderSettings = document.getElementById('btnOpenExamSubjectOrderSettings');
+    this.btnCloseExamSubjectOrderModal = document.getElementById('btnCloseExamSubjectOrderModal');
+    this.examSubjectOrderGradeSelect = document.getElementById('examSubjectOrderGradeSelect');
+    this.newExamSubjectOrderInput = document.getElementById('newExamSubjectOrderInput');
+    this.btnAddExamSubjectOrderItem = document.getElementById('btnAddExamSubjectOrderItem');
+    this.btnResetExamSubjectOrderDefault = document.getElementById('btnResetExamSubjectOrderDefault');
+    this.examSubjectOrderTableBody = document.getElementById('examSubjectOrderTableBody');
+    this.btnSaveExamSubjectOrderConfig = document.getElementById('btnSaveExamSubjectOrderConfig');
+
+    // Period Score Cleaner & Backup Manager Elements
+    this.periodScoreModal = document.getElementById('periodScoreModal');
+    this.btnOpenPeriodScoreManagerModal = document.getElementById('btnOpenPeriodScoreManagerModal');
+    this.btnClosePeriodScoreModal = document.getElementById('btnClosePeriodScoreModal');
+    this.periodScoreSelectPeriod = document.getElementById('periodScoreSelectPeriod');
+    this.periodScoreSelectGrade = document.getElementById('periodScoreSelectGrade');
+    this.periodScoreStatsStudents = document.getElementById('periodScoreStatsStudents');
+    this.periodScoreStatsSubjects = document.getElementById('periodScoreStatsSubjects');
+    this.periodScoreStatsEntries = document.getElementById('periodScoreStatsEntries');
+    this.btnBackupPeriodScores = document.getElementById('btnBackupPeriodScores');
+    this.btnClearPeriodScoresConfirm = document.getElementById('btnClearPeriodScoresConfirm');
+    this.btnWipeAllScoresEverywhere = document.getElementById('btnWipeAllScoresEverywhere');
+    this.btnQuickClearPeriodScores = document.getElementById('btnQuickClearPeriodScores');
+
+    // Voice Score Assistant Elements (បញ្ចូលពិន្ទុដោយសម្លេង)
+    this.voiceScoreModal = document.getElementById('voiceScoreModal');
+    this.btnOpenVoiceScoreModal = document.getElementById('btnOpenVoiceScoreModal');
+    this.btnQuickOpenVoiceScore = document.getElementById('btnQuickOpenVoiceScore');
+    this.btnCloseVoiceScoreModal = document.getElementById('btnCloseVoiceScoreModal');
+    this.voiceScoreGradeSelect = document.getElementById('voiceScoreGradeSelect');
+    this.voiceScoreSectionSelect = document.getElementById('voiceScoreSectionSelect');
+    this.voiceScoreSubjectSelect = document.getElementById('voiceScoreSubjectSelect');
+    this.voiceScorePeriodSelect = document.getElementById('voiceScorePeriodSelect');
+    this.voiceStudentSearchInput = document.getElementById('voiceStudentSearchInput');
+    this.btnClearVoiceStudentSearch = document.getElementById('btnClearVoiceStudentSearch');
+    this.btnVoiceMicSearchStudent = document.getElementById('btnVoiceMicSearchStudent');
+    this.voiceStudentSearchResults = document.getElementById('voiceStudentSearchResults');
+    this.voiceActiveStudentCard = document.getElementById('voiceActiveStudentCard');
+    this.voiceStudentAvatar = document.getElementById('voiceStudentAvatar');
+    this.voiceStudentName = document.getElementById('voiceStudentName');
+    this.voiceStudentGenderBadge = document.getElementById('voiceStudentGenderBadge');
+    this.voiceStudentClassBadge = document.getElementById('voiceStudentClassBadge');
+    this.voiceStudentIdText = document.getElementById('voiceStudentIdText');
+    this.voiceStudentIndexText = document.getElementById('voiceStudentIndexText');
+    this.voiceStudentCurrentScoreText = document.getElementById('voiceStudentCurrentScoreText');
+    this.btnVoicePrevStudent = document.getElementById('btnVoicePrevStudent');
+    this.btnVoiceNextStudent = document.getElementById('btnVoiceNextStudent');
+    this.voiceScoreMaxBadge = document.getElementById('voiceScoreMaxBadge');
+    this.voiceHandsFreeToggle = document.getElementById('voiceHandsFreeToggle');
+    this.voiceScoreInput = document.getElementById('voiceScoreInput');
+    this.btnVoiceMicInputScore = document.getElementById('btnVoiceMicInputScore');
+    this.voiceMicButtonText = document.getElementById('voiceMicButtonText');
+    this.voiceListeningBanner = document.getElementById('voiceListeningBanner');
+    this.voiceListeningStatusText = document.getElementById('voiceListeningStatusText');
+    this.btnStopVoiceListening = document.getElementById('btnStopVoiceListening');
+    this.voiceNoticeAlert = document.getElementById('voiceNoticeAlert');
+    this.btnSaveVoiceScore = document.getElementById('btnSaveVoiceScore');
+    this.btnNextStudentVoiceAction = document.getElementById('btnNextStudentVoiceAction');
+    this.voiceRecentScoresList = document.getElementById('voiceRecentScoresList');
+    this.voiceSessionCountBadge = document.getElementById('voiceSessionCountBadge');
+  }
+
+  bindEvents() {
+    // Sidebar Navigation Click
+    document.querySelectorAll('.nav-item[data-period]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        let periodKey = btn.getAttribute('data-period');
+        if (btn.id === 'navMonthlyBtn') {
+          periodKey = this.activeScorePeriod || this.getActiveScoringPeriod() || 'test_early';
+        }
+        this.switchPeriod(periodKey);
+      });
+    });
+
+    // Header Period Dropdown Selection (Change month/semester directly from title)
+    if (this.periodHeaderSelect) {
+      this.periodHeaderSelect.addEventListener('change', (e) => {
+        this.switchPeriod(e.target.value);
+      });
+    }
+
+    // Sidebar Toggle
+    this.sidebarToggleBtn.addEventListener('click', () => {
+      this.sidebar.classList.toggle('collapsed');
+    });
+
+    // Dark / Light Theme Toggle
+    this.themeToggleBtn.addEventListener('click', () => {
+      const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+      const newTheme = currentTheme === 'light' ? 'dark' : 'light';
+      document.documentElement.setAttribute('data-theme', newTheme);
+      this.themeToggleBtn.innerHTML = newTheme === 'dark'
+        ? '<i class="ri-sun-line"></i>'
+        : '<i class="ri-moon-line"></i>';
+      this.showToast(`បានប្តូរទៅជាផ្ទៃ ${newTheme === 'dark' ? 'ងងឹត (Dark Mode)' : 'ពន្លឺ (Light Mode)'}`, 'info');
+    });
+
+    // Search Input
+    this.searchInput.addEventListener('input', (e) => {
+      this.searchQuery = e.target.value.trim().toLowerCase();
+      this.clearSearchBtn.style.display = this.searchQuery ? 'block' : 'none';
+      this.renderCurrentView();
+    });
+
+    this.clearSearchBtn.addEventListener('click', () => {
+      this.searchInput.value = '';
+      this.searchQuery = '';
+      this.clearSearchBtn.style.display = 'none';
+      this.renderCurrentView();
+    });
+
+    // Filters
+    if (this.classSectionFilterEl) {
+      this.classSectionFilterEl.addEventListener('change', (e) => {
+        this.sectionFilter = e.target.value;
+        this.renderCurrentView();
+      });
+    }
+
+    this.genderFilterEl.addEventListener('change', (e) => {
+      this.genderFilter = e.target.value;
+      this.renderCurrentView();
+    });
+
+    this.mentionFilterEl.addEventListener('change', (e) => {
+      this.mentionFilter = e.target.value;
+      this.renderCurrentView();
+    });
+
+    // Auto Class Assign Modal Events
+    if (this.btnOpenAutoClassAssignModal) {
+      this.btnOpenAutoClassAssignModal.addEventListener('click', () => this.openAutoClassAssignModal());
+    }
+    if (this.btnCloseAutoClassAssignModal) {
+      this.btnCloseAutoClassAssignModal.addEventListener('click', () => this.closeAutoClassAssignModal());
+    }
+    if (this.btnCancelAutoClassAssignModal) {
+      this.btnCancelAutoClassAssignModal.addEventListener('click', () => this.closeAutoClassAssignModal());
+    }
+    if (this.assignGradeSelect) {
+      this.assignGradeSelect.addEventListener('change', () => {
+        this.syncAssignClassListFromGrade(this.assignGradeSelect.value);
+        this.computeAutoClassAssignment('grade');
+      });
+    }
+    if (this.assignStageSelect) {
+      this.assignStageSelect.addEventListener('change', () => this.computeAutoClassAssignment('stage'));
+    }
+    if (this.assignMethodSelect) {
+      this.assignMethodSelect.addEventListener('change', () => {
+        this.computeAutoClassAssignment('method');
+      });
+    }
+    if (this.assignMaxPerClassInput) {
+      this.assignMaxPerClassInput.addEventListener('input', () => this.computeAutoClassAssignment('maxPerClass'));
+    }
+    if (this.assignClassListInput) {
+      this.assignClassListInput.addEventListener('input', () => this.computeAutoClassAssignment('classList'));
+    }
+    if (this.btnPreviewAutoClassAssign) {
+      this.btnPreviewAutoClassAssign.addEventListener('click', () => this.computeAutoClassAssignment('manual'));
+    }
+    if (this.assignPreviewClassFilter) {
+      this.assignPreviewClassFilter.addEventListener('change', () => this.renderAutoClassAssignPreview());
+    }
+    if (this.btnConfirmClassAssignment) {
+      this.btnConfirmClassAssignment.addEventListener('click', () => this.confirmAutoClassAssignment());
+    }
+    if (this.btnUndoClassAssignment) {
+      this.btnUndoClassAssignment.addEventListener('click', () => this.undoAutoClassAssignment());
+    }
+    if (this.btnExportClassAssignmentCSV) {
+      this.btnExportClassAssignmentCSV.addEventListener('click', () => this.exportAutoClassAssignmentCSV());
+    }
+    if (this.btnPrintClassAssignment) {
+      this.btnPrintClassAssignment.addEventListener('click', () => this.printAutoClassAssignment());
+    }
+
+    // Add Student Button & Modal
+    document.getElementById('btnAddStudent').addEventListener('click', () => {
+      this.openStudentModal();
+    });
+    document.getElementById('btnCloseStudentModal').addEventListener('click', () => {
+      this.closeStudentModal();
+    });
+    document.getElementById('btnCancelStudentModal').addEventListener('click', () => {
+      this.closeStudentModal();
+    });
+    this.studentForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      this.saveStudentFromForm();
+    });
+
+    // Real-time preview for Student Date of Birth
+    const studentDobInputEl = document.getElementById('studentDOB');
+    if (studentDobInputEl) {
+      const updateDobPreview = () => {
+        const previewEl = document.getElementById('studentDOBPreview');
+        if (previewEl) {
+          const formatted = this.formatReportDob(studentDobInputEl.value);
+          previewEl.innerHTML = formatted ? `ថ្ងៃខែឆ្នាំកំណើត៖ <strong>${formatted}</strong>` : '<span style="color: #ef4444;">(មិនទាន់មានថ្ងៃខែឆ្នាំកំណើត)</span>';
+        }
+      };
+      studentDobInputEl.addEventListener('input', updateDobPreview);
+      studentDobInputEl.addEventListener('change', updateDobPreview);
+    }
+
+    // Initialize Cambodia Administrative Geography Dropdowns (ខេត្ត ស្រុក ឃុំ ភូមិ)
+    this.initAddressGeographyControls();
+
+    // Initialize GEIP Project School Controls (Tabs, BMI, Profile, Template)
+    this.initGeipControls();
+
+    // Auto Calculate Button
+    document.getElementById('btnAutoCalculate').addEventListener('click', () => {
+      this.handleAutoCalculate();
+    });
+
+    // Save Scores Button
+    document.getElementById('btnSaveScores').addEventListener('click', async () => {
+      this.saveState();
+      const pTitle = (PERIOD_DEFINITIONS[this.currentPeriod] && PERIOD_DEFINITIONS[this.currentPeriod].title) || this.currentPeriod;
+      await this.createAutoBackup(`រក្សាទុកពិន្ទុ ${pTitle}`);
+      this.updateScoreAutoBackupBadge('saved');
+      this.showToast('បានរក្សាទុកពិន្ទុ និងបង្កើត Auto Backup ជោគជ័យ!', 'success');
+      this.renderCurrentView();
+    });
+
+    // Class Select in Header
+    this.classSelect.addEventListener('change', (e) => {
+      this.activeClass = e.target.value;
+      this.sectionFilter = 'ALL';
+      this.populateClassSectionToolbarFilter();
+      if (this.examGradeSelect) this.examGradeSelect.value = this.activeClass;
+      if (this.examSecretGradeSelect) this.examSecretGradeSelect.value = this.activeClass;
+      if (this.examAttendanceGradeSelect && this.examAttendanceGradeSelect.value !== 'ALL') {
+        this.examAttendanceGradeSelect.value = this.activeClass;
+      }
+      this.syncExamConfigControls(this.activeClass);
+      this.syncSubjectsFromCurriculum(this.activeClass, false);
+      const preset = GRADE_PRESETS[this.activeClass];
+      const gradeLabel = preset ? preset.label : this.activeClass;
+      this.showToast(`បានប្តូរទៅកាន់: ${gradeLabel}`, 'info');
+      this.updateKPIOverview();
+      this.renderCurrentView();
+    });
+
+    // Auto sync class type with grade selection in Import and Student modals
+    if (this.importDefaultClass && this.importDefaultClassType) {
+      this.importDefaultClass.addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val.includes('វិទ្យាសាស្ត្រសង្គម')) {
+          this.importDefaultClassType.value = 'វិទ្យាសាស្ត្រសង្គម';
+        } else if (val.includes('វិទ្យាសាស្ត្រ')) {
+          this.importDefaultClassType.value = 'វិទ្យាសាស្ត្រ';
+        } else {
+          this.importDefaultClassType.value = 'ទូទៅ';
+        }
+      });
+    }
+
+    const studentClassInputEl = document.getElementById('studentClassInput');
+    const studentClassTypeInputEl = document.getElementById('studentClassTypeInput');
+    if (studentClassInputEl) {
+      studentClassInputEl.addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (studentClassTypeInputEl) {
+          if (val.includes('វិទ្យាសាស្ត្រសង្គម')) {
+            studentClassTypeInputEl.value = 'វិទ្យាសាស្ត្រសង្គម';
+          } else if (val.includes('វិទ្យាសាស្ត្រ')) {
+            studentClassTypeInputEl.value = 'វិទ្យាសាស្ត្រ';
+          } else {
+            studentClassTypeInputEl.value = 'ទូទៅ';
+          }
+        }
+        this.populateStudentSectionSelect(val);
+      });
+    }
+
+    // Subject Settings Modal
+    document.getElementById('btnOpenSubjectSettings').addEventListener('click', () => {
+      this.openSubjectModal();
+    });
+    document.getElementById('btnCloseSubjectModal').addEventListener('click', () => {
+      this.closeSubjectModal();
+    });
+    document.getElementById('btnSaveSubjectConfig').addEventListener('click', () => {
+      this.saveSubjectConfig();
+    });
+    document.getElementById('btnAddSubjectRow').addEventListener('click', () => {
+      this.addSubjectRow();
+    });
+    document.getElementById('btnApplyGradePreset').addEventListener('click', () => {
+      const presetKey = document.getElementById('gradePresetSelect').value;
+      this.applyGradePreset(presetKey);
+    });
+    document.getElementById('btnResetSubjectsDefault').addEventListener('click', () => {
+      const presetKey = document.getElementById('gradePresetSelect').value || 'grade_12_sci';
+      this.applyGradePreset(presetKey);
+    });
+
+    // Database Config Modal
+    const databaseModal = document.getElementById('databaseModal');
+    const dbModeSelect = document.getElementById('dbModeSelect');
+    const supabaseConfigFields = document.getElementById('supabaseConfigFields');
+    const btnTestDbConnection = document.getElementById('btnTestDbConnection');
+    const supabaseUrlInput = document.getElementById('supabaseUrlInput');
+    const supabaseAnonKeyInput = document.getElementById('supabaseAnonKeyInput');
+
+    // Load saved database settings if any
+    const savedDbConfig = JSON.parse(localStorage.getItem('sms_db_config') || '{}');
+    if (savedDbConfig.mode === 'supabase') {
+      dbModeSelect.value = 'supabase';
+      supabaseConfigFields.style.display = 'block';
+      btnTestDbConnection.style.display = 'inline-flex';
+      supabaseUrlInput.value = savedDbConfig.url || '';
+      supabaseAnonKeyInput.value = savedDbConfig.key || '';
+    }
+
+    document.getElementById('btnDatabaseConfig').addEventListener('click', () => {
+      databaseModal.classList.add('open');
+    });
+
+    document.getElementById('btnCloseDatabaseModal').addEventListener('click', () => {
+      databaseModal.classList.remove('open');
+    });
+
+    dbModeSelect.addEventListener('change', (e) => {
+      if (e.target.value === 'supabase') {
+        supabaseConfigFields.style.display = 'block';
+        btnTestDbConnection.style.display = 'inline-flex';
+      } else {
+        supabaseConfigFields.style.display = 'none';
+        btnTestDbConnection.style.display = 'none';
+      }
+    });
+
+    document.getElementById('databaseConfigForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const mode = dbModeSelect.value;
+      const url = supabaseUrlInput.value.trim();
+      const key = supabaseAnonKeyInput.value.trim();
+
+      const config = { mode, url, key };
+      try {
+        localStorage.setItem('sms_db_config', JSON.stringify(config));
+      } catch (err) {
+        console.warn('Could not save sms_db_config to localStorage:', err);
+      }
+
+      if (mode === 'supabase') {
+        if (!url || !key) {
+          this.showToast('សូមបញ្ចូល Supabase Project URL និង Anon Key!', 'error');
+          return;
+        }
+        this.showToast('បានរក្សាទុកការកំណត់ PostgreSQL Cloud (Supabase)!', 'success');
+      } else {
+        this.showToast('បានប្តូរទៅប្រើប្រព័ន្ធ Offline (Local Storage)!', 'info');
+      }
+      databaseModal.classList.remove('open');
+    });
+
+    btnTestDbConnection.addEventListener('click', async () => {
+      const url = supabaseUrlInput.value.trim();
+      const key = supabaseAnonKeyInput.value.trim();
+      if (!url || !key) {
+        this.showToast('សូមបញ្ចូល Supabase URL និង Key មុនសាកល្បង!', 'error');
+        return;
+      }
+      this.showToast('កំពុងសាកល្បងភ្ជាប់ទៅកាន់ PostgreSQL Cloud...', 'info');
+      try {
+        const res = await fetch(`${url}/rest/v1/`, {
+          headers: {
+            'apikey': key,
+            'Authorization': `Bearer ${key}`
+          }
+        });
+        if (res.ok) {
+          this.showToast('ការតភ្ជាប់ទៅកាន់ PostgreSQL ជោគជ័យ! (Status 200 OK)', 'success');
+        } else {
+          this.showToast(`ការតភ្ជាប់បរាជ័យ (HTTP ${res.status})! សូមពិនិត្យ URL និង Key ឡើងវិញ។`, 'error');
+        }
+      } catch (err) {
+        this.showToast('មិនអាចភ្ជាប់បានឡើយ! សូមពិនិត្យ Internet និង URL របស់ Supabase។', 'error');
+      }
+    });
+
+    // Export Data (JSON)
+    document.getElementById('btnExportData').addEventListener('click', () => {
+      this.exportJSON();
+    });
+
+    // Import Data (JSON)
+    const importFileInput = document.getElementById('importFileInput');
+    document.getElementById('btnImportData').addEventListener('click', () => {
+      importFileInput.click();
+    });
+    importFileInput.addEventListener('change', (e) => {
+      this.importJSON(e);
+    });
+
+    // Export Excel / CSV
+    if (this.btnExportStudentsCSV) {
+      this.btnExportStudentsCSV.addEventListener('click', () => {
+        this.openExportStudentModal();
+      });
+    }
+    document.getElementById('btnExportPeriodExcel').addEventListener('click', () => {
+      this.exportPeriodScoresCSV();
+    });
+
+    // Reset Prompt
+    document.getElementById('btnResetDataPrompt').addEventListener('click', async () => {
+      if (confirm('តើអ្នកពិតជាចង់កំណត់ទិន្នន័យឡើងវិញមែនទេ? ទិន្នន័យដែលបានបញ្ចូលនឹងត្រូវជំនួសដោយទិន្នន័យគំរូ។')) {
+        localStorage.removeItem(this.storageKey);
+        await AppStorage.removeItem(this.storageKey);
+        this.students = [...INITIAL_DEMO_STUDENTS];
+        this.subjects = [...DEFAULT_SUBJECTS];
+        this.scores = generateSampleScores(this.students, this.subjects);
+        this.examArrangements = [];
+        this.classSections = this.getDefaultClassSections();
+        this.saveState(false);
+        this.renderNavigation();
+        this.renderCurrentView();
+        this.updateKPIOverview();
+        this.showToast('បានផ្ទុកទិន្នន័យគំរូឡើងវិញ!', 'info');
+      }
+    });
+
+    // Voice Score Assistant Events (បញ្ចូលពិន្ទុដោយសម្លេង)
+    if (this.btnOpenVoiceScoreModal) {
+      this.btnOpenVoiceScoreModal.addEventListener('click', () => this.openVoiceScoreModal());
+    }
+    if (this.btnQuickOpenVoiceScore) {
+      this.btnQuickOpenVoiceScore.addEventListener('click', () => {
+        this.openVoiceScoreModal(null, this.activeClass, this.currentPeriod);
+      });
+    }
+    if (this.btnCloseVoiceScoreModal) {
+      this.btnCloseVoiceScoreModal.addEventListener('click', () => this.closeVoiceScoreModal());
+    }
+    if (this.voiceScoreGradeSelect) {
+      this.voiceScoreGradeSelect.addEventListener('change', () => {
+        this.syncVoiceScoreModalSubjects();
+        this.syncVoiceScoreModalSections();
+        this.updateVoiceStudentList();
+      });
+    }
+    if (this.voiceScoreSectionSelect) {
+      this.voiceScoreSectionSelect.addEventListener('change', () => {
+        this.updateVoiceStudentList();
+      });
+    }
+    if (this.voiceScoreSubjectSelect) {
+      this.voiceScoreSubjectSelect.addEventListener('change', () => {
+        this.updateVoiceScoreInputLimits();
+        if (this._currentVoiceStudentIndex !== undefined) {
+          this.selectVoiceStudent(this._currentVoiceStudentIndex);
+        }
+      });
+    }
+    if (this.voiceScorePeriodSelect) {
+      this.voiceScorePeriodSelect.addEventListener('change', () => {
+        this.syncVoiceScoreModalSubjects();
+        if (this._currentVoiceStudentIndex !== undefined) {
+          this.selectVoiceStudent(this._currentVoiceStudentIndex);
+        }
+      });
+    }
+    if (this.voiceStudentSearchInput) {
+      this.voiceStudentSearchInput.addEventListener('input', (e) => {
+        const q = e.target.value;
+        if (this.btnClearVoiceStudentSearch) {
+          this.btnClearVoiceStudentSearch.style.display = q ? 'block' : 'none';
+        }
+        this.handleVoiceStudentSearch(q);
+      });
+      this.voiceStudentSearchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const firstItem = this.voiceStudentSearchResults ? this.voiceStudentSearchResults.querySelector('.voice-search-item') : null;
+          if (firstItem) firstItem.click();
+        }
+      });
+    }
+    if (this.btnClearVoiceStudentSearch) {
+      this.btnClearVoiceStudentSearch.addEventListener('click', () => {
+        this.voiceStudentSearchInput.value = '';
+        this.btnClearVoiceStudentSearch.style.display = 'none';
+        if (this.voiceStudentSearchResults) this.voiceStudentSearchResults.style.display = 'none';
+        this.voiceStudentSearchInput.focus();
+      });
+    }
+    if (this.btnVoiceMicSearchStudent) {
+      this.btnVoiceMicSearchStudent.addEventListener('click', () => {
+        this.startVoiceRecognition('search');
+      });
+    }
+    if (this.btnVoiceMicInputScore) {
+      this.btnVoiceMicInputScore.addEventListener('click', () => {
+        this.startVoiceRecognition('score');
+      });
+    }
+    if (this.btnStopVoiceListening) {
+      this.btnStopVoiceListening.addEventListener('click', () => {
+        this.stopVoiceRecognition();
+      });
+    }
+    if (this.btnSaveVoiceScore) {
+      this.btnSaveVoiceScore.addEventListener('click', () => {
+        this.saveCurrentVoiceScore();
+      });
+    }
+    if (this.btnVoicePrevStudent) {
+      this.btnVoicePrevStudent.addEventListener('click', () => {
+        this.navigateVoiceStudent(-1);
+      });
+    }
+    if (this.btnVoiceNextStudent) {
+      this.btnVoiceNextStudent.addEventListener('click', () => {
+        this.navigateVoiceStudent(1);
+      });
+    }
+    if (this.btnNextStudentVoiceAction) {
+      this.btnNextStudentVoiceAction.addEventListener('click', () => {
+        this.navigateVoiceStudent(1);
+      });
+    }
+    if (this.voiceScoreInput) {
+      this.voiceScoreInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.saveCurrentVoiceScore();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          this.navigateVoiceStudent(-1);
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          this.navigateVoiceStudent(1);
+        }
+      });
+    }
+    // Global click outside to dismiss voice student search results
+    document.addEventListener('click', (e) => {
+      if (this.voiceStudentSearchResults && !e.target.closest('#voiceStudentSearchInput') && !e.target.closest('#voiceStudentSearchResults')) {
+        this.voiceStudentSearchResults.style.display = 'none';
+      }
+    });
+
+    // Period Score Cleaner & Backup Manager Modal Events
+    if (this.btnOpenPeriodScoreManagerModal) {
+      this.btnOpenPeriodScoreManagerModal.addEventListener('click', () => this.openPeriodScoreManagerModal());
+    }
+    if (this.btnQuickClearPeriodScores) {
+      this.btnQuickClearPeriodScores.addEventListener('click', () => {
+        this.openPeriodScoreManagerModal(this.currentPeriod);
+      });
+    }
+    if (this.btnClosePeriodScoreModal) {
+      this.btnClosePeriodScoreModal.addEventListener('click', () => this.closePeriodScoreManagerModal());
+    }
+    if (this.periodScoreSelectPeriod) {
+      this.periodScoreSelectPeriod.addEventListener('change', () => this.updatePeriodScoreManagerStats());
+    }
+    if (this.periodScoreSelectGrade) {
+      this.periodScoreSelectGrade.addEventListener('change', () => this.updatePeriodScoreManagerStats());
+    }
+    if (this.btnBackupPeriodScores) {
+      this.btnBackupPeriodScores.addEventListener('click', () => this.handlePeriodScoreBackup());
+    }
+    if (this.btnClearPeriodScoresConfirm) {
+      this.btnClearPeriodScoresConfirm.addEventListener('click', () => this.handlePeriodScoreClear());
+    }
+    if (this.btnWipeAllScoresEverywhere) {
+      this.btnWipeAllScoresEverywhere.addEventListener('click', () => this.handleWipeAllScoresEverywhere());
+    }
+
+    // Backup & SQLite Modal Events
+    const btnOpenBackup = document.getElementById('btnOpenBackupModal');
+    if (btnOpenBackup) {
+      btnOpenBackup.addEventListener('click', () => this.openBackupModal());
+    }
+    const btnCloseBackup = document.getElementById('btnCloseBackupModal');
+    if (btnCloseBackup) {
+      btnCloseBackup.addEventListener('click', () => this.closeBackupModal());
+    }
+    const btnCreateBackupNow = document.getElementById('btnCreateBackupNow');
+    if (btnCreateBackupNow) {
+      btnCreateBackupNow.addEventListener('click', async () => {
+        await this.createAutoBackup('បម្រុងទុកដោយដៃ (Manual Snapshot)');
+        await this.renderBackupHistoryTable();
+        this.showToast('បានបង្កើតចំណុច Backup ដោយជោគជ័យ!', 'success');
+      });
+    }
+    const btnExportSQLite = document.getElementById('btnExportSQLiteDb');
+    if (btnExportSQLite) {
+      btnExportSQLite.addEventListener('click', () => this.exportSQLiteFile());
+    }
+    const btnExportSQL = document.getElementById('btnExportSQLDump');
+    if (btnExportSQL) {
+      btnExportSQL.addEventListener('click', () => this.exportSQLDumpFile());
+    }
+    const btnExportJSONBackup = document.getElementById('btnExportJSONBackup');
+    if (btnExportJSONBackup) {
+      btnExportJSONBackup.addEventListener('click', () => this.exportJSON());
+    }
+    const inputRestoreBackup = document.getElementById('inputRestoreBackupFile');
+    if (inputRestoreBackup) {
+      inputRestoreBackup.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          this.handleRestoreBackupFile(e.target.files[0]);
+          e.target.value = '';
+        }
+      });
+    }
+
+    // Print Buttons
+    document.getElementById('btnPrintReport').addEventListener('click', () => {
+      window.print();
+    });
+    document.getElementById('btnPrintSingleTranscript').addEventListener('click', () => {
+      window.print();
+    });
+    document.getElementById('btnCloseTranscriptModal').addEventListener('click', () => {
+      this.transcriptModal.classList.remove('open');
+    });
+
+    // Exam Preparation Event Listeners (ការរៀបចំការប្រឡង)
+    if (this.tabExamListBtn) {
+      this.tabExamListBtn.addEventListener('click', () => this.switchExamTab('examList'));
+    }
+    if (this.tabExamSecretBtn) {
+      this.tabExamSecretBtn.addEventListener('click', () => this.switchExamTab('examSecret'));
+    }
+    if (this.tabExamAttendanceBtn) {
+      this.tabExamAttendanceBtn.addEventListener('click', () => this.switchExamTab('examAttendance'));
+    }
+    if (this.tabExamScoreEntryBtn) {
+      this.tabExamScoreEntryBtn.addEventListener('click', () => this.switchExamTab('examScoreEntry'));
+    }
+
+    // Tab 1 Events
+    if (this.examGradeSelect) {
+      this.examGradeSelect.addEventListener('change', () => {
+        const val = this.examGradeSelect.value;
+        if (this.classSelect && this.classSelect.value !== val) {
+          this.classSelect.value = val;
+          this.activeClass = val;
+          this.sectionFilter = 'ALL';
+          this.populateClassSectionToolbarFilter();
+        }
+        if (this.examSecretGradeSelect && this.examSecretGradeSelect.value !== val) {
+          this.examSecretGradeSelect.value = val;
+        }
+        if (this.examAttendanceGradeSelect && this.examAttendanceGradeSelect.value !== val && val !== 'ALL') {
+          this.examAttendanceGradeSelect.value = val;
+        }
+        this.syncExamConfigControls(val);
+        this.renderExamArrangementTable(false);
+      });
+    }
+    if (this.examSortOrderSelect) {
+      this.examSortOrderSelect.addEventListener('change', () => {
+        this.saveCurrentExamGradeSettings();
+        this.renderExamArrangementTable(true);
+      });
+    }
+    if (this.examStartRoomInput) {
+      this.examStartRoomInput.addEventListener('input', () => {
+        this.saveCurrentExamGradeSettings();
+        this.renderExamArrangementTable(true);
+      });
+    }
+    if (this.examStudentsPerRoomInput) {
+      this.examStudentsPerRoomInput.addEventListener('input', () => {
+        this.saveCurrentExamGradeSettings();
+        this.renderExamArrangementTable(true);
+      });
+    }
+    if (this.examLateStudentsInput) {
+      this.examLateStudentsInput.addEventListener('input', () => {
+        this.saveCurrentExamGradeSettings();
+        this.renderExamArrangementTable(true);
+      });
+    }
+    if (this.btnAssignExamRooms) {
+      this.btnAssignExamRooms.addEventListener('click', () => this.handleAssignExamRooms());
+    }
+    if (this.btnExportExamListCSV) {
+      this.btnExportExamListCSV.addEventListener('click', () => this.exportExamListCSV());
+    }
+    if (this.btnResetExamArrangement) {
+      this.btnResetExamArrangement.addEventListener('click', () => this.handleResetExamArrangement());
+    }
+
+    // Tab 2 Events: Secret Code Matrix (Image 1)
+    if (this.examSecretGradeSelect) {
+      this.examSecretGradeSelect.addEventListener('change', () => {
+        const val = this.examSecretGradeSelect.value;
+        if (this.examGradeSelect && this.examGradeSelect.value !== val) {
+          this.examGradeSelect.value = val;
+        }
+        if (this.examAttendanceGradeSelect && this.examAttendanceGradeSelect.value !== val && val !== 'ALL') {
+          this.examAttendanceGradeSelect.value = val;
+        }
+        if (this.classSelect && this.classSelect.value !== val) {
+          this.classSelect.value = val;
+          this.activeClass = val;
+          this.sectionFilter = 'ALL';
+          this.populateClassSectionToolbarFilter();
+        }
+        this.selectedSecretSubjectCodes = null; // Reset selection for changed grade
+        this.syncExamConfigControls(val);
+        this.renderExamSecretMatrixTable();
+      });
+    }
+    if (this.btnToggleSecretSubjectDropdown && this.secretSubjectCheckboxMenu) {
+      this.btnToggleSecretSubjectDropdown.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const isOpen = this.secretSubjectCheckboxMenu.style.display === 'block';
+        this.secretSubjectCheckboxMenu.style.display = isOpen ? 'none' : 'block';
+      });
+      document.addEventListener('click', (e) => {
+        if (this.secretSubjectCheckboxMenu && !this.secretSubjectCheckboxMenu.contains(e.target) && e.target !== this.btnToggleSecretSubjectDropdown) {
+          this.secretSubjectCheckboxMenu.style.display = 'none';
+        }
+      });
+    }
+    if (this.examSecretPrintSubjectSelect) {
+      this.examSecretPrintSubjectSelect.addEventListener('change', () => this.renderExamSecretMatrixTable());
+    }
+    if (this.btnGenerateSecretCodes) {
+      this.btnGenerateSecretCodes.addEventListener('click', () => this.handleGenerateSecretCodes());
+    }
+    if (this.btnSaveSecretMatrix) {
+      this.btnSaveSecretMatrix.addEventListener('click', () => this.handleSaveSecretMatrix());
+    }
+    if (this.btnPrintSecretCodes) {
+      this.btnPrintSecretCodes.addEventListener('click', () => {
+        const dupCheck = this.validateSecretCodeDuplicates ? this.validateSecretCodeDuplicates() : { hasDuplicates: false };
+        if (dupCheck.hasDuplicates) {
+          if (!confirm(`រកឃើញអក្សរសម្ងាត់ស្ទួនចំនួន ${dupCheck.count} កន្លែង (ប្រអប់ពណ៌ក្រហម)! តើអ្នកពិតជាចង់បោះពុម្ពទាំងមានស្ទួនមែនទេ?`)) {
+            return;
+          }
+        }
+        window.print();
+      });
+    }
+
+    // Tab 3 Events: Attendance Docs
+    if (this.examAttendanceGradeSelect) {
+      this.examAttendanceGradeSelect.addEventListener('change', () => {
+        const val = this.examAttendanceGradeSelect.value;
+        if (val !== 'ALL') {
+          if (this.examGradeSelect && this.examGradeSelect.value !== val) {
+            this.examGradeSelect.value = val;
+          }
+          if (this.examSecretGradeSelect && this.examSecretGradeSelect.value !== val) {
+            this.examSecretGradeSelect.value = val;
+          }
+          if (this.classSelect && this.classSelect.value !== val) {
+            this.classSelect.value = val;
+            this.activeClass = val;
+            this.sectionFilter = 'ALL';
+            this.populateClassSectionToolbarFilter();
+          }
+          this.syncExamConfigControls(val);
+        }
+        this.renderExamAttendanceDoc();
+      });
+    }
+    if (this.examAttendanceRoomSelect) {
+      this.examAttendanceRoomSelect.addEventListener('change', () => this.renderExamAttendanceDoc());
+    }
+    if (this.examDocTypeSelect) {
+      this.examDocTypeSelect.addEventListener('change', () => this.renderExamAttendanceDoc());
+    }
+    if (this.examShowSignatureSelect) {
+      this.examShowSignatureSelect.addEventListener('change', () => this.renderExamAttendanceDoc());
+    }
+    if (this.examDirectorNameInput) {
+      this.examDirectorNameInput.addEventListener('input', () => {
+        if (!this.sigConfig) this.loadSigConfig();
+        this.sigConfig.directorName = this.examDirectorNameInput.value;
+        if (this.sigDirectorNameModalInput) {
+          this.sigDirectorNameModalInput.value = this.examDirectorNameInput.value;
+        }
+        this.saveSigConfig();
+        this.updateSigPreview();
+        this.renderExamAttendanceDoc();
+      });
+    }
+
+    // Initialize Signature Customization Events
+    this.initSignatureSettingsEvents();
+    if (this.btnPrintAttendanceDoc) {
+      this.btnPrintAttendanceDoc.addEventListener('click', () => window.print());
+    }
+    if (this.btnExportAttendanceCSV) {
+      this.btnExportAttendanceCSV.addEventListener('click', () => this.exportExamAttendanceCSV());
+    }
+
+    // Tab 4 Events: Score Entry (Images 2 & 3)
+    if (this.subtabSecretCodeScoreBtn) {
+      this.subtabSecretCodeScoreBtn.addEventListener('click', () => this.switchScoreSubTab('bySecret'));
+    }
+    if (this.subtabVoiceSecretCodeScoreBtn) {
+      this.subtabVoiceSecretCodeScoreBtn.addEventListener('click', () => this.switchScoreSubTab('byVoiceSecret'));
+    }
+    if (this.subtabVoiceNameSecretScoreBtn) {
+      this.subtabVoiceNameSecretScoreBtn.addEventListener('click', () => this.switchScoreSubTab('byVoiceNameSecret'));
+    }
+    if (this.subtabSubjectScoreBtn) {
+      this.subtabSubjectScoreBtn.addEventListener('click', () => this.switchScoreSubTab('bySubject'));
+    }
+    if (this.subtabSemesterAvgBtn) {
+      this.subtabSemesterAvgBtn.addEventListener('click', () => this.switchScoreSubTab('byAvg'));
+    }
+    if (this.subtabAuditSecretBtn) {
+      this.subtabAuditSecretBtn.addEventListener('click', () => this.switchScoreSubTab('byAudit'));
+    }
+
+    // Sub-view 1: By Secret Code
+    if (this.btnFetchSecretRoomScores) {
+      this.btnFetchSecretRoomScores.addEventListener('click', () => this.fetchSecretRoomScores());
+    }
+    if (this.inputSearchSecretCode) {
+      this.inputSearchSecretCode.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.fetchSecretRoomScores();
+        }
+      });
+    }
+    if (this.secretScorePeriodSelect) {
+      this.secretScorePeriodSelect.addEventListener('change', (e) => {
+        const pKey = e.target.value;
+        if (this.examScoreSubjectPeriodSelect) this.examScoreSubjectPeriodSelect.value = pKey;
+        this.currentPeriod = pKey;
+        if (this.periodHeaderSelect) this.periodHeaderSelect.value = pKey;
+        if (this.inputSearchSecretCode && this.inputSearchSecretCode.value.trim()) {
+          this.fetchSecretRoomScores();
+        }
+      });
+    }
+    if (this.btnSaveSecretRoomScores) {
+      this.btnSaveSecretRoomScores.addEventListener('click', () => this.handleSaveSecretRoomScores());
+    }
+    if (this.chkShowStudentInfoSecret) {
+      this.chkShowStudentInfoSecret.addEventListener('change', (e) => {
+        this.toggleShowStudentInfo(e.target.checked);
+      });
+    }
+
+    // Sub-view: By Secret Code with Voice (បញ្ចូលតាមអក្សរសម្ងាត់ ដោយប្រើសម្លេង)
+    if (this.btnFetchVoiceSecretRoomScores) {
+      this.btnFetchVoiceSecretRoomScores.addEventListener('click', () => this.fetchVoiceSecretRoomScores());
+    }
+    if (this.inputSearchVoiceSecretCode) {
+      this.inputSearchVoiceSecretCode.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.fetchVoiceSecretRoomScores();
+        }
+      });
+    }
+    if (this.chkShowStudentInfoVoiceSecret) {
+      this.chkShowStudentInfoVoiceSecret.addEventListener('change', (e) => {
+        this.toggleShowStudentInfo(e.target.checked);
+      });
+    }
+    if (this.voiceSecretScorePeriodSelect) {
+      this.voiceSecretScorePeriodSelect.addEventListener('change', (e) => {
+        const pKey = e.target.value;
+        if (this.secretScorePeriodSelect) this.secretScorePeriodSelect.value = pKey;
+        if (this.examScoreSubjectPeriodSelect) this.examScoreSubjectPeriodSelect.value = pKey;
+        this.currentPeriod = pKey;
+        if (this.periodHeaderSelect) this.periodHeaderSelect.value = pKey;
+        if (this.inputSearchVoiceSecretCode && this.inputSearchVoiceSecretCode.value.trim()) {
+          this.fetchVoiceSecretRoomScores();
+        }
+      });
+    }
+    if (this.btnSaveVoiceSecretRoomScores) {
+      this.btnSaveVoiceSecretRoomScores.addEventListener('click', () => this.handleSaveVoiceSecretRoomScores());
+    }
+    if (this.btnToggleVoiceSecretListening) {
+      this.btnToggleVoiceSecretListening.addEventListener('click', () => this.toggleVoiceSecretListening());
+    }
+
+    // Sub-view: By Secret Code with Student Name Reading (សម្លេង + អានឈ្មោះសិស្ស)
+    if (this.btnFetchVoiceNameSecretRoomScores) {
+      this.btnFetchVoiceNameSecretRoomScores.addEventListener('click', () => this.fetchVoiceNameSecretRoomScores());
+    }
+    if (this.inputSearchVoiceNameSecretCode) {
+      this.inputSearchVoiceNameSecretCode.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.fetchVoiceNameSecretRoomScores();
+        }
+      });
+    }
+    if (this.btnSaveVoiceNameSecretRoomScores) {
+      this.btnSaveVoiceNameSecretRoomScores.addEventListener('click', () => this.handleSaveVoiceNameSecretRoomScores());
+    }
+    if (this.btnToggleVoiceNameSecretListening) {
+      this.btnToggleVoiceNameSecretListening.addEventListener('click', () => this.toggleVoiceNameSecretListening());
+    }
+    if (this.voiceNameSecretWorkflowMode) {
+      this.voiceNameSecretWorkflowMode.addEventListener('change', () => {
+        const mode = this.voiceNameSecretWorkflowMode.value;
+        const isSys = mode === 'system_prompt';
+        if (this.btnVoiceNameSecretRepeat) this.btnVoiceNameSecretRepeat.style.display = isSys ? 'inline-flex' : 'none';
+        if (this.btnVoiceNameSecretSkip) this.btnVoiceNameSecretSkip.style.display = isSys ? 'inline-flex' : 'none';
+        if (this.voiceNameSecretStatusText) {
+          this.voiceNameSecretStatusText.innerHTML = isSys
+            ? '🤖 <strong>របៀបប្រព័ន្ធអានឈ្មោះមុន៖</strong> ប្រព័ន្ធនឹងអានឈ្មោះសិស្សជាសំឡេង លោកគ្រូគ្រាន់តែនិយាយពិន្ទុ!'
+            : '💡 <strong>របៀបគ្រូអានឈ្មោះ+ពិន្ទុ៖</strong> គ្រាន់តែនិយាយឈ្មោះសិស្ស និងពិន្ទុ (ឧ. <em>"កុសល ម៉ូនីកា ៤៥"</em>) ប្រព័ន្ធនឹងបញ្ចូលពិន្ទុដោយស្វ័យប្រវត្តិ!';
+        }
+        if (isSys && this._voiceNameStudentsInRoom && this._voiceNameStudentsInRoom.length > 0) {
+          this.speakCurrentVoiceNameStudentPrompt();
+        }
+      });
+    }
+    if (this.btnVoiceNameSecretRepeat) {
+      this.btnVoiceNameSecretRepeat.addEventListener('click', () => this.speakCurrentVoiceNameStudentPrompt(true));
+    }
+    if (this.btnVoiceNameSecretSkip) {
+      this.btnVoiceNameSecretSkip.addEventListener('click', () => this.skipToNextStudentVoiceName());
+    }
+    if (this.btnVoiceNameSecretTestAudio) {
+      this.btnVoiceNameSecretTestAudio.addEventListener('click', () => {
+        this.playKhmerSpeech('ប្រព័ន្ធបញ្ចូលពិន្ទុដោយសំឡេងដំណើរការត្រឹមត្រូវ');
+        this.showToast('🔊 កំពុងបន្លឺសំឡេងសាកល្បង...', 'info');
+      });
+    }
+
+    // Misplaced Student Modal & Actions (សិស្សច្រឡំបន្ទប់/លេខតុ)
+    const openMisplacedModal = () => this.openMisplacedStudentModal();
+    if (this.btnAddMisplacedStudentVoiceName) {
+      this.btnAddMisplacedStudentVoiceName.addEventListener('click', openMisplacedModal);
+    }
+    if (this.btnAddMisplacedStudentSecret) {
+      this.btnAddMisplacedStudentSecret.addEventListener('click', openMisplacedModal);
+    }
+    if (this.btnCloseMisplacedStudentModal) {
+      this.btnCloseMisplacedStudentModal.addEventListener('click', () => this.closeMisplacedStudentModal());
+    }
+    if (this.btnCloseMisplacedStudentModalBtn) {
+      this.btnCloseMisplacedStudentModalBtn.addEventListener('click', () => this.closeMisplacedStudentModal());
+    }
+    if (this.btnFilterMisplacedStudent) {
+      this.btnFilterMisplacedStudent.addEventListener('click', () => this.renderMisplacedStudentSearchResults());
+    }
+    if (this.inputSearchMisplacedStudent) {
+      this.inputSearchMisplacedStudent.addEventListener('input', () => this.renderMisplacedStudentSearchResults());
+      this.inputSearchMisplacedStudent.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.renderMisplacedStudentSearchResults();
+        }
+      });
+    }
+
+    // Sub-view 2: By Subject Sheet
+    if (this.examScoreSubjectGradeSelect) {
+      this.examScoreSubjectGradeSelect.addEventListener('change', () => {
+        if (this.examScoreSubjectClassSelect) {
+          this.examScoreSubjectClassSelect.value = 'ALL';
+        }
+        if (this.examScoreSubjectFilterSelect) {
+          this.examScoreSubjectFilterSelect.value = 'ALL';
+        }
+        this.renderExamSubjectScoresTable();
+      });
+    }
+    if (this.examScoreSubjectPeriodSelect) {
+      this.examScoreSubjectPeriodSelect.addEventListener('change', (e) => {
+        const pKey = e.target.value;
+        if (this.secretScorePeriodSelect) this.secretScorePeriodSelect.value = pKey;
+        this.currentPeriod = pKey;
+        if (this.periodHeaderSelect) this.periodHeaderSelect.value = pKey;
+        this.renderExamSubjectScoresTable();
+      });
+    }
+    if (this.examScoreSubjectClassSelect) {
+      this.examScoreSubjectClassSelect.addEventListener('change', () => this.renderExamSubjectScoresTable());
+    }
+    if (this.examScoreSubjectFilterSelect) {
+      this.examScoreSubjectFilterSelect.addEventListener('change', () => this.renderExamSubjectScoresTable());
+
+      // Live auto-calc: essay+dictation → kh total (grade 7/8/9)
+      if (this.scoreSubViewSubject) {
+        this.scoreSubViewSubject.addEventListener('input', (e) => {
+          const target = e.target;
+          if (!target || !target.classList.contains('subject-table-score-input')) return;
+          const subkey = target.getAttribute('data-subkey');
+          if (subkey !== 'essay' && subkey !== 'dictation' && subkey !== 'kh_essay' && subkey !== 'kh_dict') return;
+
+          const tr = target.closest('tr');
+          if (!tr) return;
+
+          const stuId = target.getAttribute('data-stuid');
+          const gradeKey = this.examScoreSubjectGradeSelect ? this.examScoreSubjectGradeSelect.value : 'grade_7';
+          const periodKey = this.getActiveScoringPeriod(gradeKey);
+
+          const essayInp = tr.querySelector('.subject-table-score-input[data-subkey="essay"], .subject-table-score-input[data-subkey="kh_essay"]');
+          const dictInp = tr.querySelector('.subject-table-score-input[data-subkey="dictation"], .subject-table-score-input[data-subkey="kh_dict"]');
+          const khInp = tr.querySelector('.kh-total-display');
+
+          const eVal = (essayInp && essayInp.value.trim() !== '') ? parseFloat(essayInp.value) : null;
+          const dVal = (dictInp && dictInp.value.trim() !== '') ? parseFloat(dictInp.value) : null;
+
+          if (eVal !== null || dVal !== null) {
+            const sum = (eVal || 0) + (dVal || 0);
+            if (khInp) {
+              khInp.value = sum;
+              khInp.title = `ពិន្ទុភាសាខ្មែរ = តែងសេចក្ដី (${eVal || 0}) + សរសេរតាមអាន (${dVal || 0})`;
+            }
+            this.setSubjectScore(stuId, periodKey, 'kh', sum);
+          } else {
+            if (khInp) khInp.value = '';
+            this.setSubjectScore(stuId, periodKey, 'kh', null);
+          }
+        });
+      }
+    }
+    if (this.btnSaveSubjectTableScores) {
+      this.btnSaveSubjectTableScores.addEventListener('click', () => this.handleSaveSubjectTableScores());
+    }
+
+    // Sub-view 4: Audit Matrix (Image 2)
+    if (this.examAuditGradeSelect) {
+      this.examAuditGradeSelect.addEventListener('change', () => this.renderExamAuditTable());
+    }
+    if (this.btnAuditCheckStatus) {
+      this.btnAuditCheckStatus.addEventListener('click', () => {
+        this.renderExamAuditTable();
+        this.showToast('បានធ្វើបច្ចុប្បន្នភាពតារាងត្រួតពិនិត្យអក្សរសម្ងាត់!', 'info');
+      });
+    }
+    if (this.btnPrintAuditMatrix) {
+      this.btnPrintAuditMatrix.addEventListener('click', () => window.print());
+    }
+
+    const btnScore20 = document.getElementById('btnScore20Percent');
+    if (btnScore20) {
+      btnScore20.addEventListener('click', () => this.apply20PercentExamScore());
+    }
+
+    const btnLock = document.getElementById('btnLockUnlockSystem');
+    if (btnLock) {
+      btnLock.addEventListener('click', () => this.toggleExamScoreLock());
+    }
+
+    const navExamScoreEntryBtn = document.getElementById('navExamScoreEntryBtn');
+    if (navExamScoreEntryBtn) {
+      navExamScoreEntryBtn.addEventListener('click', () => {
+        this.switchPeriod('exam_score_entry');
+      });
+    }
+
+    // Student Import Modal Events (នាំចូលព័ត៌មានសិស្ស)
+    if (this.btnOpenImportStudentModal) {
+      this.btnOpenImportStudentModal.addEventListener('click', () => this.openImportStudentModal());
+    }
+    if (this.btnCloseImportModal) {
+      this.btnCloseImportModal.addEventListener('click', () => this.closeImportStudentModal());
+    }
+    if (this.btnCancelImportModal) {
+      this.btnCancelImportModal.addEventListener('click', () => this.closeImportStudentModal());
+    }
+    if (this.btnDownloadImportTemplate) {
+      this.btnDownloadImportTemplate.addEventListener('click', () => this.downloadImportTemplate());
+    }
+    if (this.btnTplGrade7) {
+      this.btnTplGrade7.addEventListener('click', () => this.downloadTemplateForGrade('grade_7'));
+    }
+    if (this.btnTplGrade89) {
+      this.btnTplGrade89.addEventListener('click', () => this.downloadTemplateForGrade('grade_8_9'));
+    }
+    if (this.btnTplGrade1012) {
+      this.btnTplGrade1012.addEventListener('click', () => this.downloadTemplateForGrade('grade_10_12'));
+    }
+    if (this.btnTplFull) {
+      this.btnTplFull.addEventListener('click', () => this.downloadTemplateForGrade('full_master'));
+    }
+
+    // Export Modal Events
+    if (this.btnCloseExportModal) {
+      this.btnCloseExportModal.addEventListener('click', () => this.closeExportStudentModal());
+    }
+    if (this.btnCancelExportModal) {
+      this.btnCancelExportModal.addEventListener('click', () => this.closeExportStudentModal());
+    }
+    if (this.exportGradeTemplateSelect) {
+      this.exportGradeTemplateSelect.addEventListener('change', () => this.updateExportColumnsPreview());
+    }
+    if (this.btnConfirmExportExcel) {
+      this.btnConfirmExportExcel.addEventListener('click', () => this.executeStudentExport('xlsx'));
+    }
+    if (this.btnConfirmExportCSV) {
+      this.btnConfirmExportCSV.addEventListener('click', () => this.executeStudentExport('csv'));
+    }
+    if (this.studentFileDropzone && this.importStudentFileInput) {
+      this.studentFileDropzone.addEventListener('click', () => this.importStudentFileInput.click());
+      this.studentFileDropzone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        this.studentFileDropzone.classList.add('dragover');
+      });
+      this.studentFileDropzone.addEventListener('dragleave', () => {
+        this.studentFileDropzone.classList.remove('dragover');
+      });
+      this.studentFileDropzone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        this.studentFileDropzone.classList.remove('dragover');
+        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          this.handleStudentFileSelect({ target: { files: e.dataTransfer.files } });
+        }
+      });
+      this.importStudentFileInput.addEventListener('change', (e) => this.handleStudentFileSelect(e));
+    }
+    if (this.btnConfirmImportStudents) {
+      this.btnConfirmImportStudents.addEventListener('click', () => this.confirmImportStudents());
+    }
+    if (this.importDefaultClass) {
+      this.importDefaultClass.addEventListener('change', () => this.syncImportClassTypeWithSelectedClass());
+    }
+
+    // Class Section Modal Events (គ្រប់គ្រងថ្នាក់រៀន)
+    if (this.btnOpenClassSectionSettings) {
+      this.btnOpenClassSectionSettings.addEventListener('click', () => this.openClassSectionModal());
+    }
+    if (this.btnCloseClassSectionModal) {
+      this.btnCloseClassSectionModal.addEventListener('click', () => this.closeClassSectionModal());
+    }
+    if (this.sectionGradeSelect) {
+      this.sectionGradeSelect.addEventListener('change', () => this.renderClassSectionTable());
+    }
+    if (this.btnAddClassSection) {
+      this.btnAddClassSection.addEventListener('click', () => this.addClassSectionRow());
+    }
+    if (this.btnSaveClassSectionConfig) {
+      this.btnSaveClassSectionConfig.addEventListener('click', () => this.saveClassSectionConfig());
+    }
+
+    // Exam Subject Order Settings Events (កំណត់លំដាប់មុខវិជ្ជាប្រឡង)
+    if (this.btnOpenExamSubjectOrderSettings) {
+      this.btnOpenExamSubjectOrderSettings.addEventListener('click', () => this.openExamSubjectOrderModal());
+    }
+    if (this.btnCloseExamSubjectOrderModal) {
+      this.btnCloseExamSubjectOrderModal.addEventListener('click', () => this.closeExamSubjectOrderModal());
+    }
+    if (this.examSubjectOrderGradeSelect) {
+      this.examSubjectOrderGradeSelect.addEventListener('change', () => this.renderExamSubjectOrderTable());
+    }
+    if (this.btnAddExamSubjectOrderItem) {
+      this.btnAddExamSubjectOrderItem.addEventListener('click', () => this.addExamSubjectOrderItem());
+    }
+    if (this.newExamSubjectOrderInput) {
+      this.newExamSubjectOrderInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.addExamSubjectOrderItem();
+        }
+      });
+    }
+    if (this.btnResetExamSubjectOrderDefault) {
+      this.btnResetExamSubjectOrderDefault.addEventListener('click', () => this.resetExamSubjectOrderDefault());
+    }
+    if (this.btnSaveExamSubjectOrderConfig) {
+      this.btnSaveExamSubjectOrderConfig.addEventListener('click', () => this.saveExamSubjectOrderConfig());
+    }
+
+    // Exam Student Action Modal Events (ការរៀបចំសិស្សក្នុងប្រព័ន្ធប្រឡង)
+    const btnCloseExamActionModal = document.getElementById('btnCloseExamStudentActionModal');
+    if (btnCloseExamActionModal) {
+      btnCloseExamActionModal.addEventListener('click', () => this.closeExamStudentActionModal());
+    }
+    const btnCancelExamAction = document.getElementById('btnCancelExamStudentAction');
+    if (btnCancelExamAction) {
+      btnCancelExamAction.addEventListener('click', () => this.closeExamStudentActionModal());
+    }
+    const btnApplyExamAction = document.getElementById('btnApplyExamStudentAction');
+    if (btnApplyExamAction) {
+      btnApplyExamAction.addEventListener('click', () => this.applyExamStudentAction());
+    }
+    const examActionModal = document.getElementById('examStudentActionModal');
+    if (examActionModal) {
+      examActionModal.addEventListener('click', (e) => {
+        if (e.target === examActionModal) this.closeExamStudentActionModal();
+      });
+    }
+
+    // Initialize Exam Date Configuration Events (ការកំណត់កាលបរិច្ឆេទប្រឡង)
+    this.initExamDateConfigEvents();
+
+    // Initialize Curriculum Configuration Events (ការកំណត់កម្មវិធីសិក្សា)
+    this.initCurriculumConfigEvents();
+
+    // Reports & Statistics module (របាយការណ៍ និងស្ថិតិ)
+    this.initReportsModule();
+
+    // Global Score Input Validation (Red highlight + Cursor Lock on over-max) & Enter Key Navigation
+    this.initGlobalScoreInputValidationAndNavigation();
+  }
+
+  // =========================================================================
+  // Reports & Statistics Module (របាយការណ៍ និងស្ថិតិ)
+  // =========================================================================
+  getReportCatalog() {
+    const byGroup = [
+      { v: 'by_grade', label: 'តាមកម្រិតថ្នាក់', hint: '(សរុបតាមកម្រិតថ្នាក់នីមួយៗ)' },
+      { v: 'by_class', label: 'តាមថ្នាក់នីមួយៗ', hint: '(ឧ. 7A, 7B, 7C...)' }
+    ];
+    return {
+      report_student: {
+        title: 'របាយការណ៍សិស្ស',
+        items: [
+          {
+            key: 'student_list', label: 'បញ្ជីសិស្ស', options: [
+              { v: 'basic', label: 'ព័ត៌មានមូលដ្ឋានរបស់សិស្ស', hint: '(រួមបញ្ចូលតែព័ត៌មានមូលដ្ឋាន)' },
+              { v: 'detail', label: 'ព័ត៌មានលម្អិតរបស់សិស្ស', hint: '(ដូចជាព័ត៌មានអាណាព្យាបាល ទូរស័ព្ទ អាសយដ្ឋាន...)' },
+              { v: 'extra', label: 'បញ្ជីសិស្សដែលមានព័ត៌មានលម្អិតបន្ថែម', hint: '(ដូចជាថ្នាក់ចាស់ ថ្នាក់ថ្មី ប្រភេទថ្នាក់...)' },
+              { v: 'grade7', label: 'គំរូបញ្ជីឈ្មោះសិស្សសម្រាប់ថ្នាក់ទី៧', hint: '(ទម្រង់ផ្លូវការ៖ ឡើងពីថ្នាក់ មកពីសាលា ត្រួតថ្នាក់ទី ផ្ទេរមកពី...)' },
+              { v: 'grade8_9', label: 'គំរូបញ្ជីឈ្មោះសិស្សសម្រាប់ថ្នាក់ទី៨ និង ទី៩', hint: '(ទម្រង់ផ្លូវការ៖ ឡើងពីថ្នាក់ទី ត្រួតថ្នាក់ទី ផ្ទេរមកពី ផ្សេងៗ)' },
+              { v: 'grade10_12', label: 'គំរូបញ្ជីឈ្មោះសិស្សសម្រាប់ថ្នាក់ទី១០ ទី១១ និង ១២', hint: '(ទម្រង់ផ្លូវការ៖ សញ្ញាបត្រមធ្យមសិក្សាបឋមភូមិ សម័យប្រឡង ម.ប្រឡង បន្ទប់ លេខតុ...)' }
+            ]
+          },
+          { key: 'age_stats', label: 'ស្ថិតិតាមអាយុរបស់សិស្ស', options: byGroup },
+          { key: 'count_stats', label: 'ស្ថិតិចំនួនសិស្ស', options: byGroup },
+          {
+            key: 'student_card', label: 'កាតសិស្ស', options: [
+              { v: 'card', label: 'កាតសម្គាល់ខ្លួនសិស្ស', hint: '(បោះពុម្ព ៨ កាតក្នុង ១ ទំព័រ)' }
+            ]
+          },
+          {
+            key: 'class_change', label: 'ការផ្លាស់ប្ដូរថ្នាក់របស់សិស្ស', options: [
+              { v: 'changed', label: 'តែសិស្សដែលបានប្ដូរថ្នាក់', hint: '(ថ្នាក់ចាស់ ➔ ថ្នាក់ថ្មី)' },
+              { v: 'all', label: 'សិស្សទាំងអស់', hint: '(រួមទាំងសិស្សនៅថ្នាក់ដដែល)' }
+            ]
+          },
+          {
+            key: 'dropout', label: 'ការបោះបង់ការសិក្សា និងផ្ទេរសាលា', options: [
+              { v: 'all', label: 'ទាំងអស់', hint: '(ឈប់រៀន និងផ្ទេរចេញ)' },
+              { v: 'dropout', label: 'សិស្សបោះបង់ការសិក្សា', hint: '(ស្ថានភាព៖ ឈប់រៀន)' },
+              { v: 'transfer', label: 'សិស្សផ្ទេរសាលា', hint: '(ស្ថានភាព៖ ផ្ទេរចេញ)' }
+            ]
+          }
+        ]
+      },
+      report_study: {
+        title: 'របាយការណ៍សិក្សា',
+        usesPeriod: true,
+        isStudyView: true,
+        items: [
+          { key: 'transcript', label: 'ប្រតិចារិក' },
+          { key: 'study_records', label: 'សៀវភៅតាមដានការសិក្សា' },
+          { key: 'term_report', label: 'របាយការណ៍សាលាធនធាន' },
+          { key: 'resource_school_result', label: 'របាយការណ៍លទ្ធផលសាលាធនធាន' },
+          { key: 'exam_score', label: 'ពិន្ទុប្រឡង' },
+          { key: 'exam_avg_score', label: 'ពិន្ទុមធ្យមភាគការប្រឡង' },
+          { key: 'monthly_avg', label: 'មធ្យមភាគខែជាមធ្យម' },
+          { key: 'yearly_monthly_avg', label: 'មធ្យមភាគប្រចាំឆ្នាំជាមធ្យម' },
+          { key: 'grade_score_status', label: 'តារាងពិន្ទុមធ្យម' },
+          { key: 'yearly_bulletin', label: 'ព្រឹត្តិបត្រពិន្ទុប្រចាំឆ្នាំ' },
+          { key: 'praise_card', label: 'ប័ណ្ណសរសើរ' },
+          { key: 'praise_letter', label: 'លិខិតសរសើរ' },
+          { key: 'reprimand', label: 'កិត្តិយស' },
+          { key: 'encourage_letter', label: 'លិខិតលើកទឹកចិត្ត' },
+          { key: 'score_deduction', label: 'ការដាក់ពិន្ទុ' }
+        ]
+      },
+      report_teacher: {
+        title: 'របាយការណ៍របស់គ្រូ',
+        usesPeriod: true,
+        items: [
+          {
+            key: 'score_entry_status', label: 'ស្ថានភាពបញ្ចូលពិន្ទុ', options: [
+              { v: 'all', label: 'គ្រប់មុខវិជ្ជា', hint: '(ចំនួនសិស្សបានបញ្ចូល / សរុប)' },
+              { v: 'missing', label: 'តែមុខវិជ្ជាមិនទាន់ពេញ', hint: '(ដើម្បីតាមដានគ្រូមុខវិជ្ជា)' }
+            ]
+          },
+          {
+            key: 'class_summary', label: 'សង្ខេបលទ្ធផលតាមថ្នាក់', options: [
+              { v: 'summary', label: 'សម្រាប់គ្រូបន្ទុកថ្នាក់', hint: '(សិស្សសរុប ជាប់ ធ្លាក់ មធ្យមភាគ)' }
+            ]
+          }
+        ]
+      }
+    };
+  }
+
+  // =========================================================================
+  // Curriculum Configuration Module (ការកំណត់កម្មវិធីសិក្សា)
+  // =========================================================================
+  initCurriculumConfigEvents() {
+    if (this.curriculumGradeSelect) {
+      this.curriculumGradeSelect.addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (this.curriculumProgramSelect) this.curriculumProgramSelect.value = val;
+        this.renderCurriculumConfigTable(val);
+      });
+    }
+
+    if (this.curriculumProgramSelect) {
+      this.curriculumProgramSelect.addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (this.curriculumGradeSelect) this.curriculumGradeSelect.value = val;
+        this.renderCurriculumConfigTable(val);
+      });
+    }
+
+    if (this.btnAddCurriculumSubject) {
+      this.btnAddCurriculumSubject.addEventListener('click', () => {
+        this.addCurriculumSubjectRow();
+      });
+    }
+
+    if (this.btnSaveCurriculumConfig) {
+      this.btnSaveCurriculumConfig.addEventListener('click', () => {
+        this.saveCurriculumConfigFromTable();
+      });
+    }
+
+    if (this.btnResetCurriculumConfig) {
+      this.btnResetCurriculumConfig.addEventListener('click', () => {
+        const gradeKey = this.curriculumGradeSelect ? this.curriculumGradeSelect.value : 'grade_10';
+        if (confirm('តើអ្នកពិតជាចង់កំណត់ឡើងវិញនូវកម្មវិធីសិក្សាសម្រាប់ថ្នាក់នេះតាមលំនាំដើមមែនទេ?')) {
+          const defaults = this.getDefaultCurriculumConfigs();
+          if (!this.curriculumConfigs) this.curriculumConfigs = {};
+          this.curriculumConfigs[gradeKey] = JSON.parse(JSON.stringify(defaults[gradeKey] || []));
+          this.syncSubjectsFromCurriculum(this.activeClass, false);
+          this.saveState(false);
+          this.renderCurriculumConfigTable(gradeKey);
+          this.showToast('បានកំណត់ឡើងវិញតាមលំនាំដើមជោគជ័យ!', 'success');
+        }
+      });
+    }
+  }
+
+  getStandardGradeKey(classOrGradeKey) {
+    const allGradeKeys = ['grade_7', 'grade_8', 'grade_9', 'grade_10', 'grade_11_sci', 'grade_11_soc', 'grade_12_sci', 'grade_12_soc'];
+    if (allGradeKeys.includes(classOrGradeKey)) return classOrGradeKey;
+    const matched = allGradeKeys.find(gk => this.studentMatchesGrade({ class: classOrGradeKey }, gk));
+    return matched || 'grade_10';
+  }
+
+  getCurriculumConfigForGrade(gradeKey) {
+    if (!this.curriculumConfigs) {
+      this.curriculumConfigs = this.getDefaultCurriculumConfigs();
+    }
+    const target = this.getStandardGradeKey(gradeKey);
+    if (!this.curriculumConfigs[target] || this.curriculumConfigs[target].length === 0) {
+      const defaults = this.getDefaultCurriculumConfigs();
+      this.curriculumConfigs[target] = JSON.parse(JSON.stringify(defaults[target] || defaults.grade_10));
+    }
+    return this.curriculumConfigs[target];
+  }
+
+  getActiveSubjectsForGrade(gradeKey, isSemester = false) {
+    const targetGrade = this.getStandardGradeKey(gradeKey);
+    const curList = this.getCurriculumConfigForGrade(targetGrade);
+    if (!curList || curList.length === 0) {
+      return (this.subjects || []).filter(s => s.enabled !== false);
+    }
+    return curList.map(s => {
+      const isNoScore = (s.scoreType === 'none');
+      const isBonus = isSemester ? Boolean(s.isBonusSemester) : Boolean(s.isBonusMonthly);
+      const maxScore = isSemester ? (parseFloat(s.maxScoreSemester) || 50) : (parseFloat(s.maxScoreMonthly) || 50);
+      const coef = (isNoScore || isBonus) ? 0 : (isSemester ? (parseFloat(s.coefSemester) || parseFloat((maxScore / 50).toFixed(2))) : (parseFloat(s.coefMonthly) || parseFloat((maxScore / 50).toFixed(2))));
+      return {
+        code: s.code,
+        name: s.name,
+        maxScore: maxScore,
+        coef: coef,
+        isBonus: isBonus,
+        enabled: s.enabled !== false,
+        scoreType: s.scoreType || 'score',
+        allowExemption: Boolean(s.allowExemption),
+        order: s.order || 1
+      };
+    });
+  }
+
+  syncSubjectsFromCurriculum(classOrGradeKey, isSemester = false) {
+    const targetGrade = this.getStandardGradeKey(classOrGradeKey || this.activeClass);
+    const subs = this.getActiveSubjectsForGrade(targetGrade, isSemester);
+    this.subjects = subs;
+    if (GRADE_PRESETS[targetGrade]) {
+      GRADE_PRESETS[targetGrade].subjects = subs;
+    }
+    return subs;
+  }
+
+  getSubjectScore(stuScores, keyOrCode) {
+    if (!stuScores) return undefined;
+    const k = String(keyOrCode || '').trim();
+    if (k === 'kh_dict' || k === 'dictation' || k === 'DI') {
+      if (stuScores['kh_dict'] !== undefined) return stuScores['kh_dict'];
+      if (stuScores['dictation'] !== undefined) return stuScores['dictation'];
+      if (stuScores['DI'] !== undefined) return stuScores['DI'];
+      return undefined;
+    }
+    if (k === 'kh_essay' || k === 'essay' || k === 'LE') {
+      if (stuScores['kh_essay'] !== undefined) return stuScores['kh_essay'];
+      if (stuScores['essay'] !== undefined) return stuScores['essay'];
+      if (stuScores['LE'] !== undefined) return stuScores['LE'];
+      return undefined;
+    }
+    if (k === 'reading_speed' || k === 'reading' || k === 'RD') {
+      if (stuScores['reading_speed'] !== undefined) return stuScores['reading_speed'];
+      if (stuScores['reading'] !== undefined) return stuScores['reading'];
+      if (stuScores['RD'] !== undefined) return stuScores['RD'];
+      return undefined;
+    }
+    if (k === 'kh' || k === 'K') {
+      if (stuScores['kh'] !== undefined) return stuScores['kh'];
+      if (stuScores['K'] !== undefined) return stuScores['K'];
+      return undefined;
+    }
+    if (stuScores[k] !== undefined) return stuScores[k];
+    const upperK = k.toUpperCase();
+    if (stuScores[upperK] !== undefined) return stuScores[upperK];
+    return undefined;
+  }
+
+  setSubjectScore(stuId, periodKey, keyOrCode, numVal) {
+    if (!stuId || !periodKey) return;
+    if (!this.scores[stuId]) this.scores[stuId] = {};
+    if (!this.scores[stuId][periodKey]) this.scores[stuId][periodKey] = {};
+    const rec = this.scores[stuId][periodKey];
+
+    const k = String(keyOrCode || '').trim();
+    if (numVal === '' || numVal === null || numVal === undefined || isNaN(numVal)) {
+      if (k === 'kh_dict' || k === 'dictation' || k === 'DI') {
+        delete rec['kh_dict']; delete rec['dictation']; delete rec['DI'];
+      } else if (k === 'kh_essay' || k === 'essay' || k === 'LE') {
+        delete rec['kh_essay']; delete rec['essay']; delete rec['LE'];
+      } else if (k === 'reading_speed' || k === 'reading' || k === 'RD') {
+        delete rec['reading_speed']; delete rec['reading']; delete rec['RD'];
+      } else if (k === 'kh' || k === 'K') {
+        delete rec['kh']; delete rec['K'];
+      } else {
+        delete rec[k];
+      }
+    } else {
+      const val = parseFloat(numVal);
+      if (k === 'kh_dict' || k === 'dictation' || k === 'DI') {
+        rec['kh_dict'] = val; rec['dictation'] = val; rec['DI'] = val;
+      } else if (k === 'kh_essay' || k === 'essay' || k === 'LE') {
+        rec['kh_essay'] = val; rec['essay'] = val; rec['LE'] = val;
+      } else if (k === 'reading_speed' || k === 'reading' || k === 'RD') {
+        rec['reading_speed'] = val; rec['reading'] = val; rec['RD'] = val;
+      } else if (k === 'kh' || k === 'K') {
+        rec['kh'] = val; rec['K'] = val;
+      } else {
+        rec[k] = val;
+      }
+    }
+  }
+
+  getSubjectCurriculumConfig(gradeKey, subCode) {
+    const list = this.getCurriculumConfigForGrade(gradeKey);
+    const codeNorm = String(subCode || '').toLowerCase().trim();
+    return list.find(s => {
+      const sCode = String(s.code || '').toLowerCase().trim();
+      if (sCode === codeNorm) return true;
+      if ((sCode === 'eng' || sCode === 'lag') && (codeNorm === 'eng' || codeNorm === 'lag' || codeNorm === 'english' || codeNorm === 'fr')) return true;
+      if (sCode === 'kh' && (codeNorm === 'kh' || codeNorm === 'khmer' || codeNorm === 'k')) return true;
+      if (sCode === 'kh_essay' && (codeNorm === 'kh_essay' || codeNorm === 'essay' || codeNorm === 'le')) return true;
+      if (sCode === 'kh_dict' && (codeNorm === 'kh_dict' || codeNorm === 'dictation' || codeNorm === 'di')) return true;
+      if (sCode === 'reading_speed' && (codeNorm === 'reading_speed' || codeNorm === 'reading' || codeNorm === 'rd')) return true;
+      if (sCode === 'moral' && (codeNorm === 'moral' || codeNorm === 'civics' || codeNorm === 'mo')) return true;
+      if (sCode === 'geo_env' && (codeNorm === 'geo_env' || codeNorm === 'earth' || codeNorm === 'es')) return true;
+      return false;
+    });
+  }
+
+  computeSubjectScoreContribution(rawScore, subMeta, gradeKey, isSemester = false) {
+    const val = parseFloat(rawScore);
+    if (isNaN(val)) return { weighted: 0, coef: 0, isBonus: false };
+
+    const conf = this.getSubjectCurriculumConfig(gradeKey, subMeta.code || subMeta.fullKey);
+    if ((conf && conf.scoreType === 'none') || subMeta.scoreType === 'none') {
+      return { weighted: 0, coef: 0, isBonus: false, isNoScore: true };
+    }
+    const isNationalExamGrade = (gradeKey === 'grade_9' || gradeKey === 'grade_12_sci' || gradeKey === 'grade_12_soc' || /12|9/.test(String(gradeKey)));
+    const isForeignLang = (subMeta.code === 'eng' || subMeta.code === 'lag' || subMeta.fullKey === 'eng' || subMeta.fullKey === 'lag');
+
+    let isBonus = false;
+    let coef = subMeta.coef !== undefined ? Number(subMeta.coef) : 1;
+
+    if (conf) {
+      isBonus = isSemester ? Boolean(conf.isBonusSemester) : Boolean(conf.isBonusMonthly);
+      coef = isBonus ? 0 : (isSemester ? (parseFloat(conf.coefSemester) || 0) : (parseFloat(conf.coefMonthly) || 0));
+    } else if (isNationalExamGrade && isForeignLang) {
+      isBonus = true;
+      coef = 0;
+    }
+
+    if (isBonus && isNationalExamGrade && isForeignLang) {
+      // MoEYS Cambodia Rule for Grade 9 & 12 national exam bonus language:
+      // Score - 25, whatever remains > 0 is added to total. (If score <= 25 => 0 bonus).
+      const bonusPoints = Math.max(0, val - 25);
+      return { weighted: bonusPoints, coef: 0, isBonus: true };
+    } else if (isBonus) {
+      // General bonus rule if enabled for any other subject: added directly with 0 coef
+      return { weighted: val, coef: 0, isBonus: true };
+    }
+
+    return { weighted: val * coef, coef: coef, isBonus: false };
+  }
+
+  renderCurriculumScoreSelect(currentVal, className) {
+    const scoreOptions = [150, 125, 100, 75, 60, 50, 40, 38, 37, 35, 33, 32, 25, 20];
+    const numVal = parseFloat(currentVal) || 50;
+    let opts = [...scoreOptions];
+    if (!opts.includes(numVal)) {
+      opts.push(numVal);
+      opts.sort((a, b) => b - a);
+    }
+    const optionsHtml = opts.map(score => `<option value="${score}" ${score === numVal ? 'selected' : ''}>${score}</option>`).join('');
+    return `<select class="form-control ${className}" style="width: 80px; padding: 0.25rem 0.4rem; border: 1px solid #cbd5e1; border-radius: 4px; text-align: center; margin: 0 auto; font-weight: 600;">${optionsHtml}</select>`;
+  }
+
+  bindCurriculumRowEvents(tr) {
+    const scoreTypeSel = tr.querySelector('.cur-score-type');
+    const bonusMonthlyCb = tr.querySelector('.cur-bonus-monthly');
+    const bonusSemesterCb = tr.querySelector('.cur-bonus-semester');
+    const maxMonthlySel = tr.querySelector('.cur-max-monthly');
+    const maxSemesterSel = tr.querySelector('.cur-max-semester');
+    const coefMonthlyLabel = tr.querySelector('.cur-coef-monthly-label');
+    const coefSemesterLabel = tr.querySelector('.cur-coef-semester-label');
+    const deleteBtn = tr.querySelector('.btn-cur-delete');
+
+    const updateMonthlyCoefDisplay = () => {
+      const isNone = scoreTypeSel && scoreTypeSel.value === 'none';
+      if (isNone) {
+        coefMonthlyLabel.textContent = 'មេគុណ: 0 (មិនយកពិន្ទុ)';
+      } else if (bonusMonthlyCb && bonusMonthlyCb.checked) {
+        coefMonthlyLabel.textContent = 'មេគុណ: 0';
+      } else {
+        const mVal = parseFloat(maxMonthlySel.value) || 50;
+        const c = parseFloat((mVal / 50).toFixed(2));
+        coefMonthlyLabel.textContent = `មេគុណ: ${c}`;
+      }
+    };
+
+    const updateSemesterCoefDisplay = () => {
+      const isNone = scoreTypeSel && scoreTypeSel.value === 'none';
+      if (isNone) {
+        coefSemesterLabel.textContent = 'មេគុណ: 0 (មិនយកពិន្ទុ)';
+      } else if (bonusSemesterCb && bonusSemesterCb.checked) {
+        coefSemesterLabel.textContent = 'មេគុណ: 0';
+      } else {
+        const sVal = parseFloat(maxSemesterSel.value) || 50;
+        const c = parseFloat((sVal / 50).toFixed(2));
+        coefSemesterLabel.textContent = `មេគុណ: ${c}`;
+      }
+    };
+
+    if (scoreTypeSel) {
+      scoreTypeSel.addEventListener('change', () => {
+        updateMonthlyCoefDisplay();
+        updateSemesterCoefDisplay();
+      });
+    }
+
+    if (bonusMonthlyCb) bonusMonthlyCb.addEventListener('change', updateMonthlyCoefDisplay);
+    if (maxMonthlySel) maxMonthlySel.addEventListener('change', updateMonthlyCoefDisplay);
+    if (bonusSemesterCb) bonusSemesterCb.addEventListener('change', updateSemesterCoefDisplay);
+    if (maxSemesterSel) maxSemesterSel.addEventListener('change', updateSemesterCoefDisplay);
+
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', () => {
+        const subName = tr.querySelector('.cur-name')?.value?.trim() || tr.getAttribute('data-subname') || 'មុខវិជ្ជានេះ';
+        if (confirm(`តើអ្នកពិតជាចង់លុបមុខវិជ្ជា «${subName}» មែនទេ?`)) {
+          tr.remove();
+          this.reindexCurriculumConfigRows();
+        }
+      });
+    }
+  }
+
+  reindexCurriculumConfigRows() {
+    const tbody = this.curriculumConfigTableBody || document.getElementById('curriculumConfigTableBody');
+    if (!tbody) return;
+    const rows = tbody.querySelectorAll('tr[data-subcode]');
+    rows.forEach((row, idx) => {
+      const numCell = row.children[0];
+      if (numCell) numCell.textContent = idx + 1;
+      const orderInput = row.querySelector('.cur-order');
+      if (orderInput && !orderInput.dataset.userEdited) {
+        orderInput.value = idx + 1;
+      }
+    });
+  }
+
+  addCurriculumSubjectRow() {
+    const tbody = this.curriculumConfigTableBody || document.getElementById('curriculumConfigTableBody');
+    if (!tbody) return;
+
+    const newIdx = tbody.querySelectorAll('tr[data-subcode]').length + 1;
+    const newCode = `sub_${Date.now()}`;
+    const newName = `មុខវិជ្ជាថ្មី ${newIdx}`;
+
+    const tr = document.createElement('tr');
+    tr.setAttribute('data-subcode', newCode);
+    tr.setAttribute('data-subname', newName);
+    tr.style.borderBottom = '1px solid #e2e8f0';
+    tr.style.backgroundColor = '#f0fdf4';
+
+    tr.innerHTML = `
+      <td style="text-align: center; font-weight: 600; border: 1px solid #cbd5e1; padding: 0.5rem 0.25rem;">${newIdx}</td>
+      <td style="font-weight: 600; border: 1px solid #cbd5e1; padding: 0.35rem 0.5rem; color: #1e293b;">
+        <input type="text" class="form-control cur-name" value="${newName}" style="font-weight: 600; color: #1e293b; border: 1.5px solid #10b981; border-radius: 4px; padding: 0.3rem 0.5rem; width: 100%;" placeholder="បញ្ចូលឈ្មោះមុខវិជ្ជា...">
+      </td>
+      <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+        <input type="number" class="form-control cur-hours-sem1" style="width: 52px; text-align: center; margin: 0 auto; padding: 0.25rem;" value="1" min="0" max="20">
+      </td>
+      <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+        <input type="number" class="form-control cur-hours-sem2" style="width: 52px; text-align: center; margin: 0 auto; padding: 0.25rem;" value="1" min="0" max="20">
+      </td>
+      <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+        <select class="form-control cur-score-type" style="width: 105px; margin: 0 auto; padding: 0.25rem 0.4rem; font-weight: 500;">
+          <option value="score" selected>យកពិន្ទុ</option>
+          <option value="none">មិនយកពិន្ទុ</option>
+        </select>
+      </td>
+      <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+        <input type="checkbox" class="cur-allow-exemption" style="transform: scale(1.2); cursor: pointer;" title="អនុញ្ញាតឱ្យមានការលើកលែងមុខវិជ្ជា">
+      </td>
+      <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+        ${this.renderCurriculumScoreSelect(50, 'cur-max-monthly')}
+        <div class="cur-coef-monthly-label" style="font-size: 0.78rem; color: #64748b; font-style: italic; margin-top: 3px;">
+          មេគុណ: 1
+        </div>
+      </td>
+      <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+        ${this.renderCurriculumScoreSelect(50, 'cur-max-semester')}
+        <div class="cur-coef-semester-label" style="font-size: 0.78rem; color: #64748b; font-style: italic; margin-top: 3px;">
+          មេគុណ: 1
+        </div>
+      </td>
+      <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+        <input type="checkbox" class="cur-bonus-monthly" style="transform: scale(1.2); cursor: pointer;" title="ធីកជាពិន្ទុបន្ថែមប្រចាំខែ (មេគុណ ០)">
+      </td>
+      <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+        <input type="checkbox" class="cur-bonus-semester" style="transform: scale(1.2); cursor: pointer;" title="ធីកជាពិន្ទុបន្ថែមឆមាស (មេគុណ ០)">
+      </td>
+      <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+        <input type="number" class="form-control cur-order" style="width: 55px; text-align: center; margin: 0 auto; padding: 0.25rem;" value="${newIdx}">
+      </td>
+      <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+        <button type="button" class="btn btn-sm btn-outline-danger btn-cur-delete" title="លុបមុខវិជ្ជា" style="color: #ef4444; border: 1px solid #fca5a5; background: #fff; padding: 0.2rem 0.45rem; border-radius: 4px; cursor: pointer;">
+          <i class="ri-delete-bin-line"></i>
+        </button>
+      </td>
+    `;
+
+    this.bindCurriculumRowEvents(tr);
+    tbody.appendChild(tr);
+
+    const nameInput = tr.querySelector('.cur-name');
+    if (nameInput) {
+      nameInput.focus();
+      nameInput.select();
+    }
+  }
+
+  renderCurriculumConfigTable(gradeKey) {
+    const targetGrade = gradeKey || (this.curriculumGradeSelect ? this.curriculumGradeSelect.value : 'grade_10');
+    if (this.curriculumGradeSelect && this.curriculumGradeSelect.value !== targetGrade) {
+      this.curriculumGradeSelect.value = targetGrade;
+    }
+    if (this.curriculumProgramSelect && this.curriculumProgramSelect.value !== targetGrade) {
+      this.curriculumProgramSelect.value = targetGrade;
+    }
+
+    const tbody = this.curriculumConfigTableBody || document.getElementById('curriculumConfigTableBody');
+    if (!tbody) return;
+
+    const subjects = this.getCurriculumConfigForGrade(targetGrade);
+    tbody.innerHTML = '';
+
+    subjects.forEach((sub, idx) => {
+      const tr = document.createElement('tr');
+      tr.setAttribute('data-subcode', sub.code);
+      tr.setAttribute('data-subname', sub.name);
+      tr.style.borderBottom = '1px solid #e2e8f0';
+
+      const maxM = sub.maxScoreMonthly ?? (sub.maxScore ?? 50);
+      const maxS = sub.maxScoreSemester ?? (sub.maxScore ?? 50);
+      const isNone = (sub.scoreType === 'none');
+      const coefM = isNone ? '0 (មិនយកពិន្ទុ)' : (sub.isBonusMonthly ? 0 : (sub.coefMonthly ?? parseFloat((maxM / 50).toFixed(2))));
+      const coefS = isNone ? '0 (មិនយកពិន្ទុ)' : (sub.isBonusSemester ? 0 : (sub.coefSemester ?? parseFloat((maxS / 50).toFixed(2))));
+
+      tr.innerHTML = `
+        <td style="text-align: center; font-weight: 600; border: 1px solid #cbd5e1; padding: 0.5rem 0.25rem;">${idx + 1}</td>
+        <td style="font-weight: 600; border: 1px solid #cbd5e1; padding: 0.35rem 0.5rem; color: #1e293b;">
+          <input type="text" class="form-control cur-name" value="${sub.name}" style="font-weight: 600; color: #1e293b; border: 1px solid #cbd5e1; border-radius: 4px; padding: 0.3rem 0.5rem; width: 100%;">
+        </td>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+          <input type="number" class="form-control cur-hours-sem1" style="width: 52px; text-align: center; margin: 0 auto; padding: 0.25rem;" value="${sub.hoursSem1 ?? 1}" min="0" max="20">
+        </td>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+          <input type="number" class="form-control cur-hours-sem2" style="width: 52px; text-align: center; margin: 0 auto; padding: 0.25rem;" value="${sub.hoursSem2 ?? 1}" min="0" max="20">
+        </td>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+          <select class="form-control cur-score-type" style="width: 105px; margin: 0 auto; padding: 0.25rem 0.4rem; font-weight: 500;">
+            <option value="score" ${sub.scoreType !== 'none' ? 'selected' : ''}>យកពិន្ទុ</option>
+            <option value="none" ${sub.scoreType === 'none' ? 'selected' : ''}>មិនយកពិន្ទុ</option>
+          </select>
+        </td>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+          <input type="checkbox" class="cur-allow-exemption" ${sub.allowExemption ? 'checked' : ''} style="transform: scale(1.2); cursor: pointer;" title="អនុញ្ញាតឱ្យមានការលើកលែងមុខវិជ្ជា">
+        </td>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+          ${this.renderCurriculumScoreSelect(maxM, 'cur-max-monthly')}
+          <div class="cur-coef-monthly-label" style="font-size: 0.78rem; color: #64748b; font-style: italic; margin-top: 3px;">
+            មេគុណ: ${coefM}
+          </div>
+        </td>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+          ${this.renderCurriculumScoreSelect(maxS, 'cur-max-semester')}
+          <div class="cur-coef-semester-label" style="font-size: 0.78rem; color: #64748b; font-style: italic; margin-top: 3px;">
+            មេគុណ: ${coefS}
+          </div>
+        </td>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+          <input type="checkbox" class="cur-bonus-monthly" ${sub.isBonusMonthly ? 'checked' : ''} style="transform: scale(1.2); cursor: pointer;" title="ធីកជាពិន្ទុបន្ថែមប្រចាំខែ (មេគុណ ០)">
+        </td>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+          <input type="checkbox" class="cur-bonus-semester" ${sub.isBonusSemester ? 'checked' : ''} style="transform: scale(1.2); cursor: pointer;" title="ធីកជាពិន្ទុបន្ថែមឆមាស (មេគុណ ០)">
+        </td>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+          <input type="number" class="form-control cur-order" style="width: 55px; text-align: center; margin: 0 auto; padding: 0.25rem;" value="${sub.order ?? (idx + 1)}">
+        </td>
+        <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.4rem 0.25rem;">
+          <button type="button" class="btn btn-sm btn-outline-danger btn-cur-delete" title="លុបមុខវិជ្ជា" style="color: #ef4444; border: 1px solid #fca5a5; background: #fff; padding: 0.2rem 0.45rem; border-radius: 4px; cursor: pointer;">
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </td>
+      `;
+
+      this.bindCurriculumRowEvents(tr);
+      tbody.appendChild(tr);
+    });
+  }
+
+  saveCurriculumConfigFromTable() {
+    const gradeKey = this.curriculumGradeSelect ? this.curriculumGradeSelect.value : 'grade_10';
+    if (!this.curriculumConfigs) this.curriculumConfigs = {};
+
+    const tbody = this.curriculumConfigTableBody || document.getElementById('curriculumConfigTableBody');
+    if (!tbody) return;
+
+    const rows = tbody.querySelectorAll('tr[data-subcode]');
+    const updated = [];
+
+    rows.forEach((row, idx) => {
+      const code = row.getAttribute('data-subcode') || `sub_${idx + 1}`;
+      const name = row.querySelector('.cur-name')?.value?.trim() || row.getAttribute('data-subname') || `មុខវិជ្ជា ${idx + 1}`;
+      const hoursSem1 = parseFloat(row.querySelector('.cur-hours-sem1')?.value) || 0;
+      const hoursSem2 = parseFloat(row.querySelector('.cur-hours-sem2')?.value) || 0;
+      const scoreType = row.querySelector('.cur-score-type')?.value || 'score';
+      const allowExemption = Boolean(row.querySelector('.cur-allow-exemption')?.checked);
+
+      const maxScoreMonthly = parseFloat(row.querySelector('.cur-max-monthly')?.value) || 50;
+      const isBonusMonthly = Boolean(row.querySelector('.cur-bonus-monthly')?.checked);
+      const coefMonthly = isBonusMonthly ? 0 : parseFloat((maxScoreMonthly / 50).toFixed(2));
+
+      const maxScoreSemester = parseFloat(row.querySelector('.cur-max-semester')?.value) || 50;
+      const isBonusSemester = Boolean(row.querySelector('.cur-bonus-semester')?.checked);
+      const coefSemester = isBonusSemester ? 0 : parseFloat((maxScoreSemester / 50).toFixed(2));
+
+      const order = parseInt(row.querySelector('.cur-order')?.value, 10) || (idx + 1);
+
+      updated.push({
+        code,
+        name,
+        hoursSem1,
+        hoursSem2,
+        scoreType,
+        allowExemption,
+        maxScoreMonthly,
+        coefMonthly,
+        maxScoreSemester,
+        coefSemester,
+        isBonusMonthly,
+        isBonusSemester,
+        order,
+        enabled: true
+      });
+    });
+
+    this.curriculumConfigs[gradeKey] = updated;
+
+    // Synchronize active class subjects with the updated curriculum
+    this.syncSubjectsFromCurriculum(this.activeClass, false);
+
+    this.saveState(false);
+    this.showToast('បានរក្សាទុកការកំណត់មុខវិជ្ជាសិក្សាដោយជោគជ័យ!', 'success');
+
+    // Re-render current view so score tables reflect newly added/modified subjects immediately
+    this.renderCurrentView();
+  }
+
+  initReportsModule() {
+    this.reportState = { group: 'report_student', itemKey: 'student_list', option: 'basic' };
+
+    const groupToggle = document.getElementById('navReportGroupToggle');
+    const group = document.getElementById('navReportGroup');
+    if (groupToggle && group) {
+      groupToggle.addEventListener('click', () => {
+        group.classList.toggle('open');
+        groupToggle.setAttribute('aria-expanded', group.classList.contains('open') ? 'true' : 'false');
+      });
+    }
+
+    const gradeSel = document.getElementById('reportGradeSelect');
+    if (gradeSel) {
+      gradeSel.addEventListener('change', () => {
+        this.populateReportClassSelect();
+        this.hideReportPreview();
+      });
+    }
+    ['reportClassSelect', 'reportProgramSelect', 'studyPeriodSelect', 'reportTeacherSelect'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', () => this.hideReportPreview());
+    });
+
+    // Radio target type: exam vs semester
+    document.querySelectorAll('input[name="studyTargetType"]').forEach(r => {
+      r.addEventListener('change', (e) => {
+        const periodSel = document.getElementById('studyPeriodSelect');
+        const periodLabel = document.getElementById('studyPeriodLabel');
+        if (!periodSel) return;
+        if (e.target.value === 'semester') {
+          if (periodLabel) periodLabel.innerHTML = 'ឆមាស <span style="color:red;">*</span>';
+          periodSel.innerHTML = `
+            <option value="sem1_overall" selected>ប្រចាំឆមាសទី១</option>
+            <option value="sem2_overall">ប្រចាំឆមាសទី២</option>
+            <option value="yearly">ប្រចាំឆ្នាំ</option>
+          `;
+        } else {
+          if (periodLabel) periodLabel.innerHTML = 'ពិន្ទុប្រឡង <span style="color:red;">*</span>';
+          periodSel.innerHTML = `
+            <option value="sem1_exam" selected>ប្រឡងឆមាសទី១</option>
+            <option value="sem2_exam">ប្រឡងឆមាសទី២</option>
+            <option value="test_early">តេស្តដើមឆ្នាំ</option>
+          `;
+        }
+        this.hideReportPreview();
+      });
+    });
+
+    ['studyScaleType', 'studyNameDisplay', 'studyGrouping'].forEach(name => {
+      document.querySelectorAll(`input[name="${name}"]`).forEach(r => {
+        r.addEventListener('change', () => this.hideReportPreview());
+      });
+    });
+
+    ['chkShowClassAvg', 'chkShowClassAvgMention', 'chkShowSubjectRank', 'chkShowSubjectRankMention', 'chkShowAbsence', 'reportShowDate', 'reportShowPrincipal', 'reportSignTeacher'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener('change', () => this.hideReportPreview());
+    });
+
+    const signDate = document.getElementById('reportSignDate');
+    if (signDate && !signDate.value) {
+      const d = new Date();
+      signDate.value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+
+    const btnPreview = document.getElementById('btnReportPreview');
+    if (btnPreview) btnPreview.addEventListener('click', () => this.previewReport());
+    const btnPDF = document.getElementById('btnReportPDF');
+    if (btnPDF) btnPDF.addEventListener('click', () => this.exportReportPDF());
+    const btnExcel = document.getElementById('btnReportExcel');
+    if (btnExcel) btnExcel.addEventListener('click', () => this.exportReportExcel());
+
+    // PDF Toolbar buttons
+    this.pdfZoom = 1.0;
+    const btnClose = document.getElementById('pdfBtnClose');
+    if (btnClose) btnClose.addEventListener('click', () => this.hideReportPreview());
+
+    const btnPrint = document.getElementById('pdfBtnPrint');
+    if (btnPrint) btnPrint.addEventListener('click', () => this.exportReportPDF());
+
+    const btnDownload = document.getElementById('pdfBtnDownload');
+    if (btnDownload) btnDownload.addEventListener('click', () => this.exportReportPDF());
+
+    const btnZoomIn = document.getElementById('pdfBtnZoomIn');
+    if (btnZoomIn) btnZoomIn.addEventListener('click', () => this.changePdfZoom(0.15));
+
+    const btnZoomOut = document.getElementById('pdfBtnZoomOut');
+    if (btnZoomOut) btnZoomOut.addEventListener('click', () => this.changePdfZoom(-0.15));
+
+    const zoomSelect = document.getElementById('pdfZoomSelect');
+    if (zoomSelect) {
+      zoomSelect.addEventListener('change', (e) => {
+        const val = e.target.value;
+        if (val === 'auto' || val === 'page-width' || val === 'page-fit') {
+          this.applyPdfZoomMode(val);
+        } else {
+          this.pdfZoom = parseFloat(val) || 1.0;
+          this.applyPdfZoom();
+        }
+      });
+    }
+
+    const btnFullscreen = document.getElementById('pdfBtnFullscreen');
+    if (btnFullscreen) {
+      btnFullscreen.addEventListener('click', () => {
+        const viewer = document.getElementById('reportPreviewCard');
+        if (!viewer) return;
+        if (!document.fullscreenElement) {
+          viewer.requestFullscreen ? viewer.requestFullscreen() : viewer.webkitRequestFullscreen && viewer.webkitRequestFullscreen();
+        } else {
+          document.exitFullscreen ? document.exitFullscreen() : document.webkitExitFullscreen && document.webkitExitFullscreen();
+        }
+      });
+    }
+  }
+
+  changePdfZoom(delta) {
+    this.pdfZoom = Math.min(2.5, Math.max(0.5, (this.pdfZoom || 1.0) + delta));
+    this.applyPdfZoom();
+  }
+
+  applyPdfZoomMode(mode) {
+    const port = document.getElementById('pdfScrollport');
+    const sheet = document.getElementById('reportPreviewBody');
+    if (!port || !sheet) return;
+    const portW = port.clientWidth - 40;
+    const sheetW = sheet.offsetWidth || 794; // approx A4 px
+    if (mode === 'page-width' || mode === 'auto') {
+      this.pdfZoom = Math.min(1.4, Math.max(0.6, portW / sheetW));
+    } else if (mode === 'page-fit') {
+      const portH = port.clientHeight - 40;
+      const sheetH = sheet.offsetHeight || 1123;
+      this.pdfZoom = Math.min(1.2, Math.min(portW / sheetW, portH / sheetH));
+    }
+    this.applyPdfZoom();
+  }
+
+  applyPdfZoom() {
+    const wrap = document.getElementById('pdfScaleWrap');
+    if (wrap) {
+      wrap.style.transform = `scale(${this.pdfZoom || 1.0})`;
+    }
+  }
+
+  hideReportPreview() {
+    const card = document.getElementById('reportPreviewCard');
+    if (card) card.style.display = 'none';
+  }
+
+  renderReportsView() {
+    const groupKey = this.currentPeriod;
+    const catalog = this.getReportCatalog();
+    const group = catalog[groupKey];
+    if (!group) return;
+
+    if (!this.reportState) this.reportState = {};
+    if (this.reportState.group !== groupKey) {
+      this.reportState.group = groupKey;
+      this.reportState.itemKey = group.items[0].key;
+      this.reportState.option = (group.items[0].options && group.items[0].options[0] && group.items[0].options[0].v) || 'default';
+    }
+
+    const crumb = document.getElementById('reportBreadcrumbCurrent');
+    if (crumb) crumb.textContent = group.title;
+
+    // Toggle study vs generic options UI
+    const isStudy = groupKey === 'report_study';
+    const studyBlock = document.getElementById('studyReportOptionsBlock');
+    const genericOptsRow = document.getElementById('reportOptionsRow');
+    const optionsHead = document.getElementById('reportOptionsHead');
+
+    if (studyBlock) studyBlock.style.display = isStudy ? 'flex' : 'none';
+    if (genericOptsRow) genericOptsRow.style.display = isStudy ? 'none' : 'flex';
+    if (optionsHead) {
+      optionsHead.textContent = isStudy ? 'កំណត់រចនាសម្ព័ន្ធរបាយការណ៍' : 'កំណត់ទម្រង់នៃរបាយការណ៍';
+    }
+
+    // Default grade filter to currently active grade the first time
+    const gradeSel = document.getElementById('reportGradeSelect');
+    if (gradeSel && !this.reportGradeInitialized) {
+      gradeSel.value = this.activeClass || 'grade_10';
+      this.reportGradeInitialized = true;
+    }
+    this.populateReportClassSelect();
+
+    const submenu = document.getElementById('reportSubmenu');
+    if (submenu) {
+      submenu.innerHTML = '';
+      group.items.forEach(item => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'report-submenu-item' + (item.key === this.reportState.itemKey ? ' active' : '');
+        btn.textContent = item.label;
+        btn.addEventListener('click', () => {
+          this.reportState.itemKey = item.key;
+          this.reportState.option = (item.options && item.options[0] && item.options[0].v) || 'default';
+          this.hideReportPreview();
+          this.renderReportsView();
+        });
+        submenu.appendChild(btn);
+      });
+    }
+
+    const item = group.items.find(i => i.key === this.reportState.itemKey) || group.items[0];
+    const titleEl = document.getElementById('reportCardTitle');
+    if (titleEl) titleEl.textContent = item.label;
+
+    if (!isStudy && genericOptsRow && item.options) {
+      genericOptsRow.innerHTML = '';
+      item.options.forEach(opt => {
+        const isChecked = opt.v === this.reportState.option;
+        const label = document.createElement('label');
+        label.className = 'report-radio' + (isChecked ? ' active' : '');
+        label.innerHTML = `
+          <input type="radio" name="reportOption" value="${opt.v}" ${isChecked ? 'checked' : ''}>
+          <span>${opt.label}${opt.hint ? `<small>${opt.hint}</small>` : ''}</span>
+        `;
+        label.querySelector('input').addEventListener('change', () => {
+          this.reportState.option = opt.v;
+          genericOptsRow.querySelectorAll('.report-radio').forEach(r => r.classList.remove('active'));
+          label.classList.add('active');
+          this.hideReportPreview();
+        });
+        genericOptsRow.appendChild(label);
+      });
+    }
+  }
+
+  populateReportClassSelect() {
+    const gradeSel = document.getElementById('reportGradeSelect');
+    const classSel = document.getElementById('reportClassSelect');
+    if (!gradeSel || !classSel) return;
+    const gradeKey = gradeSel.value;
+    const prev = classSel.value;
+    let classes = [];
+    const valid = (this.students || []).filter(s => !this.isIncompleteLateStudent(s));
+    if (gradeKey === 'ALL') {
+      classes = valid.map(s => String(s.class || '').trim()).filter(Boolean);
+    } else {
+      classes = [
+        ...this.getClassListForGradeKey(gradeKey),
+        ...valid.filter(s => this.studentMatchesGrade(s, gradeKey)).map(s => String(s.class || '').trim()).filter(Boolean)
+      ];
+    }
+    classes = [...new Set(classes)].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    classSel.innerHTML = '<option value="ALL">ទាំងអស់</option>' + classes.map(c => `<option value="${c}">${c}</option>`).join('');
+    classSel.value = classes.includes(prev) ? prev : 'ALL';
+  }
+
+  getReportGradeKeys() {
+    return ['grade_7', 'grade_8', 'grade_9', 'grade_10', 'grade_11_sci', 'grade_11_soc', 'grade_12_sci', 'grade_12_soc'];
+  }
+
+  getStudentGradeKey(stu) {
+    if (!stu) return 'grade_7';
+    const keys = this.getReportGradeKeys();
+    if (stu.gradeLevel && keys.includes(stu.gradeLevel)) {
+      return stu.gradeLevel;
+    }
+    return keys.find(g => this.studentMatchesGrade(stu, g)) || 'grade_7';
+  }
+
+  getStudentGradeKeyForReport(stu) {
+    return this.getStudentGradeKey(stu);
+  }
+
+  getReportFilters() {
+    const isStudy = this.reportState && this.reportState.group === 'report_study';
+    const gradeKey = (document.getElementById('reportGradeSelect') || {}).value || 'ALL';
+    const classVal = (document.getElementById('reportClassSelect') || {}).value || 'ALL';
+    const program = (document.getElementById('reportProgramSelect') || {}).value || 'ALL';
+
+    let period = 'sem1_exam';
+    if (isStudy) {
+      const studyPer = document.getElementById('studyPeriodSelect');
+      if (studyPer) period = studyPer.value;
+    } else {
+      period = (document.getElementById('reportPeriodSelect') || {}).value || 'sem1_overall';
+    }
+
+    const showDate = !!(document.getElementById('reportShowDate') || {}).checked;
+    const signDate = (document.getElementById('reportSignDate') || {}).value || '';
+    const showPrincipal = !!(document.getElementById('reportShowPrincipal') || {}).checked;
+    const signTeacher = !!(document.getElementById('reportSignTeacher') || {}).checked;
+    const teacherRole = (document.getElementById('reportTeacherSelect') || {}).value || 'គ្រូបន្ទុកថ្នាក់';
+
+    // Study specific options
+    const targetType = (document.querySelector('input[name="studyTargetType"]:checked') || {}).value || 'exam';
+    const scaleType = (document.querySelector('input[name="studyScaleType"]:checked') || {}).value || 'ABCDEF';
+    const nameDisplay = (document.querySelector('input[name="studyNameDisplay"]:checked') || {}).value || 'khmer_latin';
+    const grouping = (document.querySelector('input[name="studyGrouping"]:checked') || {}).value || 'class';
+
+    const showClassAvg = !!(document.getElementById('chkShowClassAvg') || {}).checked;
+    const showClassAvgMention = !!(document.getElementById('chkShowClassAvgMention') || {}).checked;
+    const showSubjectRank = !!(document.getElementById('chkShowSubjectRank') || {}).checked;
+    const showSubjectRankMention = !!(document.getElementById('chkShowSubjectRankMention') || {}).checked;
+    const showAbsence = !!(document.getElementById('chkShowAbsence') || {}).checked;
+
+    return {
+      gradeKey, classVal, program, period, showDate, signDate, showPrincipal,
+      signTeacher, teacherRole, targetType, scaleType, nameDisplay, grouping,
+      showClassAvg, showClassAvgMention, showSubjectRank, showSubjectRankMention, showAbsence
+    };
+  }
+
+  getReportStudents(filters, includeInactive = false) {
+    const list = (this.students || []).filter(s => {
+      if (this.isIncompleteLateStudent(s)) return false;
+      if (filters.gradeKey !== 'ALL' && !this.studentMatchesGrade(s, filters.gradeKey)) return false;
+      if (filters.classVal !== 'ALL' && String(s.class || '').trim() !== filters.classVal) return false;
+
+      // Program filter (general, sci, soc)
+      if (filters.program && filters.program !== 'ALL') {
+        const clsType = String(s.classType || '').toLowerCase();
+        const cls = String(s.class || '').toLowerCase();
+        if (filters.program === 'sci' && !clsType.includes('វិទ្យាសាស្ត្រ') && !cls.includes('sci')) return false;
+        if (filters.program === 'soc' && !clsType.includes('សង្គម') && !cls.includes('soc')) return false;
+        if (filters.program === 'general' && (clsType.includes('សង្គម') || clsType.includes('វិទ្យាសាស្ត្រ') && clsType !== 'ទូទៅ')) {
+          // General education
+        }
+      }
+
+      if (!includeInactive) {
+        const st = String(s.status || '').trim();
+        if (st === 'ឈប់រៀន' || st === 'ផ្ទេរចេញ') return false;
+      }
+      return true;
+    });
+    list.sort((a, b) => {
+      const c = String(a.class || '').localeCompare(String(b.class || ''), undefined, { numeric: true });
+      if (c !== 0) return c;
+      return (a.khmerName || '').localeCompare(b.khmerName || '', 'km');
+    });
+    return list;
+  }
+
+  formatReportDob(dob) {
+    if (!dob) return '';
+    const clean = String(dob).trim();
+    // 1. If YYYY-MM-DD or YYYY/MM/DD or YYYY.MM.DD
+    const isoMatch = clean.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})/);
+    if (isoMatch) {
+      return `${isoMatch[3].padStart(2, '0')}/${isoMatch[2].padStart(2, '0')}/${isoMatch[1]}`;
+    }
+    // 2. If DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
+    const dmyMatch = clean.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/);
+    if (dmyMatch) {
+      return `${dmyMatch[1].padStart(2, '0')}/${dmyMatch[2].padStart(2, '0')}/${dmyMatch[3]}`;
+    }
+    return clean;
+  }
+
+  toInputDateFormat(dob) {
+    if (!dob) return '';
+    const clean = String(dob).trim();
+    // 1. DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
+    const dmyMatch = clean.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})$/);
+    if (dmyMatch) {
+      const day = dmyMatch[1].padStart(2, '0');
+      const month = dmyMatch[2].padStart(2, '0');
+      const year = dmyMatch[3];
+      return `${year}-${month}-${day}`;
+    }
+    // 2. YYYY/MM/DD or YYYY-MM-DD or YYYY.MM.DD
+    const ymdMatch = clean.match(/^(\d{4})[\/\-\.](\d{1,2})[\/\-\.](\d{1,2})$/);
+    if (ymdMatch) {
+      const year = ymdMatch[1];
+      const month = ymdMatch[2].padStart(2, '0');
+      const day = ymdMatch[3].padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+    // 3. ISO timestamp (e.g. 2014-05-24T...)
+    if (/^\d{4}-\d{2}-\d{2}/.test(clean)) {
+      return clean.slice(0, 10);
+    }
+    return '';
+  }
+
+  computeReportAge(dob, refDateStr) {
+    if (!dob) return null;
+    const b = new Date(dob);
+    if (isNaN(b.getTime())) return null;
+    const ref = refDateStr ? new Date(refDateStr) : new Date();
+    let age = ref.getFullYear() - b.getFullYear();
+    const m = ref.getMonth() - b.getMonth();
+    if (m < 0 || (m === 0 && ref.getDate() < b.getDate())) age--;
+    return age;
+  }
+
+  getReportSubScore(stu, period, code) {
+    const aliases = {
+      kh: ['kh', 'K'], math: ['math', 'M'], phy: ['phy', 'P'], chem: ['chem', 'C'], bio: ['bio', 'B'],
+      his: ['his', 'H'], ict: ['ict', 'IT'], moral: ['moral', 'MO'], geo_env: ['geo_env', 'ES'], geo: ['geo', 'G'],
+      home_ec: ['home_ec', 'HE'], eng: ['eng', 'E'], sport: ['sport', 'SP']
+    };
+    const pObj = this.scores && this.scores[stu.id] ? this.scores[stu.id][period] : null;
+    if (!pObj) return null;
+    for (const k of (aliases[code] || [code])) {
+      if (pObj[k] !== undefined && pObj[k] !== null && pObj[k] !== '') {
+        const v = parseFloat(pObj[k]);
+        if (!isNaN(v)) return v;
+      }
+    }
+    return null;
+  }
+
+  getMentionFromPercentage(pct) {
+    if (pct >= 85) return { mention: 'A', khmer: 'ល្អប្រសើរ' };
+    if (pct >= 80) return { mention: 'B', khmer: 'ល្អណាស់' };
+    if (pct >= 70) return { mention: 'C', khmer: 'ល្អ' };
+    if (pct >= 60) return { mention: 'D', khmer: 'ល្អបង្គួរ' };
+    if (pct >= 50) return { mention: 'E', khmer: 'មធ្យម' };
+    return { mention: 'F', khmer: 'ខ្សោយ' };
+  }
+
+  // Compute results for students of a period; ranks computed within each class
+  computeReportResults(students, period) {
+    const results = students.map(stu => {
+      const gradeKey = this.getStudentGradeKeyForReport(stu);
+      const preset = GRADE_PRESETS[gradeKey] || GRADE_PRESETS.grade_7;
+      const subs = (preset.subjects || []).filter(s => s.enabled !== false);
+      const possible = subs.reduce((sum, s) => sum + (Number(s.maxScore) || 0) * (Number(s.coef) || 1), 0);
+      const stats = this.getStudentScoreStatsForClassAssign(stu, gradeKey, period);
+      const pct = possible > 0 ? (stats.total / possible) * 100 : 0;
+      const m = this.getMentionFromPercentage(pct);
+      return { student: stu, gradeKey, total: stats.total, average: stats.average, percentage: pct, mention: m.mention, mentionKhmer: m.khmer, isPassed: pct >= 50, rank: 0 };
+    });
+    const byClass = {};
+    results.forEach(r => {
+      const c = String(r.student.class || '-');
+      (byClass[c] = byClass[c] || []).push(r);
+    });
+    Object.values(byClass).forEach(arr => {
+      arr.sort((a, b) => b.total - a.total);
+      let rank = 1;
+      arr.forEach((r, i) => {
+        if (i > 0 && r.total < arr[i - 1].total) rank = i + 1;
+        r.rank = rank;
+      });
+    });
+    return results;
+  }
+
+  groupReportStudents(students, mode) {
+    const groups = new Map();
+    students.forEach(s => {
+      const key = mode === 'by_class' ? (String(s.class || '').trim() || '-') : this.resolveGradeLabelFromKey(this.getStudentGradeKeyForReport(s));
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(s);
+    });
+    const keys = [...groups.keys()];
+    if (mode === 'by_class') keys.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    else {
+      const order = this.getReportGradeKeys().map(g => this.resolveGradeLabelFromKey(g));
+      keys.sort((a, b) => order.indexOf(a) - order.indexOf(b));
+    }
+    return keys.map(k => ({ key: k, items: groups.get(k) }));
+  }
+
+  buildReportData() {
+    const f = this.getReportFilters();
+    const { group, itemKey, option } = this.reportState || {};
+    const catalog = this.getReportCatalog();
+    const item = (catalog[group] && catalog[group].items.find(i => i.key === itemKey)) || null;
+    const periodTitle = (PERIOD_DEFINITIONS[f.period] && PERIOD_DEFINITIONS[f.period].title) || f.period;
+    const scopeLabel = [
+      f.gradeKey === 'ALL' ? 'គ្រប់កម្រិតថ្នាក់' : this.resolveGradeLabelFromKey(f.gradeKey),
+      f.classVal === 'ALL' ? '' : `ថ្នាក់ ${f.classVal}`
+    ].filter(Boolean).join(' - ');
+
+    const data = { title: item ? item.label : 'របាយការណ៍', subtitle: scopeLabel, columns: [], rows: [], footer: null, cards: null, filters: f };
+    const isF = s => s.gender === 'ស្រី';
+
+    switch (itemKey) {
+      case 'student_list': {
+        const list = this.getReportStudents(f);
+        const isGrade7 = option === 'grade7' || (option !== 'basic' && option !== 'detail' && option !== 'extra' && option !== 'grade8_9' && option !== 'grade10_12' && f.gradeKey === 'grade_7');
+        const isGrade8_9 = option === 'grade8_9' || (option !== 'basic' && option !== 'detail' && option !== 'extra' && option !== 'grade7' && option !== 'grade10_12' && (f.gradeKey === 'grade_8' || f.gradeKey === 'grade_9'));
+        const isGrade10_12 = option === 'grade10_12' || (option !== 'basic' && option !== 'detail' && option !== 'extra' && option !== 'grade7' && option !== 'grade8_9' && (f.gradeKey === 'grade_10' || f.gradeKey === 'grade_11' || f.gradeKey === 'grade_12'));
+
+        if (isGrade7 || isGrade8_9 || isGrade10_12) {
+          data.isGrade7 = true;
+          data.isGrade8_9 = isGrade8_9;
+          data.isGrade10_12 = isGrade10_12;
+          data.title = 'បញ្ជីរាយនាមសិស្សតាមថ្នាក់';
+          const totalFemale = list.filter(isF).length;
+          let defaultCls = '៧';
+          if (isGrade8_9) {
+            defaultCls = (f.gradeKey === 'grade_9') ? '៩' : '៨';
+          } else if (isGrade10_12) {
+            if (f.gradeKey === 'grade_11') defaultCls = '១១';
+            else if (f.gradeKey === 'grade_12') defaultCls = '១២';
+            else defaultCls = '១០';
+          }
+          const clsLabel = (f.classVal && f.classVal !== 'ALL') ? f.classVal : defaultCls;
+          data.grade7Meta = {
+            className: clsLabel,
+            total: list.length,
+            female: totalFemale
+          };
+
+          if (isGrade10_12) {
+            // Grade 10, 11, 12 (11 columns)
+            data.columns = ['ល.រ', 'គោត្តនាម.នាម', 'ភេទ', 'ថ្ងៃខែឆ្នាំកំណើត', 'ឡើងពីថ្នាក់', 'ត្រួត', 'សម័យប្រឡង', 'ម.ប្រឡង', 'បន្ទប់', 'លេខតុ', 'ផ្សេងៗ'];
+            data.rows = list.map((s, i) => [
+              this.toKhmerNum(i + 1),
+              s.khmerName,
+              s.gender === 'ស្រី' ? 'ស' : 'ប',
+              this.formatReportDob(s.dob),
+              s.fromClass || s.oldClass || '',
+              s.repeatGrade || s.repeatedGrade || '',
+              s.diplomaSession || s.examSession || '',
+              s.diplomaCenter || s.examCenter || '',
+              s.diplomaRoom || s.room || '',
+              s.diplomaDesk || s.desk || s.seatNo || '',
+              s.note || ''
+            ]);
+
+            // Add extra blank rows for handwritten additions (e.g. 55 students -> add 3 blank rows up to 58)
+            if (list.length === 0) {
+              for (let b = 1; b <= 10; b++) {
+                data.rows.push([
+                  this.toKhmerNum(b),
+                  '', '', '', '', '', '', '', '', '', ''
+                ]);
+              }
+            } else {
+              const extraRows = 3;
+              for (let b = 1; b <= extraRows; b++) {
+                data.rows.push([
+                  this.toKhmerNum(list.length + b),
+                  '', '', '', '', '', '', '', '', '', ''
+                ]);
+              }
+            }
+          } else if (isGrade8_9) {
+            data.columns = ['ល.រ', 'គោត្តនាម.នាម', 'ភេទ', 'ថ្ងៃខែឆ្នាំកំណើត', 'ឡើងពីថ្នាក់ទី', 'ត្រួតថ្នាក់ទី', 'ផ្ទេរមកពី', 'ផ្សេងៗ'];
+            data.rows = list.map((s, i) => [
+              this.toKhmerNum(i + 1),
+              s.khmerName,
+              s.gender === 'ស្រី' ? 'ស' : 'ប',
+              this.formatReportDob(s.dob),
+              s.fromClass || s.oldClass || '',
+              s.repeatGrade || s.repeatedGrade || '',
+              s.transferFrom || '',
+              s.note || ''
+            ]);
+
+            // Add extra blank rows for handwritten additions (e.g. 55 students -> add 3 blank rows up to 58)
+            if (list.length === 0) {
+              for (let b = 1; b <= 10; b++) {
+                data.rows.push([
+                  this.toKhmerNum(b),
+                  '', '', '', '', '', '', ''
+                ]);
+              }
+            } else {
+              const extraRows = 3;
+              for (let b = 1; b <= extraRows; b++) {
+                data.rows.push([
+                  this.toKhmerNum(list.length + b),
+                  '', '', '', '', '', '', ''
+                ]);
+              }
+            }
+          } else {
+            // Grade 7 (9 columns)
+            data.columns = ['ល.រ', 'គោត្តនាម-នាម', 'ភេទ', 'ថ្ងៃខែឆ្នាំកំណើត', 'ឡើងពីថ្នាក់', 'មកពីសាលា', 'ត្រួតថ្នាក់ទី', 'ផ្ទេរមកពី', 'ផ្សេងៗ'];
+            data.rows = list.map((s, i) => [
+              this.toKhmerNum(i + 1),
+              s.khmerName,
+              s.gender === 'ស្រី' ? 'ស' : 'ប',
+              this.formatReportDob(s.dob),
+              s.fromClass || s.oldClass || '',
+              s.primarySchool || s.fromSchool || '',
+              s.repeatGrade || s.repeatedGrade || '',
+              s.transferFrom || '',
+              s.note || ''
+            ]);
+
+            // Add extra blank rows for handwritten additions (e.g. 55 students -> add 3 blank rows up to 58)
+            if (list.length === 0) {
+              for (let b = 1; b <= 10; b++) {
+                data.rows.push([
+                  this.toKhmerNum(b),
+                  '', '', '', '', '', '', '', ''
+                ]);
+              }
+            } else {
+              const extraRows = 3;
+              for (let b = 1; b <= extraRows; b++) {
+                data.rows.push([
+                  this.toKhmerNum(list.length + b),
+                  '', '', '', '', '', '', '', ''
+                ]);
+              }
+            }
+          }
+          data.summary = `សិស្សសរុប៖ ${list.length} នាក់ | សិស្សស្រី៖ ${totalFemale} នាក់`;
+        } else if (option === 'basic') {
+          data.title = 'បញ្ជីរាយនាមសិស្ស';
+          data.columns = ['ល.រ', 'អត្តលេខ', 'គោត្តនាម និងនាម', 'ឈ្មោះឡាតាំង', 'ភេទ', 'ថ្ងៃខែឆ្នាំកំណើត', 'ថ្នាក់'];
+          data.rows = list.map((s, i) => [i + 1, s.id, s.khmerName, s.latinName || '', s.gender, this.formatReportDob(s.dob), s.class || '']);
+          data.summary = `សរុប៖ ${list.length} នាក់ ក្នុងនោះស្រី៖ ${list.filter(isF).length} នាក់`;
+        } else if (option === 'detail') {
+          data.title = 'បញ្ជីរាយនាមសិស្ស';
+          data.columns = ['ល.រ', 'អត្តលេខ', 'គោត្តនាម និងនាម', 'ភេទ', 'ថ្ងៃខែឆ្នាំកំណើត', 'ថ្នាក់', 'អាណាព្យាបាល', 'លេខទូរស័ព្ទ', 'អាសយដ្ឋាន'];
+          data.rows = list.map((s, i) => [i + 1, s.id, s.khmerName, s.gender, this.formatReportDob(s.dob), s.class || '', s.guardian || '', s.phone || '', s.address || '']);
+          data.summary = `សរុប៖ ${list.length} នាក់ ក្នុងនោះស្រី៖ ${list.filter(isF).length} នាក់`;
+        } else {
+          data.title = 'បញ្ជីរាយនាមសិស្ស';
+          data.columns = ['ល.រ', 'អត្តលេខ', 'គោត្តនាម និងនាម', 'ភេទ', 'អាយុ', 'ប្រភេទថ្នាក់', 'ថ្នាក់ចាស់', 'ថ្នាក់ថ្មី', 'ស្ថានភាព'];
+          data.rows = list.map((s, i) => [i + 1, s.id, s.khmerName, s.gender, this.computeReportAge(s.dob, f.signDate) ?? '', s.classType || '', s.oldClass || '', s.class || '', s.status || 'កំពុងរៀន']);
+          data.summary = `សរុប៖ ${list.length} នាក់ ក្នុងនោះស្រី៖ ${list.filter(isF).length} នាក់`;
+        }
+        break;
+      }
+      case 'age_stats': {
+        const list = this.getReportStudents(f);
+        const ages = [...new Set(list.map(s => this.computeReportAge(s.dob, f.signDate)).filter(a => a !== null))].sort((a, b) => a - b);
+        const hasUnknown = list.some(s => this.computeReportAge(s.dob, f.signDate) === null);
+        const groups = this.groupReportStudents(list, option);
+        data.title = 'ស្ថិតិសិស្សតាមអាយុ';
+        data.columns = [option === 'by_class' ? 'ថ្នាក់' : 'កម្រិតថ្នាក់', ...ages.map(a => `${a} ឆ្នាំ`), ...(hasUnknown ? ['មិនស្គាល់'] : []), 'សរុប', 'ស្រី'];
+        const cell = (arr) => `${arr.length} (${arr.filter(isF).length})`;
+        data.rows = groups.map(g => [
+          g.key,
+          ...ages.map(a => cell(g.items.filter(s => this.computeReportAge(s.dob, f.signDate) === a))),
+          ...(hasUnknown ? [cell(g.items.filter(s => this.computeReportAge(s.dob, f.signDate) === null))] : []),
+          g.items.length, g.items.filter(isF).length
+        ]);
+        data.footer = ['សរុប', ...ages.map(a => cell(list.filter(s => this.computeReportAge(s.dob, f.signDate) === a))),
+          ...(hasUnknown ? [cell(list.filter(s => this.computeReportAge(s.dob, f.signDate) === null))] : []),
+          list.length, list.filter(isF).length];
+        data.note = 'ចំណាំ៖ តួលេខក្នុងវង់ក្រចក គឺចំនួនសិស្សស្រី';
+        break;
+      }
+      case 'count_stats': {
+        const list = this.getReportStudents(f);
+        const groups = this.groupReportStudents(list, option);
+        data.title = 'ស្ថិតិចំនួនសិស្ស';
+        data.columns = ['ល.រ', option === 'by_class' ? 'ថ្នាក់' : 'កម្រិតថ្នាក់', 'សិស្សសរុប', 'ស្រី', 'ប្រុស', 'ភាគរយស្រី'];
+        data.rows = groups.map((g, i) => {
+          const fc = g.items.filter(isF).length;
+          return [i + 1, g.key, g.items.length, fc, g.items.length - fc, g.items.length ? `${((fc / g.items.length) * 100).toFixed(1)}%` : '0%'];
+        });
+        const tf = list.filter(isF).length;
+        data.footer = ['', 'សរុប', list.length, tf, list.length - tf, list.length ? `${((tf / list.length) * 100).toFixed(1)}%` : '0%'];
+        break;
+      }
+      case 'student_card': {
+        const list = this.getReportStudents(f);
+        data.title = 'កាតសម្គាល់ខ្លួនសិស្ស';
+        data.columns = ['ល.រ', 'អត្តលេខ', 'គោត្តនាម និងនាម', 'ឈ្មោះឡាតាំង', 'ភេទ', 'ថ្ងៃខែឆ្នាំកំណើត', 'ថ្នាក់'];
+        data.rows = list.map((s, i) => [i + 1, s.id, s.khmerName, s.latinName || '', s.gender, this.formatReportDob(s.dob), s.class || '']);
+        data.cards = list;
+        data.summary = `សរុប៖ ${list.length} កាត`;
+        break;
+      }
+      case 'class_change': {
+        let list = this.getReportStudents(f);
+        if (option === 'changed') list = list.filter(s => s.oldClass && s.oldClass !== s.class);
+        data.title = 'បញ្ជីការផ្លាស់ប្ដូរថ្នាក់របស់សិស្ស';
+        data.columns = ['ល.រ', 'អត្តលេខ', 'គោត្តនាម និងនាម', 'ភេទ', 'ថ្នាក់ដំបូង', 'ថ្នាក់ចាស់', 'ថ្នាក់ថ្មី', 'ស្ថានភាព'];
+        data.rows = list.map((s, i) => [i + 1, s.id, s.khmerName, s.gender, s.initialClass || '', s.oldClass || '', s.class || '',
+        (s.oldClass && s.oldClass !== s.class) ? 'ប្ដូរថ្នាក់' : 'ថ្នាក់ដដែល']);
+        data.summary = `សរុប៖ ${list.length} នាក់ ក្នុងនោះស្រី៖ ${list.filter(isF).length} នាក់`;
+        break;
+      }
+      case 'dropout': {
+        let list = this.getReportStudents(f, true).filter(s => ['ឈប់រៀន', 'ផ្ទេរចេញ'].includes(String(s.status || '').trim()));
+        if (option === 'dropout') list = list.filter(s => s.status === 'ឈប់រៀន');
+        if (option === 'transfer') list = list.filter(s => s.status === 'ផ្ទេរចេញ');
+        data.title = 'បញ្ជីសិស្សបោះបង់ការសិក្សា និងផ្ទេរសាលា';
+        data.columns = ['ល.រ', 'អត្តលេខ', 'គោត្តនាម និងនាម', 'ភេទ', 'ថ្ងៃខែឆ្នាំកំណើត', 'ថ្នាក់', 'ស្ថានភាព', 'អាណាព្យាបាល', 'លេខទូរស័ព្ទ'];
+        data.rows = list.map((s, i) => [i + 1, s.id, s.khmerName, s.gender, this.formatReportDob(s.dob), s.class || '', s.status, s.guardian || '', s.phone || '']);
+        data.summary = `សរុប៖ ${list.length} នាក់ ក្នុងនោះស្រី៖ ${list.filter(isF).length} នាក់`;
+        data.emptyText = 'មិនមានសិស្សដែលមានស្ថានភាព «ឈប់រៀន» ឬ «ផ្ទេរចេញ» ឡើយ';
+        break;
+      }
+      case 'transcript':
+      case 'result_list': {
+        const res = this.computeReportResults(this.getReportStudents(f), f.period);
+        // Ordering / grouping
+        if (f.grouping === 'class') {
+          res.sort((a, b) => String(a.student.class || '').localeCompare(String(b.student.class || ''), undefined, { numeric: true }) || a.rank - b.rank);
+        } else {
+          // by grade
+          res.sort((a, b) => b.total - a.total);
+        }
+
+        const nameCol = f.nameDisplay === 'khmer_latin' ? 'គោត្តនាម និងនាម (ឡាតាំង)' : 'គោត្តនាម និងនាម';
+        data.title = `ប្រតិចារិកពិន្ទុ ${periodTitle}`;
+        data.columns = ['ល.រ', 'អត្តលេខ', nameCol, 'ភេទ', 'ថ្នាក់', 'ពិន្ទុសរុប'];
+
+        if (f.showClassAvg && f.showClassAvgMention) {
+          data.columns.push('មធ្យមភាគ', 'ចំណាត់ថ្នាក់', 'និទ្ទេស');
+        } else if (f.showClassAvgMention) {
+          data.columns.push('មធ្យមភាគ', 'និទ្ទេស');
+        } else if (f.showClassAvg) {
+          data.columns.push('មធ្យមភាគ', 'ចំណាត់ថ្នាក់');
+        } else {
+          data.columns.push('មធ្យមភាគ');
+        }
+
+        if (f.showAbsence) {
+          data.columns.push('អវត្តមាន');
+        }
+
+        data.rows = res.map((r, i) => {
+          const nameVal = f.nameDisplay === 'khmer_latin'
+            ? `${r.student.khmerName}${r.student.latinName ? ' (' + r.student.latinName + ')' : ''}`
+            : r.student.khmerName;
+          const mentionVal = f.scaleType === 'khmer' ? r.mentionKhmer : r.mention;
+          const row = [i + 1, r.student.id, nameVal, r.student.gender, r.student.class || '', r.total.toFixed(2)];
+
+          if (f.showClassAvg && f.showClassAvgMention) {
+            row.push(r.average.toFixed(2), r.rank, mentionVal);
+          } else if (f.showClassAvgMention) {
+            row.push(r.average.toFixed(2), mentionVal);
+          } else if (f.showClassAvg) {
+            row.push(r.average.toFixed(2), r.rank);
+          } else {
+            row.push(r.average.toFixed(2));
+          }
+
+          if (f.showAbsence) {
+            row.push('០');
+          }
+          return row;
+        });
+
+        const passed = res.filter(r => r.isPassed);
+        data.summary = `សរុប៖ ${res.length} នាក់ (ស្រី ${res.filter(r => isF(r.student)).length}) | ជាប់៖ ${passed.length} នាក់ | ធ្លាក់៖ ${res.length - passed.length} នាក់`;
+        break;
+      }
+      case 'exam_score':
+      case 'study_records':
+      case 'term_report':
+      case 'resource_school_result': {
+        // Detailed subject-by-subject score matrix sheet
+        const students = this.getReportStudents(f);
+        const gradeKey = f.gradeKey === 'ALL' ? (students[0] ? this.getStudentGradeKeyForReport(students[0]) : 'grade_10') : f.gradeKey;
+        const preset = GRADE_PRESETS[gradeKey] || GRADE_PRESETS.grade_10;
+        const subs = (preset.subjects || []).filter(s => s.enabled !== false);
+
+        data.title = item ? item.label : 'របាយការណ៍ពិន្ទុ';
+        const nameCol = f.nameDisplay === 'khmer_latin' ? 'គោត្តនាម និងនាម' : 'គោត្តនាម';
+        data.columns = ['ល.រ', 'អត្តលេខ', nameCol, 'ភេទ', 'ថ្នាក់', ...subs.map(s => s.name), 'សរុប', 'មធ្យមភាគ', 'ចំណាត់ថ្នាក់'];
+        if (f.showClassAvgMention) data.columns.push('និទ្ទេស');
+
+        const res = this.computeReportResults(students, f.period);
+        const resMap = new Map(res.map(r => [r.student.id, r]));
+
+        data.rows = students.map((s, idx) => {
+          const r = resMap.get(s.id) || { total: 0, average: 0, rank: '-', mention: '-', mentionKhmer: '-' };
+          const subScores = subs.map(sub => {
+            const val = this.getReportSubScore(s, f.period, sub.code);
+            return val !== null ? val.toFixed(1) : '-';
+          });
+          const mentionVal = f.scaleType === 'khmer' ? r.mentionKhmer : r.mention;
+          const row = [idx + 1, s.id, s.khmerName, s.gender, s.class || '', ...subScores, r.total.toFixed(1), r.average.toFixed(2), r.rank];
+          if (f.showClassAvgMention) row.push(mentionVal);
+          return row;
+        });
+        data.summary = `សិស្សសរុប៖ ${students.length} នាក់ (ស្រី៖ ${students.filter(isF).length} នាក់)`;
+        break;
+      }
+      case 'exam_avg_score':
+      case 'monthly_avg':
+      case 'yearly_monthly_avg':
+      case 'grade_score_status': {
+        // Averages per subject & class summary
+        const list = this.getReportStudents(f);
+        const groups = this.groupReportStudents(list, 'by_class');
+        data.title = item ? item.label : 'មធ្យមភាគការប្រឡង';
+        data.columns = ['ថ្នាក់', 'មុខវិជ្ជា', 'មេគុណ', 'ពិន្ទុពេញ', 'សិស្សមានពិន្ទុ', 'មធ្យមភាគ', 'អត្រាជាប់ (≥50%)'];
+        groups.forEach(g => {
+          const gradeKey = this.getStudentGradeKeyForReport(g.items[0]);
+          const subs = ((GRADE_PRESETS[gradeKey] || GRADE_PRESETS.grade_10).subjects || []).filter(s => s.enabled !== false);
+          subs.forEach(sub => {
+            const vals = g.items.map(s => this.getReportSubScore(s, f.period, sub.code)).filter(v => v !== null);
+            const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+            const passN = vals.filter(v => v >= (Number(sub.maxScore) || 0) / 2).length;
+            data.rows.push([
+              g.key, sub.name, sub.coef || 1, sub.maxScore, vals.length,
+              avg.toFixed(2), vals.length ? `${((passN / vals.length) * 100).toFixed(1)}%` : '-'
+            ]);
+          });
+        });
+        break;
+      }
+      case 'yearly_bulletin':
+      case 'praise_card':
+      case 'praise_letter':
+      case 'reprimand':
+      case 'encourage_letter':
+      case 'score_deduction': {
+        // Praise cards, certificates, and bulletins
+        const res = this.computeReportResults(this.getReportStudents(f), f.period);
+        // Praise gets top 5 or rank <= 3
+        const isPraise = itemKey.includes('praise') || itemKey === 'reprimand';
+        const filteredRes = isPraise ? res.filter(r => r.rank <= 3 && r.total > 0) : res;
+        data.title = item ? item.label : 'ព្រឹត្តិបត្រ';
+        data.columns = ['ល.រ', 'អត្តលេខ', 'គោត្តនាម និងនាម', 'ភេទ', 'ថ្នាក់', 'មធ្យមភាគ', 'ចំណាត់ថ្នាក់', 'និទ្ទេស', 'ស្ថានភាព'];
+        data.rows = filteredRes.map((r, i) => {
+          const mentionVal = f.scaleType === 'khmer' ? r.mentionKhmer : r.mention;
+          return [i + 1, r.student.id, r.student.khmerName, r.student.gender, r.student.class || '', r.average.toFixed(2), r.rank, mentionVal, isPraise ? 'សិស្សឆ្នើម' : 'ធម្មតា'];
+        });
+        data.summary = `សរុប៖ ${filteredRes.length} នាក់`;
+        break;
+      }
+      case 'honor_roll': {
+        const topN = parseInt(option, 10) || 5;
+        const res = this.computeReportResults(this.getReportStudents(f), f.period).filter(r => r.total > 0);
+        const grouped = this.groupReportStudents(res.map(r => r.student), 'by_class');
+        const resMap = new Map(res.map(r => [r.student.id, r]));
+        data.title = `តារាងកិត្តិយស ${periodTitle}`;
+        data.columns = ['ថ្នាក់', 'ចំណាត់ថ្នាក់', 'អត្តលេខ', 'គោត្តនាម និងនាម', 'ភេទ', 'មធ្យមភាគ', 'និទ្ទេស'];
+        grouped.forEach(g => {
+          g.items.map(s => resMap.get(s.id)).filter(r => r.rank <= topN).sort((a, b) => a.rank - b.rank)
+            .forEach(r => data.rows.push([g.key, r.rank, r.student.id, r.student.khmerName, r.student.gender, r.average.toFixed(2), `${r.mention} (${r.mentionKhmer})`]));
+        });
+        break;
+      }
+      case 'mention_stats': {
+        const res = this.computeReportResults(this.getReportStudents(f), f.period);
+        const resMap = new Map(res.map(r => [r.student.id, r]));
+        const groups = this.groupReportStudents(res.map(r => r.student), option);
+        const ms = ['A', 'B', 'C', 'D', 'E', 'F'];
+        const cell = (arr, m) => {
+          const x = arr.filter(r => r.mention === m);
+          return `${x.length} (${x.filter(r => isF(r.student)).length})`;
+        };
+        data.title = `ស្ថិតិនិទ្ទេស ${periodTitle}`;
+        data.columns = [option === 'by_class' ? 'ថ្នាក់' : 'កម្រិតថ្នាក់', 'សរុប', ...ms.map(m => `និទ្ទេស ${m}`), 'ជាប់', 'អត្រាជាប់'];
+        data.rows = groups.map(g => {
+          const arr = g.items.map(s => resMap.get(s.id));
+          const p = arr.filter(r => r.isPassed).length;
+          return [g.key, arr.length, ...ms.map(m => cell(arr, m)), p, arr.length ? `${((p / arr.length) * 100).toFixed(1)}%` : '0%'];
+        });
+        const tp = res.filter(r => r.isPassed).length;
+        data.footer = ['សរុប', res.length, ...ms.map(m => cell(res, m)), tp, res.length ? `${((tp / res.length) * 100).toFixed(1)}%` : '0%'];
+        data.note = 'ចំណាំ៖ តួលេខក្នុងវង់ក្រចក គឺចំនួនសិស្សស្រី';
+        break;
+      }
+      case 'weak_students': {
+        const th = parseInt(option, 10) || 50;
+        const res = this.computeReportResults(this.getReportStudents(f), f.period).filter(r => r.percentage < th);
+        res.sort((a, b) => String(a.student.class || '').localeCompare(String(b.student.class || ''), undefined, { numeric: true }) || a.percentage - b.percentage);
+        data.title = `បញ្ជីសិស្សរៀនខ្សោយ (ក្រោម ${th}%) ${periodTitle}`;
+        data.columns = ['ល.រ', 'អត្តលេខ', 'គោត្តនាម និងនាម', 'ភេទ', 'ថ្នាក់', 'មធ្យមភាគ', 'ភាគរយ', 'និទ្ទេស', 'អាណាព្យាបាល', 'លេខទូរស័ព្ទ'];
+        data.rows = res.map((r, i) => [i + 1, r.student.id, r.student.khmerName, r.student.gender, r.student.class || '',
+        r.average.toFixed(2), `${r.percentage.toFixed(1)}%`, r.mention, r.student.guardian || '', r.student.phone || '']);
+        data.summary = `សរុប៖ ${res.length} នាក់ ក្នុងនោះស្រី៖ ${res.filter(r => isF(r.student)).length} នាក់`;
+        break;
+      }
+      case 'subject_avg':
+      case 'score_entry_status': {
+        const list = this.getReportStudents(f);
+        const groups = this.groupReportStudents(list, 'by_class');
+        const isEntry = itemKey === 'score_entry_status';
+        data.title = isEntry ? `ស្ថានភាពបញ្ចូលពិន្ទុ ${periodTitle}` : `មធ្យមភាគតាមមុខវិជ្ជា ${periodTitle}`;
+        data.columns = isEntry
+          ? ['ថ្នាក់', 'មុខវិជ្ជា', 'សិស្សសរុប', 'បានបញ្ចូល', 'មិនទាន់បញ្ចូល', 'ភាគរយបញ្ចូល', 'ស្ថានភាព']
+          : ['ថ្នាក់', 'មុខវិជ្ជា', 'ពិន្ទុអតិបរមា', 'សិស្សមានពិន្ទុ', 'មធ្យមភាគ', 'ពិន្ទុខ្ពស់បំផុត', 'ពិន្ទុទាបបំផុត', 'អត្រាជាប់ (≥50%)'];
+        groups.forEach(g => {
+          const gradeKey = this.getStudentGradeKeyForReport(g.items[0]);
+          const subs = ((GRADE_PRESETS[gradeKey] || GRADE_PRESETS.grade_7).subjects || []).filter(s => s.enabled !== false);
+          subs.forEach(sub => {
+            const vals = g.items.map(s => this.getReportSubScore(s, f.period, sub.code)).filter(v => v !== null);
+            if (isEntry) {
+              const pct = g.items.length ? (vals.length / g.items.length) * 100 : 0;
+              if (option === 'missing' && vals.length >= g.items.length) return;
+              data.rows.push([g.key, sub.name, g.items.length, vals.length, g.items.length - vals.length, `${pct.toFixed(0)}%`,
+              pct >= 100 ? 'រួចរាល់' : (vals.length === 0 ? 'មិនទាន់ចាប់ផ្ដើម' : 'កំពុងបញ្ចូល')]);
+            } else {
+              const avg = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
+              const passN = vals.filter(v => v >= (Number(sub.maxScore) || 0) / 2).length;
+              data.rows.push([g.key, sub.name, sub.maxScore, vals.length, avg.toFixed(2),
+              vals.length ? Math.max(...vals) : '-', vals.length ? Math.min(...vals) : '-',
+              vals.length ? `${((passN / vals.length) * 100).toFixed(1)}%` : '-']);
+            }
+          });
+        });
+        break;
+      }
+      case 'class_summary': {
+        const res = this.computeReportResults(this.getReportStudents(f), f.period);
+        const resMap = new Map(res.map(r => [r.student.id, r]));
+        const groups = this.groupReportStudents(res.map(r => r.student), 'by_class');
+        data.title = `សង្ខេបលទ្ធផលតាមថ្នាក់ ${periodTitle}`;
+        data.columns = ['ល.រ', 'ថ្នាក់', 'សិស្សសរុប', 'ស្រី', 'ជាប់', 'ធ្លាក់', 'អត្រាជាប់', 'មធ្យមភាគថ្នាក់', 'សិស្សលេខ១'];
+        data.rows = groups.map((g, i) => {
+          const arr = g.items.map(s => resMap.get(s.id));
+          const p = arr.filter(r => r.isPassed).length;
+          const avg = arr.length ? arr.reduce((a, r) => a + r.average, 0) / arr.length : 0;
+          const top = arr.slice().sort((a, b) => a.rank - b.rank)[0];
+          return [i + 1, g.key, arr.length, arr.filter(r => isF(r.student)).length, p, arr.length - p,
+          arr.length ? `${((p / arr.length) * 100).toFixed(1)}%` : '0%', avg.toFixed(2), top && top.total > 0 ? top.student.khmerName : '-'];
+        });
+        break;
+      }
+      default:
+        break;
+    }
+    return data;
+  }
+
+  escapeReportHtml(v) {
+    return String(v === null || v === undefined ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  getKhmerHeaderDivider() {
+    return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAApAAAABsCAYAAADdeoIbAAAQAElEQVR4AezdBbxcRxUG8JniHqw4pLgTvHiKO8EdAsWhtECLFLfiUNyhuLt7i7s7BVJocSnuLfnfdNKbzb6Xfcm+91a+9+vp3b07d+acb87M+e6ZuTe7HZu/IBAEgkAQCAJBIAgEgSCwBAR2K/kLAkEgCASBKUQgKgeBIBAEVg+BEMjVwz4tB4EgEASCQBAIAkFgKhEIgdyFbsulQSAIBIEgEASCQBCYRwRCIOex12NzEAgCQWC+EYj1QSAI7CICIZC7CGAuDwJBIAgEgSAQBILAvCEQAjlvPT4p9kaPIBAEgkAQCAJBYGoRCIGc2q6L4kEgCASBIBAEVh6BtBgEIBACCYVIEAgCQSAIBIEgEASCwMgIhECODFUKBoFJQSB6BIEgEASCQBBYXQRCIFcX/7QeBIJAEAgCQSAIzAsCM2RnCOQMdWZMCQJBIAgEgSAQBILASiAQArkSKKeNIBAEJgWB6BEEgkAQCAJjQCAEcgwgpoogEASCQBAIAkEgCMwTAitPIOcJ3dgaBIJAEAgCQSAIBIEZRCAEcgY7NSYFgSAQBJYDgdQZBIJAEGgIhEA2JHIMAkEgCASBIBAEgkAQGAmBEMiRYJqUQtEjCASBIBAEgkAQCAKrj0AI5Or3QTQIAkEgCASBWUcg9gWBGUMgBHLGOjTmBIEgEASCQBAIAkFguREIgVxuhFP/pCAQPYJAEAgCQSAIBIExIRACOSYgU00QCAJBIAgEgSCwHAikzklEIARyEnslOgWBIBAEgkAQCAJBYIIRCIGc4M6JakFgUhCIHkEgCASBIBAE+giEQPbRyOcgEASCQBAIAkEgCMwOAstmSQjkskGbioNAEAgCQSAIBIEgMJsIhEDOZr/GqiAQBCYFgegRBIJAEJhBBEIgZ7BTY1IQCAJBIAgEgSAQBJYTgXkgkMuJX+oOAkEgCASBIBAEgsDcIRACOXddHoODQBAIAtOCQPQMAkFgUhEIgZzUnoleQSAIBIEgEASCQBCYUARCICe0YyZFregRBIJAEAgCQSAIBIFBBEIgBxHJ9yAQBIJAEAgC049ALAgCy4pACOSywpvKg0AQCAJBIAgEgSAwewiEQM5en8aiSUEgegSBIBAEgkAQmFEEQiBntGNjVhAIApOFwD/+8Y/yhz/8ofzqV78qv/zlL8tvf/vb8re//W1VlfzLX/7S6fP73/++/PWvfy3/+9//VlWfNB4EJgWB6LFjBEIgd4xRSgSBmUbgmGOOKf/973/Lv/71r4Lk/P3vfy9NnPPbscceuywYqBdp+c9//lP++c9/du0iMojNn//850L+9Kc/dUefnUe6lN1ZvdirPfWoj2iTzexns9/pRb+lGu4auqmntcEGxPGII44oP/zhDzv56U9/2hHJo48+urOPDtr/97//Xei41HaXUp5+7EVkDz/88LJp06atusBW++xYSp0pGwSCwHwhEAI5X/0da4PANgggCYjZT37yk/LRj360vP71ry8ve9nLystf/vLymte8phx22GHlxz/+cZed2ubCMX1B1BCrr3/96+U973lPeeUrX1me8YxnlIMOOqg86lGPKvvvv3954AMfWB784Ad335/0pCeVF7/4xeVd73pXobPrkZ1R1WGvzN9Xv/rV8tKXvrQ87nGPK094whPKM5/5zO77m9/85vKhD32ofOUrXyk/+9nPugwhIjlq/cohgUgZPF/ykpeUxz/+8WXfffctBx54YNfW05/+9ELY8ohHPKLst99+xfFpT3tah/9nP/vZIiOI5KlvOeR73/teh/Vzn/vcot0nPvGJnW5PecpTyrvf/e6ufUR2OdpOnUEgCMwGAiGQs9GPsSII7BQCyBei9MUvfrF85CMf6cjD29/+9vLOd76z++yc35A8hAIB26mGhlwkA/ab3/ymfPe73y2f+cxnygc/+MHyjne8oyBxb3jDGzoy9epXv7q86lWv6sjs6173uuI8/d7//veXL3zhC+VHP/pR+eMf/9hlT3ekmwzfUUcdVb75zW+WQw89tCOhb33rW7vje9/73vKBD3yg04HNfkfkEE1t/PrXv+6yo0PM6E7JNsoyyuSpnz2IKF2Rcja88Y1vLL4jytqD8Zve9KbOvte+9rWd3TD42te+VmQlEdcd2dQ1voT/qRPB/f73v9/1MSKOMML9LW95S6cD4vuDH/ygW25fQtUpGgSCwJwhsCCBnDMcYm4QmEsEEIpPfepTBVFDeJDFb3/72x3J+vKXv9wROr/JECI148qKIa5HHnlk0R5ChUx94hOfKN/4xje6zB9iiZC1DCOCJlPqvOzZoZsJ4Cte8YouU4pwydipc7FOlElFlg455JCOkMpgKn+Sk5yk2/snM8l2BAqhO/jgg7sM5Qtf+MLysY99rFh+Vn6Y/O53vyvf+ta3iuue/OQnd1lSJBE5ptuwa/rnkFskXebS0ralb33TLzOOz5anf/GLXxTtsJXerV43CPDV1/oDzu23HINAEAgCgwiEQA4iku9BYAwItEBtjxniIziPodqxVoGcIS7IBBKGUCExCA9igUwgM4gXQjNK40gckul6mTv1fulLXyrICCzg0LJqJzzhCcvJT37ycsYznrGc5jSnKX6jD5El8119yiNTvstaehAF+VQ30vm+972vOH7nO98p2i3H/blW+Z///OdFNhHBYxPCeJ7znKdc5SpXKde97nXLta997bLXXnuVK1/5ymXPPfcs69atK+c617nKSU960u5BF4QKuf7whz9ckG3ZyOOa6LKfiJjzCKPs5ac//emOCMOOrnyhlV/ouNtuu3XtrV27tpz73OcupzjFKYpzyrten+gHuiDdbLeXUn+xEebKHicLHmB49NFHd0vU6oRzKwxj32G4adOmLgvafpuUIzvZi8zL9NpqgKTTme4L6clu49CNyEJlcj4IBIGlIRACuTS8UjoIjISABzMQFqRGkB+VgI1U+ZgKISYIDiJhGRihHKwayTvZyU5WTn3qU3dyghOcYLDINt+RNkEa2UHqLNHaS2lpFtGCA6KCHJ3jHOcoV7ziFcud7nSncqtb3aqc97zn7dooI/xpB8aWYmVIZSMtayPD7XL2sAvJsK9TRvUMZzhDucUtbtHtS7T3se2zPOCAA7o9ivZE2pv48Ic/vNz1rnftCCXSgqSq43nPe15HhlsbyCniyEa/awNB03YrM8rxVKc6Vdljjz3KTW96004/2CC6tdYiE4uMfvKTnyxve9vbumyxZf6Pf/zjnS5shPko7cBNvyNUiPmwa/SNfncc9vtqnmMne92UWHa3pYFv6Xc4LaQb0ukGxs3JQmVyPggEgaUhEAK5NLxGK51SM4eAwCVACVSyP/aIIYaDRMF32RFZIqTDvjJ74JDJSQNFULVs20jdMEKBcMnGrVmzppzoRCcqtdahZrAbGUXW7PcT2C1NH3bYYUVGTpCHBaLnewvkiNOZz3zmcolLXKJs2LChXOYyl+naGYW8NDKkXURS9s8eQ3sNLTkjXIiWvth9993LRS960XLpS1+6XOQiFykykGc/+9nLWc5ylnKmM51pq/iOvF3gAhcol7vc5coNb3jDLkNJr1prt0xtXyQCQ2Q2EWXkGBGHaa21y6ie/vSn7wgxIlgW+EPI/U4v5PHiF794oeuJT3zigoi6AbE385BDDun2pCKN9lceunkJH3G1L/RFL3pRsZfTeXs8EcRhfUkFbbGXnY4ywM73ha8jaTKcn//857u9pmzVt3xfFlT2j0/TTwYQ/sobH24eEF7jAMGWLaYXAmfMyALzO3hpx7iSHeQTfFEmkQ1ILvLet0Ud+lPftj6Gv5sHuvTt8FkbssPwQfCRTn1GB79HgkAQ2HkEQiB3HrtcOUcICGiCnsApeAmklvmc7wc4QU8QVcYDCvbEeRJX8O2XA53vfUGI+iJTt5gIrn1ZrOyw3wRsgVTApk9faq0dWUTuZAYtMSM7tdZ+se4zG+CAHCCMz3rWs7q9iQgOAgIry7+w8IQ1QiSwu6bWWpAabdz61rfulpUtHWurq3zz/2qt3XKuc31BMknZ/GdfH3KFuNqziEgiFQir9hG09evXlytc4Qrd8nRbIm54N3x8r7WW053udB3RvNGNblRuectbdpnBs571rAUZ0pdIi/bYi7ghSnSTuZOxRc6UtzyPJDvvd/rWejyGSPkpT3nKcqUrXanc5ja3Kec///kL8lhrLZbKkSXk5/nPf3730Avyg8DB1Q2Kp+U9Oc1OuCJvyBhCr182Q7PNfwgjgizb6cbgtKc9baEbafohkM3XkXJEjb1s5dduAOhBBw8yyboi1XC2hxWxRKhtW0AqbWWgly0SxoyHtuDYSCU7tccnEErEWXaZfyLkxpT+YYhr4E0PxBCxdUQMta9MX/gkXODDL93c8EX+0i/X/zyOz7CnM+FTvo+j3tQRBCYJgd0mSZnoEgQmFQHBDyHyEIZlRK+bkekSzATEhQKE4Cegy5IJkEiTgIK0CZQCnKAqoyn4CsqyS/bcIQhIqPZk0mQyLZVqWzbF62xe8IIXFIQJSRUk/U4v19BVHbJ/w0QgRQr6wRSRQK4QKFmqC1/4wmXdunUF0RjWNwgs8oRUaF979qMhIYPlkRpYCPqWndncymgXSUWgrnnNa5ZznvOcHYFFsJDYq13tah2Ru/vd717ucpe7lNvd7nblete7Xpe5RNBaPTBF4JEKpGbt2rUdabzQhS7U7bVs5WS6/A5nBKPhoz9lshAaNugr7dsfednLXrbbnyi7xk4ZVmRSH8to3uAGNyj77bdf8UocS+APe9jDyqMf/ehOvKbn5je/eZcFZWfTg723v/3ti7phjDwiTrDRN/qdPq38sCOSwma2PPvZzy7Pec5zCl9F3gbL11o7wohQez0Sveh4j3vco9zsZjcrSPb5zne+jtTzSwQSEeeHSDm/kkm2NQFZlwHlc4gZv0RovR6p+abXBNHn4IMPLgicGwivDUJ6bRWAldccPfaxj+1e0/TIRz6yNOwe8pCHdNsK/O6hHqRSdla2mm+68UDIjT0Y6KtBe51HQo07vyGy+tiNk+/LJca18QcvNxpHHHHEcjWVeoPAqiEQArlq0Kfh4QiMdlZAQBZM1CZngcHRd+RgtFpGL4VQIHgyQsiJwCoLInDLmghirTZBrWVzHJEjwY3OAprPiBeCQld2CGiyK5s2beqekLUkKIsj4ynjhOwgK8gXHRDNz33uc93rb2SDiGyQ35WTjaGvbBACMkxgBi9ZKRlAZOaCF7xgR3IEaSSDXOxiFytr1qxp5m09CsyyR9pAegVMOlmSRBa3FjzuA5vZyy5l2YZUI2AwoocHSJBFy8uwQ6oQmr322qvc5CY36UikPYyWez0AI3NHd4RXHepHiOmE9CN2yBkiibjpJ0QE6acr0tXIo6Ngj2DAjj8h+nSw7A0T+NAZ1q5HJrXrPEKL2O69994dwb3tbW9b7njHO5Y73/nOZePGjUU2055POrXMpOtu2uy+/AAAEABJREFUfOMbd9lOmUh1wU//8TO48onjIBx64E9slglE8txAIMV8gZ1uXviacrXWAleYIrT0Q8hlfy3XI++W7umoP2Dlev5p+djNAn1gy/dlF5Fd2UZL2fq2iT7Qx01gypfZ1oSv0pNPN0z5shsS9hM4I8N8ypYKfQE3OsryIpVIvn26ZeDPWJTRRsz95AaGz+tX38ctxrc24MK33GSYK9hufMNTGX447rZTXxBYaQRCIFca8bS3ywiYfAUygUZWTmZD5kJ2Q/AU0Ha5kYEKBKe1a9d2e9pq3ZLFkakTvBCTWrcsSwpYljCRARkSAc6yqYBnT5xzArgySJnApwzCpH5kyP47GTPZP/v2EJdLXepSXZZKXbJhSNY1rnGNbn/eta51reKzp4r9br+ea1qgVeegIBDKImKyZgcddFD3Am8Y+uzhEhkgWTWBmj0DkHREV5DUBzJUCMYowVGARbwQcFlQJLTVDU+2OsLokpe8ZLnOda7T2YksNjyQHATSwzfI2dWvfvUiEwnbVpf+UR6ejUDwHcGcvoK77Bri2ETGTxbNi75l1Sy1Ii7q3GOPPbqHapBV59SlTfhc/vKX73RURh/zA9cQdiCM+ucOd7hDIUgj2/Qx4RvKEmSNPm4StOPcUgSelp1tGZD5Q0IRzGGkia7s4W98ij8gvPvss0/3cvOnPvWpRbZQplCm8qEPfWj3Yvf73//+5X73u9824hrnH/CAB3QvgOc/sonGpgyjh5a84kgG0ovb6bYj0Q98kV580DiEsWyptiz78wGZaf4xiBPCabwYC3wD1p66P9vZzjZYdCzfYYzIexUUUowA8zUZdxl6ZFqG2TgZS4OTVkn0mSsEQiDnqrun31gZJkRF1kKQbYLItM8IpHIyXuOyGAFYt25dRyAE2qte9ardAxn2kSGQrR1BStBCWmTNZKUQHQQSkZBhqnULAZUZERQRSQQCmWxEEimREVSP4C4AygR6yIIeSJbsoOwawugzQuJ3pEmgdC2iOEge23flXL9+/fpCRyK4ImNsFJBdj2AgYIKeLCr8BULBEe6IPMwFRlmuhsVCR9kwWVtZKORGtsZ39cOS7ZawCf1k7eBn7x5iCScEgB2woC9BKp1v7SJHyLn9iHB3nn6yWTJcMmXalklrIosm28u2ZpcledepC776y3cE0md9o49kT33nA7VuuaHQprZl8/iKPuIXMn0IpX5ik9/Vh4DIdsvouUnSjjqWIvoBQW9jRDbS2HDUX8hN29Mou8de2WjE07X6QX/rC9jBlO5rN99AsRHu/IJ/sZsNfGmYf/JN/eLIR/ktDPSbmxx4us71cFSXOvW3+rWnfRjKphL9AS/68BVHS9qw0p99YRNb9ItMMjHmEGoZUn4rm6pe55B3KwKy63AYBffWZ+pC+mWx+Zd6ZbGdhzPs3TDxK/0j00znUdpImSAwiQiEQE5ir0SnBREwwSMe9qDJFln2MknLagm4JnATtiCM7CxY0RJ/QOyQRsuT9o35p/XsXUPyZEVq3UIY7NlTFqGRgVFOlkRgXKhJAU5QE+QQVcEQWZJpEayXIN2rcHZUXvBXBinQlqAqICM+C+noPEIu6FmGtPfNwx3ICELp96WIwIm0WS62jCnYIpZINgzoiGzIkiIX9BtWv/NIBBIsE4mktHKygH5Xp8/OI2n8BFHkM84NCt3o0nwNuUIm3BhoS9axXYP4I0T6vJ1b7OimgW1Iscwq25pu2mjLxW6AZB/pu1h9i/3GPsvNMmCyiPZkPuhBDyqOsnrtlUWyfDKBHtTxRLf9tZ76trfRPkf7D5EfpBrZRG71FxwtyyJpxpulfeSLuCFwZI/zsFTedbZnIG/qkq2TqTNuEStt2PuJ4Mqi8i+kqxFgR6KcOtStbT7kZsRvfXHOzQ48+bt+5b/2iFqtcNRO80NbPWCGpNpasRi+7Tc28ifbMuxF9kAPfZDxVkZ99DBuYMxG85Yx1crkGASmDYGpJ5AmWYPT3aPJLHJUmUUMLCXKEpiYTfomY4FLkEQUTcSOCI7fBAWBDhauJQKYOojJW6AgsgFEcEMWCHIjkyFbRZTTnqCC8BGf1SUgymYJaER55wVQgZRvIrUCJv0FTSJDJHg6+k78TpRFlB2Jc0QZ4hrXEiRaACYyHQKxgEhkQoiAa8mYCKr9AI0cWMqFqyBIkA7EgdhXJ/B5SMIynAcDBEA2CZ6C8s5MfLI8CIC+QTCMZWQKCZehsidPFkomTAZqWBtIL4IoS4U8OvbLIWWkETFHPmLOWExvJJI/0Y+PuY5ejZDqf7r6joS7iei3u9Dndo2sIxIvm9rKaoOufNnR9/bbzhzV07Jj/J1P81Vkh58aJ3yMX/Gn5j/8pvlL8xX+0j63o0ybcWaPH5LHj2Q5mx8hUnzHjUZf+E8TvyvHz/gc37O1QB1uEvmlOvuk0Gdt0qn5Ol3o4Le+OKcce/mq+cD41q8InvHJ94xR84N5wLwBF+PGeDGmfGa3+uiIfBoPHmAzJtzM+g2Wxj6f0Yet3/g2EsvvtKEcndXF9pUW7TacG8b6jw2w1a/0g52xDgc+wTdgDhPzDr8xH7HHPAU3W0T4FswRcv4GU75nbjSv8kXzLSzMrfwT/uYCfaQ/iJtTYt8qMQcTfUbcPBC4Ev2qn4m+JeZhYtwTfUPsRyX8gOgfYl4ybpqYB4j5wpxP9Ccxxoj5ovX1zh+n78qpJ5A6lqOZFDhl5PBub9qs4WDSMQGZxEzW7FtouJnEBCiTm+uIiQvhISYzk5rJrRE/Ex4x+bmemBBNjCZIdSFryvM1k596nDOpCjB0M9GacAUbYgI2EZuQZVNMziZpk3ULdAKkSVzAFDhN7CZ4AVVgEWAFWjYRwdiTsHAQyIhMEZJH7H2TPbLvisgmEQHP/j4iy+RpWRkTT8wSwZDIRBEvzfYUreyU/Wv2wMlaqYvdJvSF+mDU8yZfkz7pB1zLnh6WsYSJuNW6JcO7UL0IHEImS9jKmNTbpN8nY+YMgUPbreywI32UFTDa77XW7jU7MonIICIpg4vEtjKjHF2PPLq21uNtq7V2T5/XWkepZsll2CRACqQwF4wFbYHcOOHTfFyWjt/rZ4SBX/Nj/stf+Sn/5Jd8kQ/yPX7HP/gY3+r7Ex/jc37ji3yTr7qO/3qym2+rk98bA9oxNrTZxsvOHJFj45YgePoO9m5MEAH+gIj4jf3GsnHHNnr4bLzZF8smezmtRHiS3f5OtsEHjsjIsI6ptXbvOOWT5hr1qssYW0kxtolMqD7SJ0iwPmGfPtQvrU/Ybd6BAaF3v1/MZeY0c5z5jvAXc6K5EdmEP1/iU+ZV/mWubSST35nfzdPmdqKviLmWNKKpjwjCSfgvwQPIQoRT//J5gmASBJMgmGSQWCKUxJjpE0p9aF4g/MdcM6zPZ/3cbtNqoICgQzkBx2oOx9EMYuJ8E3c4nI70nc7dDuF4hPMRwdHkStzpEA7oLqfJoCNyQGJyJpyRmJyIiYUzkkGHFKjIoGMKcsTETzgq25vov1prF3RMikRWxsTYRAAW6Ih9YYIXEfSILArx0AGxnGqZjgjMRBbIEisx8RJ744hlPIGbWH4kMizEHioiWMrUEHvJZIqIpT9iyZbY92ZPE+LQF9fRlf3wM2jZPkxgqx8M7vZ7rbV7l2DDZzFMYEAaDsPs79vNXsJedhL6spM0O5t9ltJ8bsL+Jso3UUdf1AtL7fRF2030QRP9op/0mb5kj37mA3yBf8CjbP6DKz/jf/A1qfJ5E7Ox4zNfhik/7Pvf5st3+r9aa/daGbrUWrfWY9wKNPTYenKRD8amAGVst2JsYg+hbzu/0HHwPB+BHdxqrQUu2oGDsap+849AaO4YvH7Ydxi3+QOO/TLGrfb0pfFmjNZ6PCb9skv5rE6+Zvndlgv7C+0ztK3CErp9iPYjWoq3bcB+RXtPPRi05557dq9Bsh/Wnk3bOGwXsEXDPk4PcNk3a//s9a9//UJkjj1x7qn5DRs2dK8HcjPgYRdPe3s63dPqHibyrxBt3Lix+1d/bA/xMMw973nPcq973avc5z736R7S8XDOvvvu270iCWGzDO939Whf2+rw8I6bHITOjY6bHp89+EMv/cj/jQnZanr3RV2+27fMBg/q0N939niQR5va8q8U2Zri4TV4qlf/LeZn+hN+nnpnJxvYutKibcIGunhoytP4tuToF3bpJ33mSX1260sYwAWWMIcVzGDAH+ybZh8/4S+2n/AhN4P8CeZ8jK+1fa98kC9aaeCbbgLbvG8LDxEPiNjAj0mbL82txJxprmxzZH+eNJ6IedG8TfgAMTaI8UbM9fyEiAFE3xLxRx8S8ycxR5A2jy5lXM5C2akmkEgEEmlCR9iQtCbIGjHpIxRNlG8iCBABph19FiSbaIOY+Pti8m8ikDQxgZBB56i1diSv1rqVyHA6k04TQbQJp2zCUYnA34QT94VzE47ehPP3xaBoglAQA4a0wePYxMAiBloTg68vSEoTA5QYrKSRHIO5iQHexIDvi0mAmBBMEn1xPT3Zw044lQX+4Or3hlnDyXWwUQeBxSAG7CXsZWffNjbBxrWu8zu92ND0pnub3JwnfjP5mQRNiGRwknSOOO+4I1HXKIKsaps0vehIJ7rpCzboK/axl+2whhV/gyN79a1riOvYD0N+ukBX7PC0voIn8dk4Ms5kimUvEFhj0/lhlRlrxqGbPuXdOLZyzhv3rleunWeXflxMb7rwGzYrW2styCyC2m5O6OQmUrZa9g6ZNH+0dgaPytOHjjItSKf5ynn6abPhrE9au4P17Oi7etimLv1kz6UtAQK4QC6gC+yNHAr09mQ6Otd+89k5ZMCTzIgBkkA8CIQ0IA+DRBLh8vQ+QTo8cY6AIGNIGUFOvKCdICtIC/KCxCCWCA1iQ5AcZAfB9B2Js3+UnggIAkwndd73vvftSKcntJFO5Ez9bDf+Cf92HZuHCVvXr19f2MU+pMh3ZAmBoj8yjFwhUvRAfIwL4wb2g33El4wxddPT9aspdKA/cqhf9JG+0meNIMKYzXDQ1/ocDvDgC/yCf/ATGPArNx+wRhT5XJ8sekgKWUS4EUZ+Cbc257W5yrzfn6vafNWfs/i1MULgSsxfxJg1jxFzFNHn5nViXBF9RYwTYi4zDxFzBOEvRP+ZC4n5kOhnItYYc4N9Pg/fJ4hALg3uWmvRsQYtRzaQOTxpd0bN+U0CpA2CNhBMOsSAIAYFMciJetsE0waKwULagDFoTMoGDjF4iDt5g6hJG0wGlAnPHRiRAWhigJnYSBtobbC5OyMGHTHwiKwCaYMQ8UAsDMYmyAMZHJgGJIGhAdnEoCSjDMrBgWlAkmEDUn8Rg5G0wdiObTAi1IPeYFCzAd4mOzYOlmnf4WgS1AewGpfAm26yUG5OTBwwHVY/XU1SzV5Y9svpS32rn/U3nfkD3+Ar/IYf8Sn+xW5+xw/5JP/ks/zXpM6n+bjJnt8bB8aEgCAwCAVBt5kAABAASURBVOAChoAtAAvUsj+C893udrfiRdIyPgKvDI8HLR7zmMcUL3v22hXis3MHHnhgUUY99GBbw36pR37QfNakjOwhYvZXWca0DcDyFuI1rG4kUV8gnJY6LYO1coiouhA+5Zw30cMVyeHvzg2KMnxSANJPAphzsqKW4/R/u0Y20fYGS6yW+iy5td8Gj2yQzbUM6AXwxHIf0olEtvICnj7mD3ysnR/1CFPjl094RZOsHfHanXvf+94FqdLf+h0xk1FD3hAJ12ibzxH+By9iPPFNwk8JHZuYx/gxf+bXhI8jC3Ds+7+xZN4ibe4yps1Zxo4jcc53hEI/1FoLDC1jWwJ3tIQKe8uhSIDADwP+pO8tpyL5/MT4NTf5bVQ8B8upw9hmj7EGQ5lPR/jBfvAaWJiTzP9+35X2B+vO9yCwWghMNYFEOAxkAchERUxWTUxaTQz2JiavJiawvpjMiDqbmMSamNT6YnJrgkwQk11fTHxNELYmiBsRyPpigmkiODdxd0XcYfVFoGsi+DRB7pq482oCsybIXl9MrsRE3AR5a2Jy7guCREzYTQTfvpgsm+gzIjA2MSH3pda63XhwPVsEKORI8IIj/GCrr0zSghzij9joxz5Ou/IZRvS23UEwsmzpMyyG1QsL5AKhsKdKpooNcNeH+tSx32/sI/1+0i5xHfGbMq2P+9f7TVn9p7/0i6NzymsPXnyTPxsDxgpMBTbYIaqwc7PVCCjy2QR5R0iJgIi0tr7Q59t13AInaq3dPxdo7Og7/g9fhM/+VJjBWfAnyIHtJ1YbEC7kECGQxdMX9qo62nrSmrSKYAsKwtcnkIiOm0xkHPnhJ3CBKzzpggSxi25wtwqhL+3lUl+ttdvP5rzlfboikQghkuk7O9qWGtdakrcvjD32iyG8CLKy9KajTKR+1A9003dwaTYtdlSOL+pTN8LGiYwZW91kOGdsIIj6m21sRo5hBU8rOTKtRF/wW37MxiYwpS/smxx55JFFdlYfESQP4SYyrnCAga1GsrUysATxR/rdJBCYtb3JfIA4pz3jR/87p7/tp2vX2L6gHfiYS2BhfnFDom1jld+oYymYqm9Q4GVsGU+wdmPnhsR4QSj1nTFlfLU5yc2emzvnjE+6Ddab70Fg2hCYWgI5bUBH3/EggKAjNybkFgwFR4RGJmX//fcvMimCr+A4nlZLEVgFIg/I2Oxvk7kHCpwf1obAi0woZ4M8ciGYWrJs5ZEg2yla4BawBWnB0tKtICwoCrqLiSAs6NqYLhuGpNjQb2O7B3fo4aEA5EfQVU55AVz9Ar82EQX22PaBGDU9a91ClpBlmLq50Q8CZyOUSAmi1a7Z0VEQFlz1oxs4pEngZzNiRS96IFsesrCxny1+R27ghhSwF8ayULDtZ/IQBrYhObCmk3YRRsTXPjAZOeSYL7kBRS4RAEuqlirZWWst6kZ8EBUEkq7wYDNM6ORhE1lFD1d4UbaHSWRRPRTlgZP24BLCpK/5k37yIANyicTRX50y0AismyQ3cnTfkbhZ4PfssXy7YcOG4kYBYRm8lp/Bji/LLnutD729ONxDU/75Qf8sIvHdy/rZ5EXzXvtDXKe8B0qIDLWX0HvpuP2H/glCexHtQ5S5JtrxYnHiJeOy2UTG22uviFdfGcf2NMqc2sOoj/knzPiyLQvNJr4q0whT/YA0tt9qrd2/vKPfy+Y/N3bwGCeBUzfCyp/dVMnsy0ZaJrYUzwYZXjdmbhw3q5H/gsBMIBACORPdWObGCkEbgRHkkUZimbZlWRAZhEQQNqmPCxjBCVFDbJASWRZBuBGT1g4CgGwgN7JmsmItSyKTItC1srXWLrgJZjIjRBZPkGMnQkAQCN+dZxPyUmstslWyVnQgCAjxmfiMaDWCitTSGaGiPxJp36AnKj1xSRpZc/RkrUyPwK0u7WqfHvSR1ZSNt50DIUMoZbXYUxb5k+WToRFQLcHL/qmfTp5OpRMd2YCswd05JNxSJd0sXyI/dEfckHNEAn6tfisO+oGdsmaWkKkFU20iaLJyfIcfWeJHGn1GbBECZIP9ltTpgaDA3fVuXPierJMsuHJIJpJOJ9lFJB65dbOBwKuDD7AXQUaIZSxlJJFJNw611sJ/6U8PhBf2tW6fmXdeNgyeMlwIDL0QYeSTrfqM3QQG2kSEEVvt0guBhRP96MCH2S5jRo+2kuMo69aOSHcTeMnctiOdfHekTzsiub476oN2lBX13XHdunUFiV63+egcP9O3fII/62v2EP5oTuCPbIWJ8wS5txQvE4vMOfJX2UO/j0Nqrd3+dplN2X166wN+YUnbnAQz2WG6jqPN1BEEJgGBEMhJ6IXosCQEaq1dcLGfzwZ5G8EFTxO3CVzgW1KFIxRGvhBARLLWLQGj1rrdlQgdIiFIyxoiQsiCoIwcub5dhGgJ/ggiwiAAylAgJwiJ5V3kQRBHzGTDkALBUjASHAUt9jr6jjypwzKssgKlugVf7crOyDIiVAguguMVHl40LWMkQyQjRGSJEDSEGfFw/aAgvQI8EiY4WwYXxAfL9b+zA3G0xOpIRzrBR1YMAaNfuwaZgT3CIxMmkyVjJfuF5CI9rkfeYckHBHBZRQQSCdYfyrQ66QhD5EdG2wMNspH2BdrbyZfopRxiCwcZ21prQZ71iXKepN24cWNBdNSN2NBXezK9sr9IGnIoe4bQ8xFlCZ0s7cq6yliyhb8gqWvXri18G9mCs0yXa/rCh9iMqNjPajxYmqdjv1z7jLzCGaH1T1Air3yUXq0MX3IThozaEyubaS8lkU2z/1WG8IADDihE1lCWkPAbmUXZTP7Dn+wPJDKRMpL8TJaSyFjKXhI+qE9lNmU4ZTyJ3zxYo7/Yxd/1S19fRNVYMQaar/vdWJIlp7u62cNP+Yjfxy30MnaNCTdI9o4axzBduK38EgSmE4EQyOnst7nX2kTtbr6JoOGc7EOt2xO7XQUMIfNAgeyFrJBslazbYGAQ5AU4GRPZLdkPhA8ZkIVA5vq61Fq77EWtddGn8xGIPtkUKBtZFCQFLYFKEEVutCXjI7sjo4PYCWb0kSmUFUGeBOVaa5HVaYIAIbqWCREN2T7EDqlDkErvr9bavYYH2YKNjBwyJngiisgN3emofRk+S3uCOj0RJQRVFszDJcijNpDB1owyMk+WpGXt6ElHnxFiv8GdDyB+lgvtR2OjPqu1Fu8XtIysfllYdbsGAaMfP0JOCJz5EtKMNNqjyH43EfBCltkAW8ReNo5tCCs/oS+SyA5kkN6OzvlN2018dx629va1JW/Ely6yf/bXIbbr168v+lffa0e/Wq72cIwySBSfYE+ttTWxzZEe7JBJRRp91z49WkGfnWOrOmUU+QrhV3Qi+o8gm/Qi/JzwRf1PkDXCR93U8AX6GxdudvgO0R5xI8XGNWvWFOPLeNIn+kt7iC2Cpi510E/WWN8rU+vxtvuub/mhOrVH1NfsHffRHNT8ih/5XuvxOo27vdQXBFYLgRDI1UI+7U4MAqMoIughXkihpSkkSdZzkBAKWIKeQIdoCPqCLjIn6AmOo7Q3WEYQQgwEPsuS2hAQEQYBkX6CtMAtgAvqiI3gKoOlbQEWobL8L0vlnPIC9GB7yA+CZunYsrGleJlV5wfL+q4O9cHG/kHkWrsIhEBPD9jJGsuqwY7OHoqwJ9C+TS9SlxVFYNQ5itRaO+KNbMEBidU3MptIHSILK8vfMpj2z8kMI8jaRkYRKUQUmUL2fHfevlDk0fKubQhsRxiR0w0bNhQYaxPusGUze/VVrUsjDHRpmUhEl45IHNIFK3vq+BPSSAdkDkF2I+OpahlI/Q6HssgfbNmp7oX0VAaBhxv/YBMb6aIvib4bJIHIH3/k44R/IoHGiLr4CCLHf+lJ+DOCh/zzb4SLIGC1bo8hkgp/PgwDPg575xD6hUw3LtWpTfpoY6GyOR8EgsBoCIRAjoZTSs05AgKOICiDJ8tmyVIQFfT60NS6JSMngMr6yVR5KMCymWAsgPbLr+ZngRTpENgX0wPRUBYZEIQXK4s0II4yY5YNLVdamrTkiVgK/AgIgmJpuBFUS+myiovVPew3+tBLvd4BiMAiMkiJ84gkQYBk9eybtAxuKdW/AuJfGpFltScQSZShtOzsvCVl2VdL0epE5GQCEVN1a7vp5IZBFhDBQ6wQovbbqEekTnYQiUbakV2klc/wHSSJjZaFLR1b1uWP/JJ/jtIOvd1EIFuyfgjV4HWwQwSH/TZYdqW/I5yyjjKOfMryuWV7RL7fHyutV9pbNQTS8CoiEAK5iuCn6elBQHASvGR/kAQBXTBGrgatkO0Q9C1jC9aW3BBOQXlniMVg/eP6juzJosksIbyDZFg7skXIE90RlWH2KtdEeWRNVkjGTIZMRhC5kh2UQYKb8pZR7RX08Ib9gbJ/zu9I6EkXRA1xQ+hkei2L6xvYI1QIkCwVcil7jHho0x5A+xKJvYmerPe0N8KGPDrviFR6OAehkrFFTu3bhJm6+1ioWx+zUXuyzm4wEG9+Qx9+0WyrtXYPUKmbLa7nU7BzjQyorKRsIJ/RPzK8spzIOZ+SgeSP6uefZYQ/2MCMrjCBDz2dp6N69I9+0uYIVa5oEX0PH/7Fp9zMwRuGfXxXVKk0FgTmFIEQyDnt+JgdBBAERAcBE5AF5kFUkGBkA8lAVLYL0oMXLOE7YqRNpAmBQl5GuRzxRYJkFmU17QG0t9JSKwI7WIeyXtmjnAwiEoYgyfghiPZfWj6XbZR5lJG0L1M7CKNrZPwQSFk7pG+wDd8RMHV7GMc+TOURNBlXdiI/yhHkUz0yZ5Zh2/I+HWWsPbgi49m/xnW7KjBGfhFdD8R4MpnO8JCJhh8iSx/Z6V1tL9cHgSAwuwiEQM5u38ayILAoAggcEolAyuYgLB4EsfQuO4VYWDZ1RIKQj1q335e2aCML/FhrLQiahzE8BS2rZpkfYfO9CZ2c85u9k5YrbQuwB1EWTjlkCElEfug42CTyhsjJVCmP2BFZS1k85xFoy7ps9915BFX7yBQSLVOL9CF/g2347jwSqw51w5RdyC2d6Y7wEp9lZmVo2SKT1nSS7ZRJ1d44CTsda92yxQJhZ7MHwuhJB7rQ135K2U5k2TWRIBAEZhOBXbUqBHJXEcz1QWCKEUB6LLN7JY1Mm4c1EAmZKa882XvvvYulYVnCcZpZay1IDPLqn1X0ahivf5Hpk4Uj++yzT7GP0jmvhfHKFy+19hofvyOUdLfELvtX6+LkVjn7My2ts08dsn3a9YoZL8K2X9ORPvRCBGXn4DSK/cpZAkYAkV6v+bFPz55Lr5GhP/FCbq+n8dob/4QkzD3wg1Aj9cOI8Cjtj1qGnsiwp6z1r4wnXOmD2FqmR7xHrS/lgkAQmD8EQiDnr89jcRDYBgFEArmSpZPNk4GSgZOFQhwtbS4HoVGnthEVZBJRQ2iQryaygs7JMFpaVY6uspf0cj0yVOvi5JHBysm6ylTL8700AAAEKklEQVRqUx32dqpPts1yMvEZiVPGci9y6vpRpNba7W3Ujn2FrQ11qpv+TXbfffeibWXYYouAJWt61rpje8ou/NVau9dHNT3ZSy8ZVLrSY9zZz11QN5cGgSAwgQiEQE5gp0SlILDSCCAMlqm9bsgSqiVbe+A8nLASumhf5s5eS0SSeEAEaXQO0UPmaq0roc5ctoG4whgprzU4z6UTxOggsAQE5ppALgGnFA0CQSAIBIEgEASCQBA4DoEQyOOAyCEIBIEgEASmBoEoGgSCwCojEAK5yh2Q5oNAEAgCQSAIBIEgMG0IhEBOW49Nir7RIwgEgSAQBIJAEJhbBEIg57brY3gQCAJBIAjMIwKxOQiMA4EQyHGgmDqCQBAIAkEgCASBIDBHCIRAzlFnx9RJQSB6BIEgEASCQBCYbgRCIKe7/6J9EAgCQSAIBIEgsFIIpJ2tCIRAboUiH4JAEAgCQSAIBIEgEARGQSAEchSUUiYIBIFJQSB6BIEgEASCwAQgEAI5AZ0QFYJAEAgCQSAIBIEgME0ILJ1ATpN10TUIBIEgEASCQBAIAkFg7AiEQI4d0lQYBIJAEJhMBKJVEAgCQWBcCIRAjgvJ1BMEgkAQCAJBIAgEgTlBIARyRTs6jQWBIBAEgkAQCAJBYPoRCIGc/j6MBUEgCASBILDcCKT+IBAEtkEgBHIbOPIlCASBIBAEgkAQCAJBYEcIhEDuCKH8PikIRI8gEASCQBAIAkFgQhAIgZyQjogaQSAIBIEgEARmE4FYNYsIhEDOYq/GpiAQBIJAEAgCQSAILCMCIZDLCG6qDgKTgkD0CAJBIAgEgSAwTgRCIMeJZuoKAkEgCASBIBAEgsD4EJjYmkIgJ7ZrolgQCAJBIAgEgSAQBCYTgRDIyeyXaBUEgsCkIBA9gkAQCAJBYDsEQiC3gyQngkAQCAJBIAgEgSAQBBZDYBoI5GL657cgEASCQBAIAkEgCASBFUYgBHKFAU9zQSAIBIH5QSCWBoEgMKsIhEDOas/GriAQBIJAEAgCQSAILBMCIZDLBOykVBs9gkAQCAJBIAgEgSAwbgRCIMeNaOoLAkEgCASBILDrCKSGIDDRCIRATnT3RLkgEASCQBAIAkEgCEweAiGQk9cn0WhSEIgeQSAIBIEgEASCwFAEQiCHwpKTQSAIBIEgEASCwLQiEL2XH4EQyOXHOC0EgSAQBIJAEAgCQWCmEAiBnKnujDFBYFIQiB5BIAgEgSAwywiEQM5y78a2IBAEgkAQCAJBIAgsBYERy4ZAjghUigWBIBAEgkAQCAJBIAhsQSAEcgsO+X8QCAJBYFIQiB5BIAgEgYlHIARy4rsoCgaBIBAEgkAQCAJBYLIQCIEc1h85FwSCQBAIAkEgCASBILAgAiGQC0KTH4JAEAgCQWDaEIi+QSAIrAwC/wcAAP//NiUoYgAAAAZJREFUAwAPzlpL1GrttAAAAABJRU5ErkJggg==';
+  }
+
+  buildReportTableHtml(data) {
+    const esc = v => this.escapeReportHtml(v);
+    if (!data.rows.length) {
+      return `<div style="text-align:center; padding:2rem; color:#64748b;">${esc(data.emptyText || 'មិនមានទិន្នន័យត្រូវនឹងលក្ខខណ្ឌដែលបានជ្រើសរើសឡើយ')}</div>`;
+    }
+    const isG7 = !!data.isGrade7;
+    const tableClass = isG7 ? 'doc-table grade7-table' : 'doc-table';
+    const cellFontSize = isG7 ? 'font-size: 8.5pt;' : '';
+
+    let theadHtml = '';
+    if (data.isGrade10_12) {
+      theadHtml = `
+        <thead>
+          <tr>
+            <th rowspan="2" style="width: 26px; text-align: center; vertical-align: middle;">ល.រ</th>
+            <th rowspan="2" style="width: 135px; text-align: center; vertical-align: middle;">គោត្តនាម.នាម</th>
+            <th rowspan="2" style="width: 24px; text-align: center; vertical-align: middle;">ភេទ</th>
+            <th rowspan="2" style="width: 74px; text-align: center; vertical-align: middle;">ថ្ងៃខែឆ្នាំកំណើត</th>
+            <th rowspan="2" style="width: 52px; text-align: center; vertical-align: middle;">ឡើងពីថ្នាក់</th>
+            <th rowspan="2" style="width: 40px; text-align: center; vertical-align: middle;">ត្រួត</th>
+            <th colspan="4" style="text-align: center; vertical-align: middle;">សញ្ញាបត្រមធ្យមសិក្សាបឋមភូមិ</th>
+            <th rowspan="2" style="width: 55px; text-align: center; vertical-align: middle;">ផ្សេងៗ</th>
+          </tr>
+          <tr>
+            <th style="width: 70px; text-align: center; vertical-align: middle;">សម័យប្រឡង</th>
+            <th style="width: 80px; text-align: center; vertical-align: middle;">ម.ប្រឡង</th>
+            <th style="width: 38px; text-align: center; vertical-align: middle;">បន្ទប់</th>
+            <th style="width: 42px; text-align: center; vertical-align: middle;">លេខតុ</th>
+          </tr>
+        </thead>`;
+    } else {
+      theadHtml = `<thead><tr>${data.columns.map((c, i) => {
+        let thStyle = '';
+        if (isG7) {
+          if (data.isGrade8_9) {
+            if (i === 0) thStyle = 'width: 28px; text-align: center;';
+            else if (i === 1) thStyle = 'width: 165px; text-align: center;';
+            else if (i === 2) thStyle = 'width: 28px; text-align: center;';
+            else if (i === 3) thStyle = 'width: 88px; text-align: center;';
+            else if (i === 4) thStyle = 'width: 80px; text-align: center;';
+            else if (i === 5) thStyle = 'width: 75px; text-align: center;';
+            else if (i === 6) thStyle = 'width: 115px; text-align: center;';
+            else if (i === 7) thStyle = 'width: 85px; text-align: center;';
+          } else {
+            if (i === 0) thStyle = 'width: 28px; text-align: center;';
+            else if (i === 1) thStyle = 'width: 140px; text-align: center;';
+            else if (i === 2) thStyle = 'width: 26px; text-align: center;';
+            else if (i === 3) thStyle = 'width: 78px; text-align: center;';
+            else if (i === 4) thStyle = 'width: 58px; text-align: center;';
+            else if (i === 5) thStyle = 'width: 125px; text-align: center;';
+            else if (i === 6) thStyle = 'width: 58px; text-align: center;';
+            else if (i === 7) thStyle = 'width: 90px; text-align: center;';
+            else if (i === 8) thStyle = 'width: 55px; text-align: center;';
+          }
+        }
+        return `<th style="${thStyle}">${esc(c)}</th>`;
+      }).join('')}</tr></thead>`;
+    }
+
+    return `
+      <table class="${tableClass}" style="${cellFontSize}">
+        ${theadHtml}
+        <tbody>${data.rows.map(r => `<tr>${r.map((c, i) => {
+      const colName = data.columns && data.columns[i] ? String(data.columns[i]) : '';
+      const isLeftAlign = colName.includes('គោត្តនាម') || colName.includes('អាសយដ្ឋាន') || colName.includes('អាណាព្យាបាល') || colName.includes('មកពីសាលា') || colName.includes('ផ្ទេរមកពី') || colName.includes('ម.ប្រឡង');
+      const align = isLeftAlign ? 'left' : 'center';
+      const pad = isG7 ? 'padding: 2.5px 3px;' : 'padding: 4px 6px;';
+      return `<td style="text-align:${align}; ${pad}">${esc(c)}</td>`;
+    }).join('')}</tr>`).join('')}</tbody>
+        ${data.footer ? `<tfoot><tr>${data.footer.map((c, i) => `<td style="text-align:center; font-weight:700;">${esc(c)}</td>`).join('')}</tr></tfoot>` : ''}
+      </table>`;
+  }
+
+  buildReportCardsHtml(list) {
+    const esc = v => this.escapeReportHtml(v);
+    if (!list.length) return '<div style="text-align:center; padding:2rem; color:#64748b;">មិនមានទិន្នន័យសិស្សឡើយ</div>';
+    return `<div class="report-student-cards">${list.map(s => {
+      const initials = String(s.khmerName || '').split(' ').map(w => w.charAt(0)).join('').slice(0, 2);
+      return `
+        <div class="report-id-card">
+          <div class="avatar">${s.avatar ? `<img src="${esc(s.avatar)}" alt="">` : esc(initials)}</div>
+          <div class="info">
+            <div style="font-size:0.7rem; color:#1e5a96; font-weight:700;">កាតសម្គាល់ខ្លួនសិស្ស • ឆ្នាំសិក្សា ${esc(this.activeYear || '')}</div>
+            <div class="name">${esc(s.khmerName)}</div>
+            <div>${esc(s.latinName || '')}</div>
+            <div>អត្តលេខ៖ <strong>${esc(s.id)}</strong> | ភេទ៖ ${esc(s.gender)}</div>
+            <div>ថ្ងៃកំណើត៖ ${esc(this.formatReportDob(s.dob))}</div>
+            <div>ថ្នាក់៖ <strong>${esc(s.class || '')}</strong></div>
+          </div>
+        </div>`;
+    }).join('')}</div>`;
+  }
+
+  buildReportHeaderHtml(data) {
+    const esc = v => this.escapeReportHtml(v);
+    if (data.isGrade7) {
+      const g7 = data.grade7Meta || {};
+      let defaultCls = '៧';
+      if (data.isGrade8_9) {
+        defaultCls = (data.filters && data.filters.gradeKey === 'grade_9') ? '៩' : '៨';
+      } else if (data.isGrade10_12) {
+        if (data.filters && data.filters.gradeKey === 'grade_11') defaultCls = '១១';
+        else if (data.filters && data.filters.gradeKey === 'grade_12') defaultCls = '១២';
+        else defaultCls = '១០';
+      }
+      const clsName = g7.className || (data.filters && data.filters.classVal !== 'ALL' ? data.filters.classVal : defaultCls);
+      const totalKh = g7.total !== undefined && g7.total !== null && g7.total !== '' ? this.toKhmerNum(g7.total) : '';
+      const femaleKh = g7.female !== undefined && g7.female !== null && g7.female !== '' ? this.toKhmerNum(g7.female) : '';
+      const yearKh = this.toKhmerNum(this.activeYear || '2026-2027');
+
+      return `
+        <div class="grade7-header-wrapper" style="margin-bottom: 6px;">
+          <!-- Top Row Header: Left (Ministry) and Right (Kingdom) -->
+          <table style="width: 100%; border-collapse: collapse; border: none; margin: 0 0 2px 0;">
+            <tr style="border: none;">
+              <td style="border: none; width: 50%; padding: 0; vertical-align: top;"></td>
+              <td style="border: none; width: 50%; padding: 0; text-align: center; vertical-align: top;">
+                <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 11pt; line-height: 1.5; white-space: nowrap;">
+                  ព្រះរាជាណាចក្រកម្ពុជា
+                </div>
+              </td>
+            </tr>
+            <tr style="border: none;">
+              <td style="border: none; width: 50%; padding: 0; vertical-align: top;"></td>
+              <td style="border: none; width: 50%; padding: 0; text-align: center; vertical-align: top;">
+                <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 11pt; line-height: 1.5; white-space: nowrap;">
+                  ជាតិ សាសនា ព្រះមហាក្សត្រ
+                </div>
+              </td>
+            </tr>
+            <tr style="border: none;">
+              <td style="border: none; width: 50%; padding: 0; vertical-align: middle;">
+                <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 11pt; line-height: 1.4; white-space: nowrap; text-align: left;">
+                  មន្ទីរអប់រំ យុវជន និងកីឡា
+                </div>
+              </td>
+              <td style="border: none; width: 50%; padding: 0; text-align: center; vertical-align: middle;">
+                <div style="text-align: center; line-height: 1; margin: 0 auto;">
+                  <img class="doc-divider-img" src="${this.getKhmerHeaderDivider()}" style="height: 14px; width: auto; max-width: 175px; object-fit: contain; vertical-align: middle;" alt="divider">
+                </div>
+              </td>
+            </tr>
+            <tr style="border: none;">
+              <td style="border: none; width: 50%; padding: 0; vertical-align: top;">
+                <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 11pt; line-height: 1.4; white-space: nowrap; text-align: left; padding-left: 1.2em;">
+                  ខេត្តសៀមរាប
+                </div>
+              </td>
+              <td style="border: none; width: 50%; padding: 0;"></td>
+            </tr>
+            <tr style="border: none;">
+              <td style="border: none; width: 50%; padding: 0; vertical-align: top;">
+                <div style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 11pt; line-height: 1.4; white-space: nowrap; text-align: left;">
+                  វិ/អនុវិទ្យាល័យ....................
+                </div>
+              </td>
+              <td style="border: none; width: 50%; padding: 0;"></td>
+            </tr>
+          </table>
+
+          <!-- Middle Title and Right Class Metadata -->
+          <table style="width: 100%; border-collapse: collapse; border: none; margin: 2px 0 4px 0;">
+            <tr style="border: none;">
+              <td style="border: none; width: 22%; padding: 0;"></td>
+              <td style="border: none; width: 56%; padding: 0; text-align: center; vertical-align: middle;">
+                <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 12pt; line-height: 1.4; white-space: nowrap; margin-bottom: 2px;">
+                  ${esc(data.title)}
+                </div>
+                <div style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 10.5pt; line-height: 1.4; white-space: nowrap;">
+                  ឆ្នាំសិក្សា ${esc(yearKh)}
+                </div>
+              </td>
+              <td style="border: none; width: 22%; padding: 0; text-align: right; vertical-align: bottom;">
+                <div style="display: inline-block; text-align: left; font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 10pt; line-height: 1.5; white-space: nowrap;">
+                  <div style="text-align: center;">ថ្នាក់ទី &ldquo;${esc(clsName)}&rdquo;</div>
+                  <div>សិស្សសរុប: ${totalKh !== '' ? `${esc(totalKh)} នាក់` : '..................'}</div>
+                  <div>សិស្សស្រី: ${femaleKh !== '' ? `${esc(femaleKh)} នាក់` : '..................'}</div>
+                </div>
+              </td>
+            </tr>
+          </table>
+        </div>
+      `;
+    }
+
+    return `
+      <div class="doc-header-grid">
+        <div class="doc-school-meta">
+          <div>មន្ទីរអប់រំ យុវជន និងកីឡា</div>
+          <div>ខេត្តសៀមរាប</div>
+          <div>វិទ្យាល័យ ២៨ មករា</div>
+        </div>
+        <div class="doc-kingdom-meta">
+          <div class="doc-kingdom-head">
+            ព្រះរាជាណាចក្រកម្ពុជា<br>ជាតិ សាសនា ព្រះមហាក្សត្រ
+          </div>
+          <div class="doc-separator">
+            <img class="doc-divider-img" src="${this.getKhmerHeaderDivider()}" alt="divider">
+          </div>
+        </div>
+        <div></div>
+      </div>
+      <div class="doc-title-main">${esc(data.title)}</div>
+      <div class="doc-title-sub">
+        ${esc(data.subtitle || '')} ${data.subtitle ? ' | ' : ''}ឆ្នាំសិក្សា ៖ ${esc(this.activeYear || '2026-2027')}
+      </div>
+    `;
+  }
+
+  buildGrade7FooterHtml(data) {
+    const f = data.filters || {};
+    const esc = v => this.escapeReportHtml(v);
+    const g7 = data.grade7Meta || {};
+    const totalCount = g7.total !== undefined && g7.total !== null && g7.total !== '' ? this.toKhmerNum(g7.total) : '';
+    const femaleCount = g7.female !== undefined && g7.female !== null && g7.female !== '' ? this.toKhmerNum(g7.female) : '';
+
+    const stopLineText = (totalCount !== '')
+      ? `បានបញ្ឈប់ត្រឹមលេខរៀងទី ${esc(totalCount)} ស្រី ${esc(femaleCount)}`
+      : `បានបញ្ឈប់ត្រឹមលេខរៀងទី............ស្រី.............`;
+
+    // Dotted template for manual handwriting as requested:
+    // "មិនបាច់បំពេញថ្ងៃទី និង ទីកន្លែងទេចាំបំពេញដោយដៃ ត្រង់ឆ្នាំ២០២៦ ដាក់តែឆ្នាំ២០....."
+    const dateStr = '............, ថ្ងៃទី........ ខែ........ ឆ្នាំ២០.....';
+
+    return `
+      <div class="grade7-footer-wrapper" style="margin-top: 10px; page-break-inside: avoid; font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif;">
+        <div style="font-size: 10pt; margin-bottom: 12px; text-align: left;">
+          ${stopLineText}
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; border: none; font-size: 10pt; line-height: 1.5; text-align: center;">
+          <!-- Row 1: Right has Teacher date -->
+          <tr style="border: none;">
+            <td style="border: none; width: 33%; padding: 0 4px;"></td>
+            <td style="border: none; width: 34%; padding: 0 4px;"></td>
+            <td style="border: none; width: 33%; padding: 0 4px; font-size: 9.5pt; white-space: nowrap;">
+              ${esc(dateStr)}
+            </td>
+          </tr>
+
+          <!-- Row 2: Right has គ្រូបន្ទុកថ្នាក់ -->
+          <tr style="border: none;">
+            <td style="border: none; width: 33%; padding: 0 4px;"></td>
+            <td style="border: none; width: 34%; padding: 0 4px;"></td>
+            <td style="border: none; width: 33%; padding: 2px 4px 0; font-size: 10.5pt; font-weight: bold;">
+              <div>គ្រូបន្ទុកថ្នាក់</div>
+            </td>
+          </tr>
+
+          <!-- Spacer rows: គម្លាត ២ បន្ទាត់ សម្រាប់កន្លែងនាយក -->
+          <tr style="border: none;"><td style="border: none; height: 16px;" colspan="3"></td></tr>
+          <tr style="border: none;"><td style="border: none; height: 16px;" colspan="3"></td></tr>
+
+          <!-- Row 5: Left has បានឃើញ និង ឯកភាព -->
+          <tr style="border: none;">
+            <td style="border: none; width: 33%; padding: 2px 4px 0;">
+              <div>បានឃើញ និង ឯកភាព</div>
+            </td>
+            <td style="border: none; width: 34%; padding: 0 4px;"></td>
+            <td style="border: none; width: 33%; padding: 0 4px;"></td>
+          </tr>
+
+          <!-- Row 6: Left has Principal date -->
+          <tr style="border: none;">
+            <td style="border: none; width: 33%; padding: 2px 4px 0; font-size: 9.5pt; white-space: nowrap;">
+              ${esc(dateStr)}
+            </td>
+            <td style="border: none; width: 34%; padding: 0 4px;"></td>
+            <td style="border: none; width: 33%; padding: 0 4px;"></td>
+          </tr>
+
+          <!-- Row 7: Left has នាយកសាលា -->
+          <tr style="border: none;">
+            <td style="border: none; width: 33%; padding: 2px 4px 0; font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 10.5pt; white-space: nowrap;">
+              <div>នាយកសាលា</div>
+            </td>
+            <td style="border: none; width: 34%; padding: 0 4px;"></td>
+            <td style="border: none; width: 33%; padding: 0 4px;"></td>
+          </tr>
+
+          <!-- Spacer rows: គម្លាត ២ បន្ទាត់ សម្រាប់កន្លែងមន្ទីរ -->
+          <tr style="border: none;"><td style="border: none; height: 16px;" colspan="3"></td></tr>
+          <tr style="border: none;"><td style="border: none; height: 16px;" colspan="3"></td></tr>
+
+          <!-- Row 8: Center has បានឃើញ និងឯកភាព (ចុះក្រោម ២ បន្ទាត់បន្ថែមពីនាយកសាលា និងរំកិលមកស្ដាំ) -->
+          <tr style="border: none;">
+            <td style="border: none; width: 33%; padding: 0 4px;"></td>
+            <td style="border: none; width: 34%; padding: 2px 4px 0; font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 10pt; white-space: nowrap;">
+              <div style="position: relative; left: 75px;">បានឃើញ និងឯកភាព</div>
+            </td>
+            <td style="border: none; width: 33%; padding: 0 4px;"></td>
+          </tr>
+
+          <!-- Row 9: Center has Department date -->
+          <tr style="border: none;">
+            <td style="border: none; width: 33%; padding: 0 4px;"></td>
+            <td style="border: none; width: 34%; padding: 2px 4px 0; font-size: 9.5pt; white-space: nowrap;">
+              <div style="position: relative; left: 75px;">${esc(dateStr)}</div>
+            </td>
+            <td style="border: none; width: 33%; padding: 0 4px;"></td>
+          </tr>
+
+          <!-- Row 10: Center has ជ.ប្រធានមន្ទីរអប់រំយុវជន និងកីឡា & signature spaces -->
+          <tr style="border: none;">
+            <td style="border: none; width: 33%; padding: 0 4px; vertical-align: top;">
+              <div style="height: 45px;"></div>
+            </td>
+            <td style="border: none; width: 34%; padding: 2px 4px 0; font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 10.5pt; white-space: nowrap; vertical-align: top;">
+              <div style="position: relative; left: 75px;">ជ.ប្រធានមន្ទីរអប់រំយុវជន និងកីឡា</div>
+              <div style="height: 45px;"></div>
+            </td>
+            <td style="border: none; width: 33%; padding: 0 4px; vertical-align: top;">
+              <div style="height: 45px;"></div>
+            </td>
+          </tr>
+        </table>
+      </div>
+    `;
+  }
+
+  previewReport() {
+    const data = this.buildReportData();
+    const card = document.getElementById('reportPreviewCard');
+    const body = document.getElementById('reportPreviewBody');
+    const f = data.filters;
+    const esc = v => this.escapeReportHtml(v);
+    if (!card || !body) return;
+
+    // Check if landscape needed (Grade 7 is strictly Portrait A4)
+    const isLandscape = data.isGrade7 ? false : (data.columns.length > 7);
+    body.className = 'pdf-a4-sheet' + (isLandscape ? ' landscape' : '');
+
+    // Signatures / Footer
+    let signHtml = '';
+    if (data.isGrade7) {
+      signHtml = this.buildGrade7FooterHtml(data);
+    } else if (f.showDate || f.showPrincipal || f.signTeacher) {
+      let lunar = '';
+      try { lunar = f.signDate ? this.getKhmerLunarDate(f.signDate) : ''; } catch (e) { lunar = ''; }
+      const solarDate = f.signDate ? this.formatKhmerDocSolarDate(f.signDate) : '';
+
+      const leftCol = `
+        <div class="doc-sign-col" style="text-align: center; line-height: 1.65; font-size: 10pt;">
+          <div class="doc-sign-moul" style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 10.5pt; margin-bottom: 2px;">បានឃើញ និងឯកភាព</div>
+          ${f.showDate && lunar ? `<div style="font-size: 9.5pt;">${esc(lunar)}</div>` : ''}
+          ${f.showDate && solarDate ? `<div style="font-size: 9.5pt;">${esc(solarDate)}</div>` : ''}
+          <div class="doc-sign-moul" style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 10.5pt; margin-top: 4px;">នាយក/នាយិកាសាលា</div>
+          <div class="doc-sign-space" style="height: 65px;"></div>
+        </div>`;
+
+      const rightCol = `
+        <div class="doc-sign-col right" style="text-align: center; line-height: 1.65; font-size: 10pt; margin-left: auto;">
+          ${f.showDate && lunar ? `<div style="font-size: 9.5pt;">${esc(lunar)}</div>` : ''}
+          ${f.showDate && solarDate ? `<div style="font-size: 9.5pt;">${esc(solarDate)}</div>` : ''}
+          <div class="doc-sign-moul" style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 10.5pt; margin-top: 4px;">រៀបចំដោយ</div>
+          <div class="doc-sign-space" style="height: 65px;"></div>
+        </div>`;
+
+      signHtml = `
+        <div class="doc-sign-block" style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 25px; padding: 0 10px; page-break-inside: avoid;">
+          ${leftCol}
+          ${rightCol}
+        </div>`;
+    }
+
+    const tableHtml = data.cards
+      ? this.buildReportCardsHtml(data.cards)
+      : this.buildReportTableHtml(data);
+
+    const headerHtml = this.buildReportHeaderHtml(data);
+
+    body.innerHTML = `
+      ${headerHtml}
+      ${tableHtml}
+      ${data.note ? `<div style="margin-top: 6px; font-size: 9pt; color: #475569;">${esc(data.note)}</div>` : ''}
+      ${data.summary && !data.isGrade7 ? `<div class="doc-summary-note">${esc(data.summary)}</div>` : ''}
+      ${signHtml}
+    `;
+
+    card.style.display = 'flex';
+    this.applyPdfZoomMode('page-width');
+    card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Helper to print HTML directly without opening a new tab or window
+  printHtmlDirectly(htmlContent) {
+    let frame = document.getElementById('silentPrintIframe');
+    if (!frame) {
+      frame = document.createElement('iframe');
+      frame.id = 'silentPrintIframe';
+      frame.className = 'silent-print-frame';
+      document.body.appendChild(frame);
+    }
+    const frameDoc = frame.contentWindow || frame.contentDocument;
+    const doc = frame.contentDocument || frame.contentWindow.document;
+    doc.open();
+    doc.write(htmlContent);
+    doc.close();
+
+    const triggerPrint = () => {
+      try {
+        frame.contentWindow.focus();
+        frame.contentWindow.print();
+      } catch (err) {
+        console.error('Print iframe error, fallback to window.print:', err);
+        window.print();
+      }
+    };
+
+    // Give a short delay for fonts and styles to render before showing native print dialog
+    setTimeout(triggerPrint, 350);
+  }
+
+  exportReportPDF() {
+    const data = this.buildReportData();
+    const f = data.filters;
+    const esc = v => this.escapeReportHtml(v);
+
+    // Grade 7 is strictly Portrait A4
+    const isLandscape = data.isGrade7 ? false : (data.columns.length > 7);
+
+    let signHtml = '';
+    if (data.isGrade7) {
+      signHtml = this.buildGrade7FooterHtml(data);
+    } else if (f.showDate || f.showPrincipal || f.signTeacher) {
+      let lunar = '';
+      try { lunar = f.signDate ? this.getKhmerLunarDate(f.signDate) : ''; } catch (e) { lunar = ''; }
+      const solarDate = f.signDate ? this.formatKhmerDocSolarDate(f.signDate) : '';
+
+      const leftCol = `
+        <div style="text-align: center; line-height: 1.65; font-size: 10pt;">
+          <div class="moul" style="font-size: 10.5pt; margin-bottom: 2px;">បានឃើញ និងឯកភាព</div>
+          ${f.showDate && lunar ? `<div style="font-size: 9.5pt;">${esc(lunar)}</div>` : ''}
+          ${f.showDate && solarDate ? `<div style="font-size: 9.5pt;">${esc(solarDate)}</div>` : ''}
+          <div class="moul" style="font-size: 10.5pt; margin-top: 4px;">នាយក/នាយិកាសាលា</div>
+          <div style="height: 65px;"></div>
+        </div>`;
+
+      const rightCol = `
+        <div style="text-align: center; line-height: 1.65; font-size: 10pt; margin-left: auto;">
+          ${f.showDate && lunar ? `<div style="font-size: 9.5pt;">${esc(lunar)}</div>` : ''}
+          ${f.showDate && solarDate ? `<div style="font-size: 9.5pt;">${esc(solarDate)}</div>` : ''}
+          <div class="moul" style="font-size: 10.5pt; margin-top: 4px;">រៀបចំដោយ</div>
+          <div style="height: 65px;"></div>
+        </div>`;
+
+      signHtml = `
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 25px; padding: 0 10px; page-break-inside: avoid;">
+          ${leftCol}
+          ${rightCol}
+        </div>`;
+    }
+    const content = data.cards ? this.buildReportCardsHtml(data.cards) : this.buildReportTableHtml(data);
+    const headerHtml = this.buildReportHeaderHtml(data);
+    const fullHtml = `<!DOCTYPE html>
+      <html lang="km"><head><meta charset="UTF-8"><title>${esc(data.title)}</title>
+      <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600;700&family=Moul&family=Siemreap&display=swap" rel="stylesheet">
+      <style>
+        @page { size: A4 ${isLandscape ? 'landscape' : 'portrait'}; margin: 8mm 8mm; }
+        body { font-family: 'Khmer OS Siemreap', 'Siemreap', 'Kantumruy Pro', sans-serif; color: #000; margin: 0; font-size: 10pt; }
+        .moul { font-family: 'Khmer OS Muol Light', 'Moul', serif; }
+        h2 { text-align: center; font-size: 13pt; margin: 14px 0 2px; font-weight: 400; font-family: 'Khmer OS Muol Light', 'Moul', serif; }
+        .sub { text-align: center; margin-bottom: 10px; }
+        .doc-header-grid { display: grid; grid-template-columns: 1fr auto 1fr; align-items: flex-start; margin-bottom: 12px; }
+        .doc-kingdom-meta { text-align: center; }
+        .doc-kingdom-head { text-align: center; line-height: 1.65; font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 11pt; margin-bottom: 2px; }
+        .doc-separator { text-align: center; margin: 2px auto 0 auto; line-height: 1; }
+        .doc-divider-img { display: inline-block; height: 14px; max-width: 175px; width: auto; object-fit: contain; vertical-align: middle; }
+        .doc-school-meta { text-align: left; line-height: 1.6; font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 10.5pt; margin-top: 3.4em; white-space: nowrap; }
+        .doc-title-main { text-align: center; font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 12.5pt; font-weight: 400; margin: 10px 0 4px; }
+        .doc-title-sub { text-align: center; font-size: 10.5pt; margin-bottom: 16px; }
+        .doc-table, table.doc-table { width: 100%; border-collapse: collapse; }
+        .doc-table th, .doc-table td { border: 1px solid #000; padding: 3px 4px; text-align: center; }
+        .doc-table th { background: #f8fafc; font-weight: 700; }
+        .doc-table tfoot td { font-weight: 700; }
+        .grade7-table { font-size: 8.5pt; }
+        .grade7-table thead { display: table-row-group; }
+        .grade7-table th, .grade7-table td { border: 1px solid #000; padding: 2.5px 3px; }
+        .summary { margin-top: 8px; font-weight: 700; }
+        .report-student-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .report-id-card { border: 1.5px solid #1e5a96; border-radius: 10px; padding: 10px; display: flex; gap: 10px; page-break-inside: avoid; }
+        .report-id-card .avatar { width: 70px; height: 86px; border: 1px solid #94a3b8; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 700; overflow: hidden; }
+        .report-id-card .avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .report-id-card .info { font-size: 9.5pt; line-height: 1.55; }
+        .report-id-card .name { font-weight: 700; font-size: 11pt; }
+      </style></head><body>
+        ${headerHtml}
+        ${content}
+        ${data.note ? `<div style="margin-top:6px; font-size:9.5pt;">${esc(data.note)}</div>` : ''}
+        ${data.summary && !data.isGrade7 ? `<div class="summary">${esc(data.summary)}</div>` : ''}
+        ${signHtml}
+      </body></html>`;
+
+    this.printHtmlDirectly(fullHtml);
+  }
+
+  exportReportExcel() {
+    const data = this.buildReportData();
+    const aoa = [[data.title], [`${data.subtitle || ''} | ឆ្នាំសិក្សា៖ ${this.activeYear || ''}`], [], data.columns, ...data.rows];
+    if (data.footer) aoa.push(data.footer);
+    if (data.summary) aoa.push([], [data.summary]);
+    if (data.note) aoa.push([data.note]);
+    const safeName = String(data.title).replace(/[\\/:*?"<>|]/g, '_');
+    const fileBase = `${safeName}_${new Date().toISOString().slice(0, 10)}`;
+
+    if (typeof XLSX !== 'undefined') {
+      const ws = XLSX.utils.aoa_to_sheet(aoa);
+      ws['!cols'] = data.columns.map((c, i) => {
+        const maxLen = Math.max(String(c).length, ...data.rows.map(r => String(r[i] ?? '').length));
+        return { wch: Math.min(45, Math.max(8, maxLen + 2)) };
+      });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Report');
+      XLSX.writeFile(wb, `${fileBase}.xlsx`);
+    } else {
+      const csv = '\uFEFF' + aoa.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${fileBase}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+    }
+    this.showToast('បាននាំចេញរបាយការណ៍ជា Excel ដោយជោគជ័យ!', 'success');
+  }
+
+  switchPeriod(periodKey) {
+    if (!PERIOD_DEFINITIONS[periodKey]) return;
+    this.currentPeriod = periodKey;
+
+    const isSemester = (periodKey === 'sem1_exam' || periodKey === 'sem2_exam' || periodKey === 'sem1_overall' || periodKey === 'sem2_overall' || periodKey === 'yearly');
+    this.syncSubjectsFromCurriculum(this.activeClass, isSemester);
+
+    // Update active nav item in clean Sidebar
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.classList.remove('active');
+    });
+
+    if (periodKey === 'curriculum_setting') {
+      const btn = document.querySelector('.nav-item[data-period="curriculum_setting"]');
+      if (btn) btn.classList.add('active');
+    } else if (periodKey === 'student_info') {
+      const btn = document.querySelector('.nav-item[data-period="student_info"]');
+      if (btn) btn.classList.add('active');
+    } else if (periodKey === 'overview_stats') {
+      const btn = document.querySelector('.nav-item[data-period="overview_stats"]');
+      if (btn) btn.classList.add('active');
+    } else if (periodKey === 'exam_date_config') {
+      const btn = document.querySelector('.nav-item[data-period="exam_date_config"]');
+      if (btn) btn.classList.add('active');
+    } else if (periodKey === 'exam_prep') {
+      const btn = document.querySelector('.nav-item[data-period="exam_prep"]');
+      if (btn) btn.classList.add('active');
+    } else if (periodKey === 'exam_score_entry') {
+      const btn = document.querySelector('.nav-item[data-period="exam_score_entry"]');
+      if (btn) btn.classList.add('active');
+    } else if (periodKey.startsWith('report_')) {
+      const btn = document.querySelector(`.nav-item[data-period="${periodKey}"]`);
+      if (btn) btn.classList.add('active');
+    } else if (periodKey === 'sem1_overall') {
+      if (this.navSem1Btn) this.navSem1Btn.classList.add('active');
+    } else if (periodKey === 'sem2_overall') {
+      if (this.navSem2Btn) this.navSem2Btn.classList.add('active');
+    } else if (periodKey === 'yearly') {
+      if (this.navYearlyBtn) this.navYearlyBtn.classList.add('active');
+    } else {
+      // Monthly scores (test_early, m01..m12, etc.)
+      if (this.navMonthlyBtn) this.navMonthlyBtn.classList.add('active');
+    }
+
+    // Reports sidebar group highlight
+    const reportGroup = document.getElementById('navReportGroup');
+    if (reportGroup) {
+      const isReport = periodKey.startsWith('report_');
+      reportGroup.classList.toggle('has-active', isReport);
+      if (isReport) reportGroup.classList.add('open');
+    }
+
+    const meta = PERIOD_DEFINITIONS[periodKey];
+    this.currentViewTitle.textContent = meta.title;
+    this.currentViewDesc.textContent = meta.desc;
+    this.currentPeriodIcon.innerHTML = `<i class="${meta.icon}"></i>`;
+
+    if (this.reportsPanel) this.reportsPanel.style.display = 'none';
+
+    // Toggle Action Buttons, Header Dropdown & Filter visibility
+    if (meta.type === 'curriculum_setting') {
+      this.currentViewTitle.style.display = 'block';
+      if (this.periodHeaderSelectWrapper) this.periodHeaderSelectWrapper.style.display = 'none';
+      this.studentViewActions.style.display = 'none';
+      this.gradeViewActions.style.display = 'none';
+      this.mentionFilterWrapper.style.display = 'none';
+      this.studentInfoPanel.style.display = 'none';
+      this.gradeSheetPanel.style.display = 'none';
+      this.overviewStatsPanel.style.display = 'none';
+      if (this.examPrepPanel) this.examPrepPanel.style.display = 'none';
+      if (this.examScorePanel) this.examScorePanel.style.display = 'none';
+      if (this.examDateConfigPanel) this.examDateConfigPanel.style.display = 'none';
+      if (this.reportsPanel) this.reportsPanel.style.display = 'none';
+      if (this.curriculumConfigPanel) this.curriculumConfigPanel.style.display = 'block';
+      if (this.statsCardsSection) this.statsCardsSection.style.display = 'none';
+      if (this.tableToolbar) this.tableToolbar.style.display = 'none';
+    } else if (meta.type === 'report') {
+      this.currentViewTitle.style.display = 'block';
+      if (this.periodHeaderSelectWrapper) this.periodHeaderSelectWrapper.style.display = 'none';
+      this.studentViewActions.style.display = 'none';
+      this.gradeViewActions.style.display = 'none';
+      this.mentionFilterWrapper.style.display = 'none';
+      this.studentInfoPanel.style.display = 'none';
+      this.gradeSheetPanel.style.display = 'none';
+      this.overviewStatsPanel.style.display = 'none';
+      if (this.examPrepPanel) this.examPrepPanel.style.display = 'none';
+      if (this.examScorePanel) this.examScorePanel.style.display = 'none';
+      if (this.examDateConfigPanel) this.examDateConfigPanel.style.display = 'none';
+      if (this.curriculumConfigPanel) this.curriculumConfigPanel.style.display = 'none';
+      if (this.reportsPanel) this.reportsPanel.style.display = 'block';
+      if (this.statsCardsSection) this.statsCardsSection.style.display = 'none';
+      if (this.tableToolbar) this.tableToolbar.style.display = 'none';
+    } else if (meta.type === 'profile') {
+      this.currentViewTitle.style.display = 'block';
+      if (this.periodHeaderSelectWrapper) this.periodHeaderSelectWrapper.style.display = 'none';
+      this.studentViewActions.style.display = 'flex';
+      this.gradeViewActions.style.display = 'none';
+      this.mentionFilterWrapper.style.display = 'none';
+      this.studentInfoPanel.style.display = 'block';
+      this.gradeSheetPanel.style.display = 'none';
+      this.overviewStatsPanel.style.display = 'none';
+      if (this.examPrepPanel) this.examPrepPanel.style.display = 'none';
+      if (this.examScorePanel) this.examScorePanel.style.display = 'none';
+      if (this.examDateConfigPanel) this.examDateConfigPanel.style.display = 'none';
+      if (this.curriculumConfigPanel) this.curriculumConfigPanel.style.display = 'none';
+      if (this.statsCardsSection) this.statsCardsSection.style.display = 'grid';
+      if (this.tableToolbar) this.tableToolbar.style.display = 'flex';
+    } else if (meta.type === 'overview') {
+      this.currentViewTitle.style.display = 'block';
+      if (this.periodHeaderSelectWrapper) this.periodHeaderSelectWrapper.style.display = 'none';
+      this.studentViewActions.style.display = 'none';
+      this.gradeViewActions.style.display = 'none';
+      this.mentionFilterWrapper.style.display = 'none';
+      this.studentInfoPanel.style.display = 'none';
+      this.gradeSheetPanel.style.display = 'none';
+      this.overviewStatsPanel.style.display = 'block';
+      if (this.examPrepPanel) this.examPrepPanel.style.display = 'none';
+      if (this.examScorePanel) this.examScorePanel.style.display = 'none';
+      if (this.examDateConfigPanel) this.examDateConfigPanel.style.display = 'none';
+      if (this.curriculumConfigPanel) this.curriculumConfigPanel.style.display = 'none';
+      if (this.statsCardsSection) this.statsCardsSection.style.display = 'none';
+      if (this.tableToolbar) this.tableToolbar.style.display = 'none';
+    } else if (meta.type === 'exam') {
+      this.currentViewTitle.style.display = 'block';
+      if (this.periodHeaderSelectWrapper) this.periodHeaderSelectWrapper.style.display = 'none';
+      this.studentViewActions.style.display = 'none';
+      this.gradeViewActions.style.display = 'none';
+      this.mentionFilterWrapper.style.display = 'none';
+      this.studentInfoPanel.style.display = 'none';
+      this.gradeSheetPanel.style.display = 'none';
+      this.overviewStatsPanel.style.display = 'none';
+      if (this.examPrepPanel) this.examPrepPanel.style.display = 'block';
+      if (this.examScorePanel) this.examScorePanel.style.display = 'none';
+      if (this.examDateConfigPanel) this.examDateConfigPanel.style.display = 'none';
+      if (this.curriculumConfigPanel) this.curriculumConfigPanel.style.display = 'none';
+      // Hide top score KPI cards and generic search bar in Exam Preparation!
+      if (this.statsCardsSection) this.statsCardsSection.style.display = 'none';
+      if (this.tableToolbar) this.tableToolbar.style.display = 'none';
+    } else if (meta.type === 'exam_score') {
+      this.currentViewTitle.style.display = 'block';
+      if (this.periodHeaderSelectWrapper) this.periodHeaderSelectWrapper.style.display = 'none';
+      this.studentViewActions.style.display = 'none';
+      this.gradeViewActions.style.display = 'none';
+      this.mentionFilterWrapper.style.display = 'none';
+      this.studentInfoPanel.style.display = 'none';
+      this.gradeSheetPanel.style.display = 'none';
+      this.overviewStatsPanel.style.display = 'none';
+      if (this.examPrepPanel) this.examPrepPanel.style.display = 'none';
+      if (this.examScorePanel) this.examScorePanel.style.display = 'block';
+      if (this.examDateConfigPanel) this.examDateConfigPanel.style.display = 'none';
+      if (this.curriculumConfigPanel) this.curriculumConfigPanel.style.display = 'none';
+      if (this.statsCardsSection) this.statsCardsSection.style.display = 'none';
+      if (this.tableToolbar) this.tableToolbar.style.display = 'none';
+    } else if (meta.type === 'exam_date_config') {
+      this.currentViewTitle.style.display = 'block';
+      if (this.periodHeaderSelectWrapper) this.periodHeaderSelectWrapper.style.display = 'none';
+      this.studentViewActions.style.display = 'none';
+      this.gradeViewActions.style.display = 'none';
+      this.mentionFilterWrapper.style.display = 'none';
+      this.studentInfoPanel.style.display = 'none';
+      this.gradeSheetPanel.style.display = 'none';
+      this.overviewStatsPanel.style.display = 'none';
+      if (this.examPrepPanel) this.examPrepPanel.style.display = 'none';
+      if (this.examScorePanel) this.examScorePanel.style.display = 'none';
+      if (this.examDateConfigPanel) this.examDateConfigPanel.style.display = 'block';
+      if (this.curriculumConfigPanel) this.curriculumConfigPanel.style.display = 'none';
+      if (this.statsCardsSection) this.statsCardsSection.style.display = 'none';
+      if (this.tableToolbar) this.tableToolbar.style.display = 'none';
+    } else {
+      // Grade View: Show Dropdown Selector right at title position!
+      this.currentViewTitle.style.display = 'none';
+      if (this.periodHeaderSelectWrapper) {
+        this.periodHeaderSelectWrapper.style.display = 'inline-flex';
+        this.periodHeaderSelect.value = periodKey;
+      }
+      this.studentViewActions.style.display = 'none';
+      this.gradeViewActions.style.display = 'flex';
+      this.mentionFilterWrapper.style.display = 'flex';
+      this.studentInfoPanel.style.display = 'none';
+      this.gradeSheetPanel.style.display = 'block';
+      this.overviewStatsPanel.style.display = 'none';
+      if (this.examPrepPanel) this.examPrepPanel.style.display = 'none';
+      if (this.examScorePanel) this.examScorePanel.style.display = 'none';
+      if (this.examDateConfigPanel) this.examDateConfigPanel.style.display = 'none';
+      if (this.curriculumConfigPanel) this.curriculumConfigPanel.style.display = 'none';
+      if (this.statsCardsSection) this.statsCardsSection.style.display = 'grid';
+      if (this.tableToolbar) this.tableToolbar.style.display = 'flex';
+
+      // Custom helper banner text
+      if (meta.id === 'sem1_monthly_avg') {
+        this.periodHelperText.textContent = 'ខែប្រចាំឆមាសទី១៖ អ្នកអាចចុចប៊ូតុង "គណនាស្វ័យប្រវត្តិ" ដើម្បីប្រមូលមធ្យមភាគពីខែ មករា ដល់ មិថុនា ឬបញ្ចូលដោយផ្ទាល់។';
+      } else if (meta.id === 'sem1_overall') {
+        this.periodHelperText.textContent = 'លទ្ធផលរួមឆមាសទី១៖ ចុច "គណនាស្វ័យប្រវត្តិ" ដើម្បីគណនាចេញពី (ខែប្រចាំឆមាសទី១ + ប្រឡងឆមាសទី១) ÷ ២។';
+      } else if (meta.id === 'sem2_monthly_avg') {
+        this.periodHelperText.textContent = 'ខែឆមាសទី២៖ ចុចប៊ូតុង "គណនាស្វ័យប្រវត្តិ" ដើម្បីប្រមូលមធ្យមភាគពីខែ កក្កដា ដល់ ធ្នូ ឬបញ្ចូលដោយផ្ទាល់។';
+      } else if (meta.id === 'sem2_overall') {
+        this.periodHelperText.textContent = 'លទ្ធផលរួមឆមាសទី២៖ ចុច "គណនាស្វ័យប្រវត្តិ" ដើម្បីគណនាចេញពី (ខែឆមាសទី២ + ប្រឡងឆមាសទី២) ÷ ២។';
+      } else if (meta.id === 'yearly') {
+        this.periodHelperText.textContent = 'លទ្ធផលប្រចាំឆ្នាំសរុប៖ ចុច "គណនាស្វ័យប្រវត្តិ" ដើម្បីគណនាចេញពី (ឆមាសទី១ + ឆមាសទី២) ÷ ២ រួចផ្តល់ចំណាត់ថ្នាក់ និងនិទ្ទេសចុងក្រោយ។';
+      } else {
+        this.periodHelperText.textContent = `សូមបញ្ចូលពិន្ទុ ${meta.title} តាមមុខវិជ្ជានីមួយៗ។ ប្រព័ន្ធនឹងគណនាពិន្ទុសរុប មធ្យមភាគ ចំណាត់ថ្នាក់ និងនិទ្ទេសដោយស្វ័យប្រវត្តិ។`;
+      }
+    }
+
+    this.renderCurrentView();
+    this.updateKPIOverview();
+  }
+
+  renderNavigation() {
+    const validCount = (this.students || []).filter(s => !this.isIncompleteLateStudent(s)).length;
+    this.sidebarStudentCount.textContent = validCount;
+  }
+
+  isIncompleteLateStudent(stu) {
+    if (!stu || typeof stu !== 'object') return false;
+    const idStr = String(stu.id || stu.studentId || '').trim();
+    const isLate = Boolean(stu.isLateEntry) || idStr.startsWith('END-') || idStr.startsWith('END ');
+    if (!isLate) return false;
+    const hasName = Boolean(String(stu.khmerName || '').trim());
+    const hasGender = Boolean(String(stu.gender || '').trim());
+    const hasDob = Boolean(String(stu.dob || '').trim());
+    return !(hasName && hasGender && hasDob);
+  }
+
+  // =========================================================================
+  // Grade Matching Helper
+  // Maps a student to a grade-level key (grade_7 … grade_12_soc)
+  // based on student.class and student.classType fields.
+  // =========================================================================
+  studentMatchesGrade(stu, gradeKey) {
+    if (!stu) return false;
+    let cls = '';
+    let clsType = '';
+    if (typeof stu === 'string') {
+      cls = stu.trim();
+    } else {
+      cls = (stu.class || stu.grade || '').trim();
+      clsType = (stu.classType || '').trim();
+      if (stu.gradeLevel && stu.gradeLevel === gradeKey) {
+        return true;
+      }
+      if (!cls && stu.gradeLevel) {
+        return stu.gradeLevel === gradeKey;
+      }
+    }
+    const clsLower = cls.toLowerCase();
+    const typeLower = clsType.toLowerCase();
+
+    // Khmer numerals → ASCII so regex can parse grade number
+    const khmerDigits = { '០': '0', '១': '1', '២': '2', '៣': '3', '៤': '4', '៥': '5', '៦': '6', '៧': '7', '៨': '8', '៩': '9' };
+    let normalized = cls.replace(/[០-៩]/g, d => khmerDigits[d] || d).replace(/ថ្នាក់ទី\s*/g, '');
+
+    // Roman numerals conversion
+    normalized = normalized.replace(/\bXII\b/i, '12')
+      .replace(/\bXI\b/i, '11')
+      .replace(/\bX\b/i, '10')
+      .replace(/\bIX\b/i, '9')
+      .replace(/\bVIII\b/i, '8')
+      .replace(/\bVII\b/i, '7');
+
+    const numMatch = normalized.match(/^(\d+)/) || normalized.match(/(\d+)/);
+    const gradeNum = numMatch ? parseInt(numMatch[1], 10) : null;
+
+    // Combined string for substring checks (class + classType)
+    const clsNorm = cls + ' ' + clsType;
+
+    // Enhanced section checks for Social vs Science (D, E, ឃ, ង vs A, B, C, ក, ខ, គ, SS vs SC)
+    const isSocSection = /\b(11|12)[-_\s]*[DEឃង]\b/i.test(normalized) || /(11|12)[DEឃង]$/i.test(normalized.trim()) ||
+      /\b(11|12)[-_\s]*SS\b/i.test(normalized) || /(11|12)SS$/i.test(normalized.trim());
+    const isSciSection = /\b(11|12)[-_\s]*[ABCកខគ]\b/i.test(normalized) || /(11|12)[ABCកខគ]$/i.test(normalized.trim()) ||
+      /\b(11|12)[-_\s]*SC\b/i.test(normalized) || /(11|12)SC$/i.test(normalized.trim());
+
+    // isSoc must be checked first (it is a superset of isSci label-wise)
+    const isSoc = clsType === 'វិទ្យាសាស្ត្រសង្គម' || typeLower === 'social' || typeLower === 'soc' ||
+      clsNorm.includes('សង្គម') || clsNorm.includes('soc') || clsNorm.includes('ss') || isSocSection;
+    const isSci = !isSoc && (
+      clsType === 'វិទ្យាសាស្ត្រ' || typeLower === 'science' || typeLower === 'sci' ||
+      clsNorm.includes('វិទ្យាសាស្ត្រ') || clsNorm.includes('sci') || clsNorm.includes('sc') || isSciSection);
+
+    switch (gradeKey) {
+      case 'grade_7': return gradeNum === 7;
+      case 'grade_8': return gradeNum === 8;
+      case 'grade_9': return gradeNum === 9;
+      case 'grade_10': return gradeNum === 10;
+      case '11SC':
+      case 'grade_11_sci': return gradeNum === 11 && (isSci || !isSoc);
+      case '11SS':
+      case 'grade_11_soc': return gradeNum === 11 && isSoc;
+      case '12SC':
+      case 'grade_12_sci': return gradeNum === 12 && (isSci || !isSoc);
+      case '12SS':
+      case 'grade_12_soc': return gradeNum === 12 && isSoc;
+      default:
+        return cls === gradeKey || clsLower === gradeKey.toLowerCase() || (gradeNum && gradeKey.includes(String(gradeNum)));
+    }
+  }
+
+  populateClassSectionToolbarFilter() {
+    if (!this.classSectionFilterEl) return;
+    const prevVal = this.sectionFilter || 'ALL';
+    const gradeKey = this.activeClass || 'grade_12_sci';
+    const configuredClasses = this.getClassListForGradeKey(gradeKey);
+
+    // Also include any distinct student.class values belonging to this grade
+    const existingClasses = (this.students || [])
+      .filter(s => this.studentMatchesGrade(s, gradeKey) && !this.isIncompleteLateStudent(s))
+      .map(s => String(s.class || '').trim())
+      .filter(c => c && !c.startsWith('ថ្នាក់ទី'));
+
+    const allOptions = [...new Set([...configuredClasses, ...existingClasses])];
+
+    this.classSectionFilterEl.innerHTML = '<option value="ALL">ទាំងអស់</option>';
+    allOptions.forEach(clsName => {
+      const opt = document.createElement('option');
+      opt.value = clsName;
+      opt.textContent = clsName;
+      this.classSectionFilterEl.appendChild(opt);
+    });
+
+    if (prevVal !== 'ALL' && allOptions.includes(prevVal)) {
+      this.classSectionFilterEl.value = prevVal;
+      this.sectionFilter = prevVal;
+    } else {
+      this.classSectionFilterEl.value = 'ALL';
+      this.sectionFilter = 'ALL';
+    }
+  }
+
+  // Filter students based on activeClass, sectionFilter, search and gender
+  // Results are sorted alphabetically by Khmer name by default (incomplete END- late students at bottom)
+  getFilteredStudents() {
+    const list = this.students.filter(stu => {
+      // Grade/Class Match
+      const matchesGrade = this.studentMatchesGrade(stu, this.activeClass);
+
+      // Specific Section Match (e.g. 7A, 7B, 7C)
+      const matchesSection = !this.sectionFilter || this.sectionFilter === 'ALL' || stu.class === this.sectionFilter;
+
+      // Search Match
+      const matchesSearch = !this.searchQuery ||
+        (stu.khmerName && stu.khmerName.toLowerCase().includes(this.searchQuery)) ||
+        (stu.latinName && stu.latinName.toLowerCase().includes(this.searchQuery)) ||
+        (stu.id && stu.id.toLowerCase().includes(this.searchQuery)) ||
+        (stu.phone && stu.phone.includes(this.searchQuery)) ||
+        (stu.class && stu.class.toLowerCase().includes(this.searchQuery)) ||
+        (stu.oldClass && stu.oldClass.toLowerCase().includes(this.searchQuery));
+
+      // Gender Match
+      const matchesGender = this.genderFilter === 'ALL' || stu.gender === this.genderFilter;
+
+      return matchesGrade && matchesSection && matchesSearch && matchesGender;
+    });
+
+    // Default sort: completed students alphabetically by Khmer name, incomplete late students at the end by ID
+    list.sort((a, b) => {
+      const aIncomplete = this.isIncompleteLateStudent(a);
+      const bIncomplete = this.isIncompleteLateStudent(b);
+      if (aIncomplete && !bIncomplete) return 1;
+      if (!aIncomplete && bIncomplete) return -1;
+      if (aIncomplete && bIncomplete) {
+        const aNum = parseInt(String(a.id || '').replace(/\D+/g, ''), 10) || 0;
+        const bNum = parseInt(String(b.id || '').replace(/\D+/g, ''), 10) || 0;
+        return aNum - bNum;
+      }
+      return (a.khmerName || '').localeCompare(b.khmerName || '', 'km');
+    });
+    return list;
+  }
+
+  renderCurrentView() {
+    const meta = PERIOD_DEFINITIONS[this.currentPeriod];
+    if (meta.type === 'curriculum_setting') {
+      const gradeKey = this.curriculumGradeSelect ? this.curriculumGradeSelect.value : (this.activeClass || 'grade_10');
+      this.renderCurriculumConfigTable(gradeKey);
+    } else if (meta.type === 'profile') {
+      this.renderStudentTable();
+    } else if (meta.type === 'overview') {
+      this.renderOverviewStats();
+    } else if (meta.type === 'exam') {
+      this.renderExamView();
+    } else if (meta.type === 'exam_score') {
+      this.renderExamScoreEntryView();
+    } else if (meta.type === 'exam_date_config') {
+      this.renderExamDateConfigTable();
+    } else if (meta.type === 'report') {
+      this.renderReportsView();
+    } else {
+      this.renderGradeTable();
+    }
+    this.updateKPIOverview();
+  }
+
+  // ==========================================================================
+  // VIEW 1: Student Information Table
+  // ==========================================================================
+  renderStudentTable() {
+    const filtered = this.getFilteredStudents();
+    this.studentTableBody.innerHTML = '';
+
+    if (filtered.length === 0) {
+      this.studentTableBody.innerHTML = `
+        <tr>
+          <td colspan="14" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+            <i class="ri-user-unfollow-line" style="font-size: 2rem; display:block; margin-bottom: 0.5rem;"></i>
+            មិនមានទិន្នន័យសិស្សត្រូវនឹងលក្ខខណ្ឌស្វែងរកឡើយ
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    filtered.forEach((stu, index) => {
+      const tr = document.createElement('tr');
+      const isIncompleteLate = this.isIncompleteLateStudent(stu);
+
+      if (isIncompleteLate) {
+        tr.innerHTML = `
+          <td style="text-align: center; font-weight: 600;">${index + 1}</td>
+          <td><strong style="color: var(--primary);">${stu.id}</strong></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td style="text-align: center;"></td>
+          <td></td>
+          <td style="text-align: center;"></td>
+          <td style="text-align: center;"></td>
+          <td style="text-align: center;"></td>
+          <td></td>
+          <td></td>
+          <td></td>
+          <td style="text-align: center;">
+            <button class="btn-table-action" title="មើលព្រឹត្តិបត្រពិន្ទុបុគ្គល" onclick="app.viewStudentTranscript('${stu.id}')">
+              <i class="ri-file-user-line"></i>
+            </button>
+            <button class="btn-table-action" title="កែប្រែព័ត៌មាន" onclick="app.editStudent('${stu.id}')">
+              <i class="ri-edit-line"></i>
+            </button>
+            <button class="btn-table-action delete" title="លុបសិស្ស" onclick="app.deleteStudent('${stu.id}')">
+              <i class="ri-delete-bin-line"></i>
+            </button>
+          </td>
+        `;
+        this.studentTableBody.appendChild(tr);
+        return;
+      }
+
+      const initials = (stu.khmerName || '').split(' ').map(w => w[0]).join('').slice(0, 2);
+      const genderBadgeClass = stu.gender === 'ស្រី' ? 'gender-female' : 'gender-male';
+      const classTypeName = stu.classType || 'ទូទៅ';
+      const currentClass = stu.class || 'ថ្នាក់ទី១២';
+      const oldClassVal = stu.oldClass || '';
+
+      let oldClassHtml = '<span style="color: var(--text-muted); font-size: 0.82rem;">-</span>';
+      if (oldClassVal && oldClassVal !== currentClass) {
+        oldClassHtml = `<span style="display: inline-block; padding: 0.18rem 0.5rem; border-radius: 6px; background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-weight: 700; font-size: 0.8rem;" title="ថ្នាក់ចាស់មុនប្ដូរ: ${oldClassVal}">${oldClassVal}</span>`;
+      } else if (oldClassVal) {
+        oldClassHtml = `<span style="display: inline-block; padding: 0.18rem 0.5rem; border-radius: 6px; background: #f1f5f9; color: #64748b; font-weight: 600; font-size: 0.8rem;">${oldClassVal}</span>`;
+      }
+
+      tr.innerHTML = `
+        <td style="text-align: center; font-weight: 600;">${index + 1}</td>
+        <td>
+          <strong style="color: var(--primary);">${stu.id}</strong>
+          ${stu.geipId ? `<div style="margin-top: 2px;"><span class="geip-badge" title="GEIP ID: ${stu.geipId}"><i class="ri-shield-star-fill"></i> GEIP</span></div>` : ''}
+        </td>
+        <td>
+          <div class="student-avatar-cell">
+            ${stu.avatar
+          ? `<img src="${stu.avatar}" class="avatar-img" alt="${stu.khmerName}">`
+          : `<div class="avatar-img">${initials}</div>`
+        }
+          </div>
+        </td>
+        <td>
+          <strong>${stu.khmerName}</strong>
+          ${(() => {
+          const extraSummary = [];
+          if (stu.idPoor && stu.idPoor !== 'មិនមាន') extraSummary.push(`ក្រ: ${stu.idPoor}`);
+          if (stu.fromClass) extraSummary.push(`ឡើងពី: ${stu.fromClass}`);
+          if (stu.primarySchool) extraSummary.push(`បឋម: ${stu.primarySchool}`);
+          if (stu.repeatGrade) extraSummary.push(`ត្រួត: ${stu.repeatGrade}`);
+          if (stu.transferFrom) extraSummary.push(`ផ្ទេរ: ${stu.transferFrom}`);
+          if (stu.diplomaSession || stu.diplomaCenter) extraSummary.push(`បឋមភូមិ: ${stu.diplomaCenter || ''} ${stu.diplomaSession || ''}`);
+          return extraSummary.length > 0
+            ? `<div style="font-size: 0.73rem; color: #0369a1; margin-top: 2px; font-weight: 500;">${extraSummary.join(' · ')}</div>`
+            : '';
+        })()}
+        </td>
+        <td><span style="font-family: 'Outfit', sans-serif;">${stu.latinName || '-'}</span></td>
+        <td style="text-align: center;"><span class="gender-badge ${genderBadgeClass}">${stu.gender}</span></td>
+        <td>${this.formatReportDob(stu.dob) || '-'}</td>
+        <td style="text-align: center;">${oldClassHtml}</td>
+        <td style="text-align: center;"><span class="badge-room-tag">${currentClass}</span></td>
+        <td style="text-align: center;"><span class="badge-class-type">${classTypeName}</span></td>
+        <td>${stu.phone || stu.studentPhone || '-'}</td>
+        <td>${stu.guardian || stu.fatherName || stu.motherName || '-'}</td>
+        <td style="max-width: 180px; overflow: hidden; text-overflow: ellipsis;">${stu.address || '-'}</td>
+        <td style="text-align: center;">
+          <button class="btn-table-action" title="មើលជីវប្រវត្តិសិស្សគម្រោង GEIP" style="color: #0284c7;" onclick="app.viewStudentProfile('${stu.id}')">
+            <i class="ri-profile-line"></i>
+          </button>
+          <button class="btn-table-action" title="មើលព្រឹត្តិបត្រពិន្ទុបុគ្គល" onclick="app.viewStudentTranscript('${stu.id}')">
+            <i class="ri-file-user-line"></i>
+          </button>
+          <button class="btn-table-action" title="កែប្រែព័ត៌មាន" onclick="app.editStudent('${stu.id}')">
+            <i class="ri-edit-line"></i>
+          </button>
+          <button class="btn-table-action delete" title="លុបសិស្ស" onclick="app.deleteStudent('${stu.id}')">
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </td>
+      `;
+      this.studentTableBody.appendChild(tr);
+    });
+  }
+
+  // ==========================================================================
+  // VIEW 2: Grade Sheet Table
+  // ==========================================================================
+  renderGradeTable() {
+    const period = this.currentPeriod;
+    const isSemester = (period === 'sem1_exam' || period === 'sem2_exam' || period === 'sem1_overall' || period === 'sem2_overall' || period === 'yearly');
+    const matchedGradeKey = this.getStandardGradeKey(this.activeClass);
+    const activeSubjects = this.syncSubjectsFromCurriculum(this.activeClass, isSemester);
+    const isLocked = !this.isPeriodActiveForScoring(period);
+
+    // Update locked banner
+    if (this.gradeTableLockedBanner) {
+      if (isLocked) {
+        this.gradeTableLockedBanner.style.display = 'flex';
+        if (this.gradeTableLockedBannerText) {
+          const currentTitle = this.getExamPeriodTitle(period);
+          const activeTitle = this.getExamPeriodTitle(this.activeScorePeriod);
+          this.gradeTableLockedBannerText.innerHTML = `ការបញ្ចូលពិន្ទុសម្រាប់ <strong>«${currentTitle}»</strong> ត្រូវបានបិទ! បច្ចុប្បន្នប្រព័ន្ធអនុញ្ញាតឱ្យបញ្ចូលពិន្ទុតែខែ <strong>«${activeTitle}»</strong> ប៉ុណ្ណោះ។`;
+        }
+      } else {
+        this.gradeTableLockedBanner.style.display = 'none';
+      }
+    }
+
+    // 1. Calculate Results for all students in this period
+    const calculatedData = this.calculatePeriodResults(period);
+
+    // Filter by activeClass, sectionFilter, student search, gender & mention, then sort alphabetically
+    const filteredResults = calculatedData.filter(item => {
+      const stu = item.student;
+      const matchesGrade = this.studentMatchesGrade(stu, this.activeClass);
+      const matchesSection = !this.sectionFilter || this.sectionFilter === 'ALL' || stu.class === this.sectionFilter;
+      const matchesSearch = !this.searchQuery ||
+        stu.khmerName.toLowerCase().includes(this.searchQuery) ||
+        stu.id.toLowerCase().includes(this.searchQuery);
+      const matchesGender = this.genderFilter === 'ALL' || stu.gender === this.genderFilter;
+      const matchesMention = this.mentionFilter === 'ALL' || item.mention === this.mentionFilter;
+      return matchesGrade && matchesSection && matchesSearch && matchesGender && matchesMention;
+    });
+
+    // Sort alphabetically by Khmer name
+    filteredResults.sort((a, b) => a.student.khmerName.localeCompare(b.student.khmerName, 'km'));
+
+    // 2. Render Table Head
+    let headHtml = `
+      <tr>
+        <th class="sticky-col" style="width: 50px; text-align: center;">ចំណាត់ថ្នាក់</th>
+        <th class="sticky-col-2" style="width: 85px;">អត្តលេខ</th>
+        <th class="sticky-col-3" style="min-width: 140px;">គោត្តនាម-នាម</th>
+        <th style="width: 60px; text-align: center;">ភេទ</th>
+    `;
+
+    activeSubjects.forEach(sub => {
+      let coefText = '';
+      if (sub.scoreType === 'none') {
+        coefText = '(មិនយកពិន្ទុ)';
+      } else if (sub.isBonus) {
+        coefText = '(ពិន្ទុបន្ថែម)';
+      } else {
+        coefText = `(ពិន្ទុពេញ ${sub.maxScore} × ${sub.coef})`;
+      }
+      headHtml += `
+        <th style="text-align: center; min-width: 85px;">
+          <div>${sub.name}</div>
+          <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: normal;">${coefText}</span>
+        </th>
+      `;
+    });
+
+    headHtml += `
+        <th style="text-align: center; width: 90px; background-color: var(--primary-soft);">ពិន្ទុសរុប</th>
+        <th style="text-align: center; width: 90px; background-color: var(--primary-soft);">មធ្យមភាគ</th>
+        <th style="text-align: center; width: 80px;">និទ្ទេស</th>
+        <th style="text-align: center; width: 80px;">លទ្ធផល</th>
+        <th style="text-align: center; width: 60px;">ព្រឹត្តិបត្រ</th>
+      </tr>
+    `;
+    this.gradeTableHead.innerHTML = headHtml;
+
+    // 3. Render Table Body
+    this.gradeTableBody.innerHTML = '';
+    if (filteredResults.length === 0) {
+      this.gradeTableBody.innerHTML = `
+        <tr>
+          <td colspan="${activeSubjects.length + 9}" style="text-align: center; padding: 2.5rem; color: var(--text-muted);">
+            <i class="ri-file-search-line" style="font-size: 2rem; display:block; margin-bottom: 0.5rem;"></i>
+            មិនមានទិន្នន័យពិន្ទុត្រូវនឹងលក្ខខណ្ឌស្វែងរកឡើយ
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    filteredResults.forEach(item => {
+      const stu = item.student;
+      const tr = document.createElement('tr');
+      const rankClass = item.rank === 1 ? 'rank-1' : item.rank === 2 ? 'rank-2' : item.rank === 3 ? 'rank-3' : '';
+      const mentionClass = `mention-${item.mention}`;
+      const passClass = item.isPassed ? 'pass-status-pass' : 'pass-status-fail';
+
+      let rowHtml = `
+        <td class="sticky-col" style="text-align: center;">
+          <span class="rank-badge ${rankClass}">${item.rank}</span>
+        </td>
+        <td class="sticky-col-2"><strong>${stu.id}</strong></td>
+        <td class="sticky-col-3">
+          <div style="font-weight: 600;">${stu.khmerName}</div>
+        </td>
+        <td style="text-align: center;">
+          <span class="gender-badge ${stu.gender === 'ស្រី' ? 'gender-female' : 'gender-male'}">${stu.gender}</span>
+        </td>
+      `;
+
+      // Subject Input Cells
+      const isGrade789 = ['grade_7', 'grade_8', 'grade_9'].includes(matchedGradeKey) || /^grade_[789]/.test(matchedGradeKey);
+      const hasKhmer = activeSubjects.some(s => s.code === 'kh');
+
+      activeSubjects.forEach(sub => {
+        const studentScores = (this.scores[stu.id] && this.scores[stu.id][period]) || {};
+        let scoreVal = this.getSubjectScore(studentScores, sub.code);
+        if (scoreVal === undefined) scoreVal = '';
+
+        const isKhmerAuto = isGrade789 && hasKhmer && sub.code === 'kh';
+        if (isKhmerAuto) {
+          const dictVal = this.getSubjectScore(studentScores, 'kh_dict');
+          const essayVal = this.getSubjectScore(studentScores, 'kh_essay');
+          if (dictVal !== undefined || essayVal !== undefined) {
+            scoreVal = (dictVal || 0) + (essayVal || 0);
+          }
+          rowHtml += `
+            <td style="text-align: center;">
+              <input type="number" 
+                     class="score-input ${isLocked ? 'score-input-locked' : ''} kh-auto-calc-cell" 
+                     min="0" 
+                     max="${sub.maxScore}" 
+                     step="0.25"
+                     value="${scoreVal}"
+                     data-student="${stu.id}"
+                     data-subject="${sub.code}"
+                     data-max="${sub.maxScore}"
+                     readonly
+                     tabindex="-1"
+                     style="background-color: #f1f5f9; font-weight: 700; color: #1e3a8a; cursor: not-allowed; border-color: #cbd5e1;"
+                     title="ពិន្ទុភាសាខ្មែរ = សរសេរតាមអាន (${dictVal !== undefined ? dictVal : 0}) + តែងសេចក្តី (${essayVal !== undefined ? essayVal : 0}) (គណនាស្វ័យប្រវត្តិ)">
+            </td>
+          `;
+        } else {
+          rowHtml += `
+            <td style="text-align: center;">
+              <input type="number" 
+                     class="score-input ${isLocked ? 'score-input-locked' : ''}" 
+                     min="0" 
+                     max="${sub.maxScore}" 
+                     step="0.25"
+                     value="${scoreVal}"
+                     data-student="${stu.id}"
+                     data-subject="${sub.code}"
+                     data-max="${sub.maxScore}"
+                     ${isLocked ? 'disabled readonly title="ខែនេះត្រូវបានបិទការបញ្ចូលពិន្ទុ"' : ''}
+                     onchange="app.handleScoreChange(this)">
+            </td>
+          `;
+        }
+      });
+
+      // Calculated Total, Average, Mention, Status
+      rowHtml += `
+        <td class="calc-cell" style="color: var(--primary); font-size: 0.95rem;">${item.total.toFixed(1)}</td>
+        <td class="calc-cell" style="font-size: 0.95rem;">${item.average.toFixed(2)}</td>
+        <td style="text-align: center;">
+          <span class="mention-badge ${mentionClass}">${item.mention}</span>
+        </td>
+        <td style="text-align: center;">
+          <span class="${passClass}">${item.isPassed ? 'ជាប់' : 'ធ្លាក់'}</span>
+        </td>
+        <td style="text-align: center;">
+          <button class="btn-table-action" title="បោះពុម្ពព្រឹត្តិបត្រពិន្ទុ" onclick="app.viewStudentTranscript('${stu.id}')">
+            <i class="ri-printer-line"></i>
+          </button>
+        </td>
+      `;
+
+      tr.innerHTML = rowHtml;
+      this.gradeTableBody.appendChild(tr);
+    });
+  }
+
+  // Score Calculation Formula
+  calculatePeriodResults(period) {
+    const isSemester = (period === 'sem1_exam' || period === 'sem2_exam' || period === 'sem1_overall' || period === 'sem2_overall' || period === 'yearly');
+    const matchedGradeKey = this.getStandardGradeKey(this.activeClass);
+    const activeSubjects = this.getActiveSubjectsForGrade(matchedGradeKey, isSemester);
+    const isGrade789 = ['grade_7', 'grade_8', 'grade_9'].includes(matchedGradeKey) || /^grade_[789]/.test(matchedGradeKey);
+    const hasKhmer = activeSubjects.some(s => s.code === 'kh');
+
+    let totalMaxCoef = 0;
+    let totalPossibleRaw = 0;
+
+    activeSubjects.forEach(s => {
+      if (s.scoreType === 'none') return;
+      // In Grade 7, 8, 9, Khmer = Dictation + Essay, and Khmer (100 * 2) is the parent subject.
+      // Dictation and Essay are subcomponents that feed into Khmer, so avoid double-counting in grand total.
+      if (isGrade789 && hasKhmer && (s.code === 'kh_dict' || s.code === 'kh_essay')) return;
+      totalMaxCoef += s.coef;
+      if (!s.isBonus) {
+        totalPossibleRaw += (s.maxScore * s.coef);
+      } else {
+        totalPossibleRaw += Math.max(0, s.maxScore - 25);
+      }
+    });
+
+    const results = this.students
+      .filter(stu => this.studentMatchesGrade(stu, this.activeClass) && !this.isIncompleteLateStudent(stu))
+      .map(stu => {
+        const studentScores = (this.scores[stu.id] && this.scores[stu.id][period]) || {};
+        let totalWeighted = 0;
+
+        // Auto-compute Khmer for Grade 7, 8, 9
+        if (isGrade789 && hasKhmer) {
+          const dictVal = this.getSubjectScore(studentScores, 'kh_dict');
+          const essayVal = this.getSubjectScore(studentScores, 'kh_essay');
+          if (dictVal !== undefined || essayVal !== undefined) {
+            const khSum = (dictVal || 0) + (essayVal || 0);
+            studentScores['kh'] = khSum;
+            studentScores['K'] = khSum;
+            if (this.scores[stu.id] && this.scores[stu.id][period]) {
+              this.scores[stu.id][period]['kh'] = khSum;
+              this.scores[stu.id][period]['K'] = khSum;
+            }
+          }
+        }
+
+        activeSubjects.forEach(sub => {
+          if (sub.scoreType === 'none') return;
+          if (isGrade789 && hasKhmer && (sub.code === 'kh_dict' || sub.code === 'kh_essay')) return;
+          const val = this.getSubjectScore(studentScores, sub.code);
+          if (val !== undefined && val !== null && val !== '') {
+            const contrib = this.computeSubjectScoreContribution(val, sub, matchedGradeKey, isSemester);
+            totalWeighted += contrib.weighted;
+          }
+        });
+
+        // Percentage out of 100%
+        const percentage = totalPossibleRaw > 0 ? (totalWeighted / totalPossibleRaw) * 100 : 0;
+
+        // Standard Cambodian Average: Total weighted divided by total coefficients
+        const average = totalMaxCoef > 0 ? (totalWeighted / totalMaxCoef) : 0;
+
+        // Cambodian MoEYS Mention System
+        let mention = 'F';
+        let mentionKhmer = 'ខ្សោយ';
+        if (percentage >= 85) { mention = 'A'; mentionKhmer = 'ល្អប្រសើរ'; }
+        else if (percentage >= 80) { mention = 'B'; mentionKhmer = 'ល្អណាស់'; }
+        else if (percentage >= 70) { mention = 'C'; mentionKhmer = 'ល្អ'; }
+        else if (percentage >= 60) { mention = 'D'; mentionKhmer = 'ល្អបង្គួរ'; }
+        else if (percentage >= 50) { mention = 'E'; mentionKhmer = 'មធ្យម'; }
+        else { mention = 'F'; mentionKhmer = 'ខ្សោយ'; }
+
+        const isPassed = percentage >= 50;
+
+        return {
+          student: stu,
+          total: totalWeighted,
+          average: average,
+          percentage: percentage,
+          mention: mention,
+          mentionKhmer: mentionKhmer,
+          isPassed: isPassed
+        };
+      });
+
+    // Rank sorting (higher total score = rank 1)
+    results.sort((a, b) => b.total - a.total);
+
+    // Assign Competition Ranks
+    let currentRank = 1;
+    for (let i = 0; i < results.length; i++) {
+      if (i > 0 && results[i].total < results[i - 1].total) {
+        currentRank = i + 1;
+      }
+      results[i].rank = currentRank;
+    }
+
+    return results;
+  }
+
+  isScoreInputEl(el) {
+    if (!el || el.tagName !== 'INPUT') return false;
+    return (
+      el.classList.contains('secret-score-input-fast') ||
+      (el.classList.contains('subject-table-score-input') && !el.classList.contains('kh-total-display')) ||
+      el.classList.contains('score-input')
+    );
+  }
+
+  validateScoreInputEl(inputEl, showMessage = true) {
+    if (!inputEl || !inputEl.isConnected || inputEl.disabled || inputEl.readOnly) {
+      if (this.lockedInvalidScoreInput === inputEl) this.lockedInvalidScoreInput = null;
+      return true;
+    }
+
+    const maxLimit = parseFloat(inputEl.getAttribute('data-max') || inputEl.getAttribute('max')) || 100;
+    const rawVal = String(inputEl.value || '').trim();
+
+    if (rawVal === '') {
+      inputEl.classList.remove('score-input-invalid-over');
+      if (this.lockedInvalidScoreInput === inputEl) this.lockedInvalidScoreInput = null;
+      return true;
+    }
+
+    const numVal = parseFloat(rawVal);
+    if (!isNaN(numVal) && (numVal > maxLimit || numVal < 0)) {
+      inputEl.classList.add('score-input-invalid-over');
+      this.lockedInvalidScoreInput = inputEl;
+      if (showMessage) {
+        const now = Date.now();
+        if (now - (this._lastOverScoreToastTime || 0) > 450) {
+          this._lastOverScoreToastTime = now;
+          if (numVal > maxLimit) {
+            this.showToast(`⚠️ ពិន្ទុដែលបានបញ្ចូល (${numVal}) លើសពីពិន្ទុពេញ (${maxLimit})! សូមកែតម្រូវជាមុនសិន។`, 'error');
+          } else {
+            this.showToast(`⚠️ ពិន្ទុមិនអាចតូចជាង 0 បានទេ! សូមកែតម្រូវជាមុនសិន។`, 'error');
+          }
+        }
+      }
+      return false;
+    }
+
+    inputEl.classList.remove('score-input-invalid-over');
+    if (this.lockedInvalidScoreInput === inputEl) this.lockedInvalidScoreInput = null;
+    return true;
+  }
+
+  initGlobalScoreInputValidationAndNavigation() {
+    this.lockedInvalidScoreInput = null;
+
+    // 1. Live validation as the user types in any score input
+    document.addEventListener('input', (e) => {
+      const target = e.target;
+      if (this.isScoreInputEl(target)) {
+        this.validateScoreInputEl(target, true);
+      }
+    });
+
+    // 2. Prevent mouse clicks outside the invalid score input while over-limit
+    document.addEventListener('mousedown', (e) => {
+      if (this.lockedInvalidScoreInput && this.lockedInvalidScoreInput.isConnected && this.lockedInvalidScoreInput.offsetParent !== null) {
+        if (!this.validateScoreInputEl(this.lockedInvalidScoreInput, false)) {
+          if (e.target !== this.lockedInvalidScoreInput) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.validateScoreInputEl(this.lockedInvalidScoreInput, true);
+            this.lockedInvalidScoreInput.focus();
+          }
+        }
+      }
+    }, true);
+
+    // 3. Keep focus locked on the invalid score input if focus tries to move elsewhere
+    document.addEventListener('focusin', (e) => {
+      if (this.lockedInvalidScoreInput && this.lockedInvalidScoreInput.isConnected && this.lockedInvalidScoreInput.offsetParent !== null) {
+        if (!this.validateScoreInputEl(this.lockedInvalidScoreInput, false)) {
+          if (e.target !== this.lockedInvalidScoreInput) {
+            this.validateScoreInputEl(this.lockedInvalidScoreInput, true);
+            setTimeout(() => {
+              if (this.lockedInvalidScoreInput && this.lockedInvalidScoreInput.isConnected) {
+                this.lockedInvalidScoreInput.focus();
+              }
+            }, 0);
+          }
+        }
+      }
+    }, true);
+
+    // 4. Keydown handler (capture phase): block leaving invalid input + Enter/Arrow navigation across ALL score inputs
+    document.addEventListener('keydown', (e) => {
+      const target = e.target;
+
+      // If an invalid input is locked, block Tab/Enter/Arrow keys or typing elsewhere
+      if (this.lockedInvalidScoreInput && this.lockedInvalidScoreInput.isConnected && this.lockedInvalidScoreInput.offsetParent !== null) {
+        if (!this.validateScoreInputEl(this.lockedInvalidScoreInput, false)) {
+          if (target !== this.lockedInvalidScoreInput) {
+            e.preventDefault();
+            e.stopPropagation();
+            this.validateScoreInputEl(this.lockedInvalidScoreInput, true);
+            this.lockedInvalidScoreInput.focus();
+            return;
+          }
+          if (e.key === 'Enter' || e.key === 'Tab' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+            e.preventDefault();
+            e.stopPropagation();
+            this.validateScoreInputEl(this.lockedInvalidScoreInput, true);
+            this.lockedInvalidScoreInput.focus();
+            return;
+          }
+        }
+      }
+
+      if (!this.isScoreInputEl(target)) return;
+
+      if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'ArrowUp' || e.key === 'Tab') {
+        if (!this.validateScoreInputEl(target, true)) {
+          e.preventDefault();
+          e.stopPropagation();
+          target.focus();
+          return;
+        }
+      }
+
+      if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        e.stopPropagation();
+
+        const table = target.closest('table') || document;
+        const selector = 'input.secret-score-input-fast:not([disabled]):not([readonly]), input.subject-table-score-input:not(.kh-total-display):not([disabled]):not([readonly]), input.score-input:not([disabled]):not([readonly])';
+        const allInputs = Array.from(table.querySelectorAll(selector));
+        const curIdx = allInputs.indexOf(target);
+        if (curIdx === -1) return;
+
+        const nextIdx = (e.key === 'ArrowUp') ? (curIdx - 1) : (curIdx + 1);
+        const nextInput = allInputs[nextIdx] || null;
+
+        // If inside the main Grade Sheet (.score-input), save the current score and preserve focus on nextInput
+        if (target.classList.contains('score-input')) {
+          const nextStudent = nextInput ? nextInput.getAttribute('data-student') : null;
+          const nextSubject = nextInput ? nextInput.getAttribute('data-subject') : null;
+          this._pendingFocusScoreCell = nextStudent && nextSubject ? { student: nextStudent, subject: nextSubject } : null;
+          this.handleScoreChange(target);
+          return;
+        }
+
+        if (nextInput) {
+          nextInput.focus();
+          nextInput.select();
+        }
+      }
+    }, true);
+  }
+
+  handleScoreChange(inputEl) {
+    if (!this.isPeriodActiveForScoring(this.currentPeriod)) {
+      const activeTitle = this.getExamPeriodTitle(this.activeScorePeriod);
+      this.showToast(`ខែនេះត្រូវបានបិទការបញ្ចូលពិន្ទុ! អនុញ្ញាតតែខែ «${activeTitle}» ប៉ុណ្ណោះ។`, 'error');
+      this.renderGradeTable();
+      return;
+    }
+
+    // Validate score: if over max or < 0, highlight red and lock cursor on this input
+    if (!this.validateScoreInputEl(inputEl, true)) {
+      inputEl.focus();
+      return;
+    }
+
+    // Capture currently focused score input (if user clicked or tabbed to another score cell)
+    const activeEl = document.activeElement;
+    if (!this._pendingFocusScoreCell && activeEl && activeEl !== inputEl && activeEl.classList && activeEl.classList.contains('score-input')) {
+      this._pendingFocusScoreCell = {
+        student: activeEl.getAttribute('data-student'),
+        subject: activeEl.getAttribute('data-subject')
+      };
+    }
+
+    const studentId = inputEl.getAttribute('data-student');
+    const subjectCode = inputEl.getAttribute('data-subject');
+    const rawVal = String(inputEl.value || '').trim();
+    let val = parseFloat(rawVal);
+
+    const numVal = (rawVal === '' || isNaN(val)) ? null : val;
+    this.setSubjectScore(studentId, this.currentPeriod, subjectCode, numVal);
+
+    // Auto-calculate Khmer if dictation or essay changed for Grade 7, 8, 9
+    const matchedGradeKey = this.getStandardGradeKey(this.activeClass);
+    if (['grade_7', 'grade_8', 'grade_9'].includes(matchedGradeKey) || /^grade_[789]/.test(matchedGradeKey)) {
+      if (['kh_dict', 'dictation', 'DI', 'kh_essay', 'essay', 'LE'].includes(subjectCode)) {
+        this.autoCalcKhmerScore(studentId, this.currentPeriod, matchedGradeKey);
+      }
+    }
+
+    this.saveState();
+    this.scheduleScoreAutoBackup();
+    this.renderCurrentView();
+
+    if (this._pendingFocusScoreCell && this.gradeTableBody) {
+      const { student, subject } = this._pendingFocusScoreCell;
+      this._pendingFocusScoreCell = null;
+      const toFocus = this.gradeTableBody.querySelector(`input.score-input[data-student="${student}"][data-subject="${subject}"]`);
+      if (toFocus && !toFocus.disabled) {
+        toFocus.focus();
+        toFocus.select();
+      }
+    }
+  }
+
+  // ==========================================================================
+  // Auto-Calculate Engine for Semester Monthly Avg, Overalls & Yearly
+  // ==========================================================================
+  handleAutoCalculate() {
+    const period = this.currentPeriod;
+    const isSemester = (period === 'sem1_exam' || period === 'sem2_exam' || period === 'sem1_overall' || period === 'sem2_overall' || period === 'yearly');
+    const matchedGradeKey = this.getStandardGradeKey(this.activeClass);
+    const activeSubjects = this.getActiveSubjectsForGrade(matchedGradeKey, isSemester);
+
+    if (period === 'sem1_monthly_avg') {
+      // Average of Months 1 to 6 (មករា ដល់ មិថុនា)
+      const sem1Months = ['m01', 'm02', 'm03', 'm04', 'm05', 'm06'];
+      this.students.forEach(stu => {
+        if (!this.scores[stu.id]) this.scores[stu.id] = {};
+        if (!this.scores[stu.id]['sem1_monthly_avg']) this.scores[stu.id]['sem1_monthly_avg'] = {};
+
+        activeSubjects.forEach(sub => {
+          let sum = 0;
+          let count = 0;
+          sem1Months.forEach(m => {
+            const val = this.scores[stu.id]?.[m]?.[sub.code];
+            if (val !== undefined && val !== null && !isNaN(val)) {
+              sum += parseFloat(val);
+              count++;
+            }
+          });
+          const avg = count > 0 ? Math.round((sum / count) * 10) / 10 : 0;
+          this.scores[stu.id]['sem1_monthly_avg'][sub.code] = avg;
+        });
+      });
+      this.saveState();
+      this.showToast('បានគណនាមធ្យមភាគខែប្រចាំឆមាសទី១ ដោយជោគជ័យ!', 'success');
+      this.renderCurrentView();
+
+    } else if (period === 'sem2_monthly_avg') {
+      // Average of Months 7 to 12 (កក្កដា ដល់ ធ្នូ)
+      const sem2Months = ['m07', 'm08', 'm09', 'm10', 'm11', 'm12'];
+      this.students.forEach(stu => {
+        if (!this.scores[stu.id]) this.scores[stu.id] = {};
+        if (!this.scores[stu.id]['sem2_monthly_avg']) this.scores[stu.id]['sem2_monthly_avg'] = {};
+
+        activeSubjects.forEach(sub => {
+          let sum = 0;
+          let count = 0;
+          sem2Months.forEach(m => {
+            const val = this.scores[stu.id]?.[m]?.[sub.code];
+            if (val !== undefined && val !== null && !isNaN(val)) {
+              sum += parseFloat(val);
+              count++;
+            }
+          });
+          const avg = count > 0 ? Math.round((sum / count) * 10) / 10 : 0;
+          this.scores[stu.id]['sem2_monthly_avg'][sub.code] = avg;
+        });
+      });
+      this.saveState();
+      this.showToast('បានគណនាមធ្យមភាគខែឆមាសទី២ ដោយជោគជ័យ!', 'success');
+      this.renderCurrentView();
+
+    } else if (period === 'sem1_overall') {
+      // Overall Sem 1 = (sem1_monthly_avg + sem1_exam) / 2
+      this.students.forEach(stu => {
+        if (!this.scores[stu.id]) this.scores[stu.id] = {};
+        if (!this.scores[stu.id]['sem1_overall']) this.scores[stu.id]['sem1_overall'] = {};
+
+        activeSubjects.forEach(sub => {
+          const monthlyAvg = parseFloat(this.scores[stu.id]?.['sem1_monthly_avg']?.[sub.code] || 0);
+          const examScore = parseFloat(this.scores[stu.id]?.['sem1_exam']?.[sub.code] || 0);
+          const overall = Math.round(((monthlyAvg + examScore) / 2) * 10) / 10;
+          this.scores[stu.id]['sem1_overall'][sub.code] = overall;
+        });
+      });
+      this.saveState();
+      this.showToast('បានគណនាលទ្ធផលសរុបប្រចាំឆមាសទី១ ដោយជោគជ័យ!', 'success');
+      this.renderCurrentView();
+
+    } else if (period === 'sem2_overall') {
+      // Overall Sem 2 = (sem2_monthly_avg + sem2_exam) / 2
+      this.students.forEach(stu => {
+        if (!this.scores[stu.id]) this.scores[stu.id] = {};
+        if (!this.scores[stu.id]['sem2_overall']) this.scores[stu.id]['sem2_overall'] = {};
+
+        activeSubjects.forEach(sub => {
+          const monthlyAvg = parseFloat(this.scores[stu.id]?.['sem2_monthly_avg']?.[sub.code] || 0);
+          const examScore = parseFloat(this.scores[stu.id]?.['sem2_exam']?.[sub.code] || 0);
+          const overall = Math.round(((monthlyAvg + examScore) / 2) * 10) / 10;
+          this.scores[stu.id]['sem2_overall'][sub.code] = overall;
+        });
+      });
+      this.saveState();
+      this.showToast('បានគណនាលទ្ធផលសរុបប្រចាំឆមាសទី២ ដោយជោគជ័យ!', 'success');
+      this.renderCurrentView();
+
+    } else if (period === 'yearly') {
+      // Yearly = (sem1_overall + sem2_overall) / 2
+      this.students.forEach(stu => {
+        if (!this.scores[stu.id]) this.scores[stu.id] = {};
+        if (!this.scores[stu.id]['yearly']) this.scores[stu.id]['yearly'] = {};
+
+        activeSubjects.forEach(sub => {
+          const sem1 = parseFloat(this.scores[stu.id]?.['sem1_overall']?.[sub.code] || 0);
+          const sem2 = parseFloat(this.scores[stu.id]?.['sem2_overall']?.[sub.code] || 0);
+          const yearly = Math.round(((sem1 + sem2) / 2) * 10) / 10;
+          this.scores[stu.id]['yearly'][sub.code] = yearly;
+        });
+      });
+      this.saveState();
+      this.showToast('បានគណនាលទ្ធផលប្រចាំឆ្នាំសរុប ដោយជោគជ័យ!', 'success');
+      this.renderCurrentView();
+
+    } else {
+      // Regular month: just recalculate rankings & totals
+      this.renderGradeTable();
+      this.showToast('បានធ្វើបច្ចុប្បន្នភាពពិន្ទុ និងចំណាត់ថ្នាក់!', 'info');
+    }
+  }
+
+  // ==========================================================================
+  // VIEW 3: Performance Dashboard & Overview
+  // ==========================================================================
+  renderOverviewStats() {
+    // Grade distribution based on current active period or yearly
+    const targetPeriod = 'yearly';
+    const results = this.calculatePeriodResults(targetPeriod);
+
+    // Distribution Counts
+    const distCounts = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
+    results.forEach(r => {
+      distCounts[r.mention] = (distCounts[r.mention] || 0) + 1;
+    });
+
+    const distBarsContainer = document.getElementById('gradeDistBars');
+    const total = results.length || 1;
+    const colors = {
+      A: '#10b981',
+      B: '#3b82f6',
+      C: '#06b6d4',
+      D: '#f59e0b',
+      E: '#f97316',
+      F: '#ef4444'
+    };
+
+    let barsHtml = '';
+    ['A', 'B', 'C', 'D', 'E', 'F'].forEach(m => {
+      const count = distCounts[m] || 0;
+      const pct = Math.round((count / total) * 100);
+      barsHtml += `
+        <div class="dist-row">
+          <span class="dist-label"><span class="mention-badge mention-${m}">និទ្ទេស ${m}</span></span>
+          <div class="dist-bar-wrapper">
+            <div class="dist-bar-fill" style="width: ${pct}%; background-color: ${colors[m]};"></div>
+          </div>
+          <span class="dist-count">${count} នាក់ (${pct}%)</span>
+        </div>
+      `;
+    });
+    distBarsContainer.innerHTML = barsHtml;
+
+    // Top 5 Students
+    const topList = document.getElementById('topStudentsList');
+    topList.innerHTML = '';
+    const top5 = results.slice(0, 5);
+
+    top5.forEach((item, idx) => {
+      const stu = item.student;
+      const rankBadge = idx === 0 ? 'rank-1' : idx === 1 ? 'rank-2' : idx === 2 ? 'rank-3' : '';
+      const li = document.createElement('li');
+      li.className = 'top-student-item';
+      li.innerHTML = `
+        <div class="top-student-info">
+          <span class="rank-badge ${rankBadge}">${item.rank}</span>
+          <div>
+            <strong>${stu.khmerName}</strong>
+            <div style="font-size: 0.75rem; color: var(--text-muted);">${stu.id} • ថ្នាក់ ${stu.class}</div>
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-weight: 700; color: var(--primary);">មធ្យមភាគ: ${item.average.toFixed(2)}</div>
+          <span class="mention-badge mention-${item.mention}">និទ្ទេស ${item.mention}</span>
+        </div>
+      `;
+      topList.appendChild(li);
+    });
+
+    // Trend comparison across all periods
+    const trendContainer = document.getElementById('periodTrendChart');
+    trendContainer.innerHTML = '';
+
+    const keyPeriods = ['test_early', 'm01', 'm02', 'm03', 'm04', 'm05', 'm06', 'sem1_overall', 'm07', 'm08', 'm09', 'm10', 'm11', 'm12', 'sem2_overall', 'yearly'];
+
+    keyPeriods.forEach(pKey => {
+      const pDef = PERIOD_DEFINITIONS[pKey];
+      if (!pDef) return;
+      const pResults = this.calculatePeriodResults(pKey);
+      const avgClass = pResults.length > 0 ? (pResults.reduce((acc, cur) => acc + cur.average, 0) / pResults.length) : 0;
+
+      const col = document.createElement('div');
+      col.className = 'trend-bar-column';
+      const heightPct = Math.min(100, Math.max(10, (avgClass / 100) * 180));
+
+      col.innerHTML = `
+        <span class="trend-bar-val">${avgClass.toFixed(1)}</span>
+        <div class="trend-bar-pillar" style="height: ${heightPct}px;" title="${pDef.title}: ${avgClass.toFixed(2)}"></div>
+        <span class="trend-bar-label">${pDef.title.split(' ')[0]}</span>
+      `;
+      trendContainer.appendChild(col);
+    });
+  }
+
+  // Update Top KPI Cards
+  updateKPIOverview() {
+    const period = this.currentPeriod;
+    const periodMeta = PERIOD_DEFINITIONS[period];
+    if (!periodMeta) return;
+
+    // Do not alter or update if currently in exam prep or overview stats (hidden anyway)
+    if (periodMeta.type === 'exam' || periodMeta.type === 'overview' || periodMeta.type === 'report') {
+      return;
+    }
+
+    // Use only completed students that match the active grade level (exclude incomplete END- late students until info is filled)
+    const gradeStudents = this.students.filter(
+      s => this.studentMatchesGrade(s, this.activeClass) && !this.isIncompleteLateStudent(s)
+    );
+    const totalCount = gradeStudents.length;
+    const femaleCount = gradeStudents.filter(s => s.gender === 'ស្រី').length;
+    const maleCount = totalCount - femaleCount;
+
+    if (periodMeta.type === 'grade') {
+      // Restore Grade View KPI Labels
+      if (this.statLabelTotal) this.statLabelTotal.textContent = 'សិស្សសរុប';
+      if (this.statLabelPassed) this.statLabelPassed.textContent = 'ជាប់មធ្យមភាគ (>= 50%)';
+      if (this.statLabelFailed) this.statLabelFailed.textContent = 'ក្រោមមធ្យមភាគ (< 50%)';
+      if (this.statLabelAverage) this.statLabelAverage.textContent = 'មធ្យមភាគថ្នាក់សរុប';
+
+      const results = this.calculatePeriodResults(period);
+      const passedCount = results.filter(r => r.isPassed).length;
+      const failedCount = totalCount - passedCount;
+      const passRate = totalCount > 0 ? Math.round((passedCount / totalCount) * 100) : 0;
+      const failRate = totalCount > 0 ? Math.round((failedCount / totalCount) * 100) : 0;
+
+      const sumAvg = results.reduce((acc, cur) => acc + cur.average, 0);
+      const classAvg = results.length > 0 ? (sumAvg / results.length) : 0;
+
+      this.statTotalStudents.textContent = totalCount;
+      this.statFemaleStudents.textContent = `ស្រី: ${femaleCount} នាក់ (${totalCount > 0 ? Math.round((femaleCount / totalCount) * 100) : 0}%)`;
+
+      this.statPassedStudents.textContent = passedCount;
+      this.statPassRate.textContent = `អត្រាជាប់: ${passRate}%`;
+
+      this.statFailedStudents.textContent = failedCount;
+      this.statFailRate.textContent = `អត្រាធ្លាក់: ${failRate}%`;
+
+      this.statClassAverage.textContent = classAvg.toFixed(2);
+      if (results.length > 0) {
+        // Top student after rank sort (already done in calculatePeriodResults)
+        const top = results.find(r => r.rank === 1) || results[0];
+        this.statTopStudent.textContent = `ពិន្ទុខ្ពស់: ${top.student.khmerName} (${top.average.toFixed(2)})`;
+      } else {
+        this.statTopStudent.textContent = 'ពិន្ទុខ្ពស់បំផុត: -';
+      }
+    } else {
+      // Profile View: Student Demographics
+      if (this.statLabelTotal) this.statLabelTotal.textContent = 'សិស្សសរុប';
+      if (this.statLabelPassed) this.statLabelPassed.textContent = 'សិស្សស្រី';
+      if (this.statLabelFailed) this.statLabelFailed.textContent = 'សិស្សប្រុស';
+      if (this.statLabelAverage) this.statLabelAverage.textContent = 'កម្រិតថ្នាក់បច្ចុប្បន្ន';
+
+      this.statTotalStudents.textContent = totalCount;
+      this.statFemaleStudents.textContent = `សរុប: ${totalCount} នាក់`;
+
+      this.statPassedStudents.textContent = femaleCount;
+      this.statPassRate.textContent = totalCount > 0 ? `អត្រា: ${Math.round((femaleCount / totalCount) * 100)}%` : '0%';
+
+      this.statFailedStudents.textContent = maleCount;
+      this.statFailRate.textContent = totalCount > 0 ? `អត្រា: ${Math.round((maleCount / totalCount) * 100)}%` : '0%';
+
+      const gradeLabel = GRADE_PRESETS[this.activeClass] ? GRADE_PRESETS[this.activeClass].label : this.activeClass;
+      this.statClassAverage.textContent = gradeLabel.replace('ថ្នាក់ទី', 'ទី');
+      this.statTopStudent.textContent = `ឆ្នាំសិក្សា ${this.activeYear}`;
+    }
+  }
+
+  // ==========================================================================
+  // Student Modal & CRUD Operations
+  // ==========================================================================
+  resolveGradeKeyFromLabel(labelOrKey) {
+    const val = String(labelOrKey || '').trim();
+    if (['grade_7', 'grade_8', 'grade_9', 'grade_10', 'grade_11_sci', 'grade_11_soc', 'grade_12_sci', 'grade_12_soc'].includes(val)) {
+      return val;
+    }
+    if (val.includes('១១') || /\b11\b/.test(val)) {
+      return (val.includes('សង្គម') || val.toLowerCase().includes('soc')) ? 'grade_11_soc' : 'grade_11_sci';
+    }
+    if (val.includes('១២') || /\b12\b/.test(val)) {
+      return (val.includes('សង្គម') || val.toLowerCase().includes('soc')) ? 'grade_12_soc' : 'grade_12_sci';
+    }
+    if (val.includes('១០') || /\b10\b/.test(val)) return 'grade_10';
+    if (val.includes('៩') || /\b9\b/.test(val)) return 'grade_9';
+    if (val.includes('៨') || /\b8\b/.test(val)) return 'grade_8';
+    return 'grade_7';
+  }
+
+  resolveGradeLabelFromKey(gradeKey) {
+    const map = {
+      grade_7: 'ថ្នាក់ទី៧',
+      grade_8: 'ថ្នាក់ទី៨',
+      grade_9: 'ថ្នាក់ទី៩',
+      grade_10: 'ថ្នាក់ទី១០',
+      grade_11_sci: 'ថ្នាក់ទី១១ វិទ្យាសាស្ត្រ (11SC)',
+      grade_11_soc: 'ថ្នាក់ទី១១ វិទ្យាសាស្ត្រសង្គម (11SS)',
+      grade_12_sci: 'ថ្នាក់ទី១២ វិទ្យាសាស្ត្រ (12SC)',
+      grade_12_soc: 'ថ្នាក់ទី១២ វិទ្យាសាស្ត្រសង្គម (12SS)',
+      '11SC': 'ថ្នាក់ទី១១ វិទ្យាសាស្ត្រ (11SC)',
+      '11SS': 'ថ្នាក់ទី១១ វិទ្យាសាស្ត្រសង្គម (11SS)',
+      '12SC': 'ថ្នាក់ទី១២ វិទ្យាសាស្ត្រ (12SC)',
+      '12SS': 'ថ្នាក់ទី១២ វិទ្យាសាស្ត្រសង្គម (12SS)'
+    };
+    return map[gradeKey] || 'ថ្នាក់ទី៧';
+  }
+
+  formatSectionClassName(gradeKey, rawSection) {
+    const sec = String(rawSection || '').trim().toUpperCase().replace(/\s+/g, '');
+    if (!sec) return '';
+    let gradeNum = '7';
+    if (gradeKey.includes('12')) gradeNum = '12';
+    else if (gradeKey.includes('11')) gradeNum = '11';
+    else if (gradeKey.includes('10')) gradeNum = '10';
+    else if (gradeKey.includes('9')) gradeNum = '9';
+    else if (gradeKey.includes('8')) gradeNum = '8';
+
+    if (sec.startsWith(gradeNum)) {
+      return sec;
+    }
+    return `${gradeNum}${sec}`;
+  }
+
+  getClassListForGradeKey(gradeKey) {
+    if (!this.classSections || !Array.isArray(this.classSections)) {
+      this.classSections = this.getDefaultClassSections();
+    }
+    const gradeEntry = this.classSections.find(c => c.gradeLevel === gradeKey);
+    let rawSections = (gradeEntry && Array.isArray(gradeEntry.sections) && gradeEntry.sections.length > 0)
+      ? gradeEntry.sections
+      : (gradeKey.endsWith('_soc') ? ['D', 'E'] : ['A', 'B', 'C']);
+
+    const list = rawSections
+      .map(sec => this.formatSectionClassName(gradeKey, sec))
+      .filter(Boolean);
+
+    return [...new Set(list)];
+  }
+
+  populateStudentSectionSelect(gradeLabelOrKey, selectedClassVal = '') {
+    const sectionSelect = document.getElementById('studentSectionSelect');
+    if (!sectionSelect) return;
+
+    const gradeKey = this.resolveGradeKeyFromLabel(gradeLabelOrKey);
+    const options = this.getClassListForGradeKey(gradeKey);
+
+    const cleanSelected = String(selectedClassVal || '').trim();
+    if (cleanSelected && !cleanSelected.startsWith('ថ្នាក់ទី') && !options.includes(cleanSelected)) {
+      options.push(cleanSelected);
+    }
+
+    sectionSelect.innerHTML = '';
+    options.forEach(clsName => {
+      const opt = document.createElement('option');
+      opt.value = clsName;
+      opt.textContent = clsName;
+      sectionSelect.appendChild(opt);
+    });
+
+    if (cleanSelected && options.includes(cleanSelected)) {
+      sectionSelect.value = cleanSelected;
+    } else if (options.length > 0) {
+      sectionSelect.value = options[0];
+    }
+  }
+
+  setupCascadingGeoDropdowns({
+    provSelectId,
+    distSelectId,
+    commSelectId,
+    villSelectId,
+    textInputId,
+    clearBtnId,
+    badgeId
+  }) {
+    const provSelect = document.getElementById(provSelectId);
+    const distSelect = document.getElementById(distSelectId);
+    const commSelect = document.getElementById(commSelectId);
+    const villSelect = document.getElementById(villSelectId);
+    const textInput = document.getElementById(textInputId);
+    const btnClear = document.getElementById(clearBtnId);
+    const badgeEl = document.getElementById(badgeId);
+
+    if (!provSelect || !distSelect || !commSelect || !villSelect) return;
+
+    const updateText = () => {
+      if (!window.CambodiaGeoHelper) return;
+      const pCode = provSelect.value;
+      const dCode = distSelect.value;
+      const cmCode = commSelect.value;
+      const vCode = villSelect.value;
+
+      if (!pCode) {
+        if (badgeEl) {
+          badgeEl.textContent = '';
+          badgeEl.classList.remove('active');
+        }
+        return;
+      }
+
+      const generated = window.CambodiaGeoHelper.formatAddress({
+        provinceCode: pCode,
+        districtCode: dCode,
+        communeCode: cmCode,
+        villageCode: vCode
+      });
+
+      if (generated) {
+        if (textInput) textInput.value = generated;
+        if (badgeEl) {
+          badgeEl.innerHTML = '<i class="ri-check-double-line"></i> បានជ្រើសតាមរដ្ឋបាល';
+          badgeEl.classList.add('active');
+        }
+      }
+    };
+
+    // 1. Province change -> populate districts
+    provSelect.addEventListener('change', () => {
+      const pCode = provSelect.value;
+      distSelect.innerHTML = '<option value="">-- ជ្រើសរើស ស្រុក/ខណ្ឌ/ក្រុង --</option>';
+      commSelect.innerHTML = '<option value="">-- ជ្រើសរើស ឃុំ/សង្កាត់ --</option>';
+      villSelect.innerHTML = '<option value="">-- ជ្រើសរើស ភូមិ --</option>';
+
+      if (pCode && window.CambodiaGeoHelper) {
+        const districts = window.CambodiaGeoHelper.getDistricts(pCode);
+        districts.forEach(d => {
+          const opt = document.createElement('option');
+          opt.value = d.code;
+          opt.textContent = `${d.type || 'ស្រុក'}${d.name}`;
+          distSelect.appendChild(opt);
+        });
+        distSelect.disabled = false;
+        commSelect.disabled = true;
+        villSelect.disabled = true;
+      } else {
+        distSelect.disabled = true;
+        commSelect.disabled = true;
+        villSelect.disabled = true;
+      }
+      updateText();
+    });
+
+    // 2. District change -> populate communes
+    distSelect.addEventListener('change', () => {
+      const dCode = distSelect.value;
+      commSelect.innerHTML = '<option value="">-- ជ្រើសរើស ឃុំ/សង្កាត់ --</option>';
+      villSelect.innerHTML = '<option value="">-- ជ្រើសរើស ភូមិ --</option>';
+
+      if (dCode && window.CambodiaGeoHelper) {
+        const communes = window.CambodiaGeoHelper.getCommunes(dCode);
+        communes.forEach(cm => {
+          const opt = document.createElement('option');
+          opt.value = cm.code;
+          opt.textContent = `${cm.type || 'ឃុំ'}${cm.name}`;
+          commSelect.appendChild(opt);
+        });
+        commSelect.disabled = false;
+        villSelect.disabled = true;
+      } else {
+        commSelect.disabled = true;
+        villSelect.disabled = true;
+      }
+      updateText();
+    });
+
+    // 3. Commune change -> populate villages
+    commSelect.addEventListener('change', () => {
+      const cmCode = commSelect.value;
+      villSelect.innerHTML = '<option value="">-- ជ្រើសរើស ភូមិ --</option>';
+
+      if (cmCode && window.CambodiaGeoHelper) {
+        const villages = window.CambodiaGeoHelper.getVillages(cmCode);
+        villages.forEach(v => {
+          const opt = document.createElement('option');
+          opt.value = v.code;
+          opt.textContent = `ភូមិ${v.name}`;
+          villSelect.appendChild(opt);
+        });
+        villSelect.disabled = false;
+      } else {
+        villSelect.disabled = true;
+      }
+      updateText();
+    });
+
+    // 4. Village change -> update string
+    villSelect.addEventListener('change', () => {
+      updateText();
+    });
+
+    // Clear / Reset button
+    if (btnClear) {
+      btnClear.addEventListener('click', () => {
+        provSelect.value = '';
+        distSelect.innerHTML = '<option value="">-- ជ្រើសរើស ស្រុក/ខណ្ឌ/ក្រុង --</option>';
+        distSelect.disabled = true;
+        commSelect.innerHTML = '<option value="">-- ជ្រើសរើស ឃុំ/សង្កាត់ --</option>';
+        commSelect.disabled = true;
+        villSelect.innerHTML = '<option value="">-- ជ្រើសរើស ភូមិ --</option>';
+        villSelect.disabled = true;
+        if (textInput) textInput.value = '';
+        if (badgeEl) {
+          badgeEl.textContent = '';
+          badgeEl.classList.remove('active');
+        }
+      });
+    }
+  }
+
+  initAddressGeographyControls() {
+    // 1. Setup Place of Birth (ទីកន្លែងកំណើត)
+    this.setupCascadingGeoDropdowns({
+      provSelectId: 'studentPobProvince',
+      distSelectId: 'studentPobDistrict',
+      commSelectId: 'studentPobCommune',
+      villSelectId: 'studentPobVillage',
+      textInputId: 'studentBirthPlace',
+      clearBtnId: 'btnClearPobSelection',
+      badgeId: 'studentPobAutoBadge'
+    });
+
+    // 2. Setup Current Address (អាសយដ្ឋានបច្ចុប្បន្ន)
+    this.setupCascadingGeoDropdowns({
+      provSelectId: 'studentAddressProvince',
+      distSelectId: 'studentAddressDistrict',
+      commSelectId: 'studentAddressCommune',
+      villSelectId: 'studentAddressVillage',
+      textInputId: 'studentAddress',
+      clearBtnId: 'btnClearAddressSelection',
+      badgeId: 'studentAddressAutoBadge'
+    });
+
+    // 3. Quick Copy Button: Copy Place of Birth to Current Address
+    const btnCopyPob = document.getElementById('btnCopyPobToAddress');
+    if (btnCopyPob) {
+      btnCopyPob.addEventListener('click', () => {
+        const pobP = document.getElementById('studentPobProvince')?.value || '';
+        const pobD = document.getElementById('studentPobDistrict')?.value || '';
+        const pobCm = document.getElementById('studentPobCommune')?.value || '';
+        const pobV = document.getElementById('studentPobVillage')?.value || '';
+        const pobText = document.getElementById('studentBirthPlace')?.value || '';
+
+        this.populateDropdownSet({
+          provSelectId: 'studentAddressProvince',
+          distSelectId: 'studentAddressDistrict',
+          commSelectId: 'studentAddressCommune',
+          villSelectId: 'studentAddressVillage',
+          badgeId: 'studentAddressAutoBadge',
+          pCode: pobP,
+          dCode: pobD,
+          cmCode: pobCm,
+          vCode: pobV,
+          rawAddress: pobText
+        });
+
+        const addrInput = document.getElementById('studentAddress');
+        if (addrInput && pobText) {
+          addrInput.value = pobText;
+        }
+
+        this.showToast('បានចម្លងទីកន្លែងកំណើតមកអាសយដ្ឋានបច្ចុប្បន្នរួចរាល់!', 'info');
+      });
+    }
+  }
+
+  populateDropdownSet({ provSelectId, distSelectId, commSelectId, villSelectId, badgeId, pCode, dCode, cmCode, vCode, rawAddress }) {
+    const provSelect = document.getElementById(provSelectId);
+    const distSelect = document.getElementById(distSelectId);
+    const commSelect = document.getElementById(commSelectId);
+    const villSelect = document.getElementById(villSelectId);
+    const badgeEl = document.getElementById(badgeId);
+
+    if (!provSelect || !distSelect || !commSelect || !villSelect || !window.CambodiaGeoHelper) return;
+
+    // Populate all 25 provinces
+    provSelect.innerHTML = '<option value="">-- ជ្រើសរើស ខេត្ត/រាជធានី --</option>';
+    const provinces = window.CambodiaGeoHelper.getProvinces();
+    provinces.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p.code;
+      const prefix = (p.name.includes('រាជធានី') || p.name === 'ភ្នំពេញ') ? 'រាជធានី' : 'ខេត្ត';
+      const cleanName = p.name.replace(/^(ខេត្ត|រាជធានី)/, '').trim();
+      opt.textContent = `${prefix} ${cleanName}`;
+      provSelect.appendChild(opt);
+    });
+
+    distSelect.innerHTML = '<option value="">-- ជ្រើសរើស ស្រុក/ខណ្ឌ/ក្រុង --</option>';
+    distSelect.disabled = true;
+    commSelect.innerHTML = '<option value="">-- ជ្រើសរើស ឃុំ/សង្កាត់ --</option>';
+    commSelect.disabled = true;
+    villSelect.innerHTML = '<option value="">-- ជ្រើសរើស ភូមិ --</option>';
+    villSelect.disabled = true;
+    if (badgeEl) {
+      badgeEl.textContent = '';
+      badgeEl.classList.remove('active');
+    }
+
+    let finalP = pCode || '';
+    let finalD = dCode || '';
+    let finalCm = cmCode || '';
+    let finalV = vCode || '';
+
+    // If no explicit codes, parse from raw address string
+    if ((!finalP || !finalD) && rawAddress) {
+      const parsed = window.CambodiaGeoHelper.parseAddressString(rawAddress);
+      if (parsed) {
+        finalP = finalP || parsed.provinceCode;
+        finalD = finalD || parsed.districtCode;
+        finalCm = finalCm || parsed.communeCode;
+        finalV = finalV || parsed.villageCode;
+      }
+    }
+
+    if (finalP) {
+      provSelect.value = finalP;
+      const districts = window.CambodiaGeoHelper.getDistricts(finalP);
+      distSelect.innerHTML = '<option value="">-- ជ្រើសរើស ស្រុក/ខណ្ឌ/ក្រុង --</option>';
+      districts.forEach(d => {
+        const opt = document.createElement('option');
+        opt.value = d.code;
+        opt.textContent = `${d.type || 'ស្រុក'}${d.name}`;
+        distSelect.appendChild(opt);
+      });
+      distSelect.disabled = false;
+
+      if (finalD) {
+        distSelect.value = finalD;
+        const communes = window.CambodiaGeoHelper.getCommunes(finalD);
+        commSelect.innerHTML = '<option value="">-- ជ្រើសរើស ឃុំ/សង្កាត់ --</option>';
+        communes.forEach(cm => {
+          const opt = document.createElement('option');
+          opt.value = cm.code;
+          opt.textContent = `${cm.type || 'ឃុំ'}${cm.name}`;
+          commSelect.appendChild(opt);
+        });
+        commSelect.disabled = false;
+
+        if (finalCm) {
+          commSelect.value = finalCm;
+          const villages = window.CambodiaGeoHelper.getVillages(finalCm);
+          villSelect.innerHTML = '<option value="">-- ជ្រើសរើស ភូមិ --</option>';
+          villages.forEach(v => {
+            const opt = document.createElement('option');
+            opt.value = v.code;
+            opt.textContent = `ភូមិ${v.name}`;
+            villSelect.appendChild(opt);
+          });
+          villSelect.disabled = false;
+
+          if (finalV) {
+            villSelect.value = finalV;
+          }
+        }
+      }
+
+      if (badgeEl && (finalP || finalD)) {
+        badgeEl.innerHTML = '<i class="ri-check-double-line"></i> បានជ្រើសតាមរដ្ឋបាល';
+        badgeEl.classList.add('active');
+      }
+    }
+  }
+
+  populateStudentAddressDropdowns(student = null) {
+    // 1. Populate Place of Birth (ទីកន្លែងកំណើត)
+    this.populateDropdownSet({
+      provSelectId: 'studentPobProvince',
+      distSelectId: 'studentPobDistrict',
+      commSelectId: 'studentPobCommune',
+      villSelectId: 'studentPobVillage',
+      badgeId: 'studentPobAutoBadge',
+      pCode: student?.pobProvinceCode || '',
+      dCode: student?.pobDistrictCode || '',
+      cmCode: student?.pobCommuneCode || '',
+      vCode: student?.pobVillageCode || '',
+      rawAddress: student?.birthPlace || student?.pob || ''
+    });
+
+    // 2. Populate Current Address (អាសយដ្ឋានបច្ចុប្បន្ន)
+    this.populateDropdownSet({
+      provSelectId: 'studentAddressProvince',
+      distSelectId: 'studentAddressDistrict',
+      commSelectId: 'studentAddressCommune',
+      villSelectId: 'studentAddressVillage',
+      badgeId: 'studentAddressAutoBadge',
+      pCode: student?.provinceCode || '',
+      dCode: student?.districtCode || '',
+      cmCode: student?.communeCode || '',
+      vCode: student?.villageCode || '',
+      rawAddress: student?.address || ''
+    });
+  }
+
+  // ==========================================================================
+  // GEIP PROJECT SCHOOL CONTROLS (MoEYS General Education Improvement Project)
+  // ==========================================================================
+  initGeipControls() {
+    // 1. Tab switching
+    const tabButtons = document.querySelectorAll('#geipModalTabs .geip-tab-btn');
+    const tabContents = document.querySelectorAll('#studentForm .geip-tab-content');
+
+    const switchTab = (tabId) => {
+      tabButtons.forEach(btn => {
+        if (btn.getAttribute('data-tab') === tabId) {
+          btn.classList.add('active');
+        } else {
+          btn.classList.remove('active');
+        }
+      });
+      tabContents.forEach(pane => {
+        if (pane.id === tabId) {
+          pane.classList.add('active');
+        } else {
+          pane.classList.remove('active');
+        }
+      });
+    };
+
+    tabButtons.forEach(btn => {
+      btn.addEventListener('click', () => {
+        const tabId = btn.getAttribute('data-tab');
+        switchTab(tabId);
+      });
+    });
+
+    // 2. Prev & Next Tab buttons
+    const tabOrder = ['geipTab1', 'geipTab2', 'geipTab3', 'geipTab4', 'geipTab5', 'geipTab6'];
+    const btnPrev = document.getElementById('btnGeipPrevTab');
+    const btnNext = document.getElementById('btnGeipNextTab');
+
+    if (btnPrev) {
+      btnPrev.addEventListener('click', () => {
+        const activeBtn = document.querySelector('#geipModalTabs .geip-tab-btn.active');
+        const currentTabId = activeBtn ? activeBtn.getAttribute('data-tab') : 'geipTab1';
+        const currentIndex = tabOrder.indexOf(currentTabId);
+        if (currentIndex > 0) {
+          switchTab(tabOrder[currentIndex - 1]);
+        }
+      });
+    }
+
+    if (btnNext) {
+      btnNext.addEventListener('click', () => {
+        const activeBtn = document.querySelector('#geipModalTabs .geip-tab-btn.active');
+        const currentTabId = activeBtn ? activeBtn.getAttribute('data-tab') : 'geipTab1';
+        const currentIndex = tabOrder.indexOf(currentTabId);
+        if (currentIndex < tabOrder.length - 1) {
+          switchTab(tabOrder[currentIndex + 1]);
+        }
+      });
+    }
+
+    // 3. Auto Full Name composition (LastName + FirstName => KhmerName)
+    const lastNameInput = document.getElementById('studentKhmerLastName');
+    const firstNameInput = document.getElementById('studentKhmerFirstName');
+    const khmerNameInput = document.getElementById('studentKhmerName');
+
+    const updateKhmerFullName = () => {
+      const ln = (lastNameInput ? lastNameInput.value : '').trim();
+      const fn = (firstNameInput ? firstNameInput.value : '').trim();
+      if (khmerNameInput && (ln || fn)) {
+        khmerNameInput.value = `${ln} ${fn}`.trim();
+      }
+    };
+
+    if (lastNameInput) {
+      lastNameInput.addEventListener('input', updateKhmerFullName);
+    }
+    if (firstNameInput) {
+      firstNameInput.addEventListener('input', updateKhmerFullName);
+    }
+
+    // 4. Auto Age calculation from DOB
+    const dobInput = document.getElementById('studentDOB');
+    const ageInput = document.getElementById('studentAge');
+    const updateAgeFromDob = () => {
+      if (!dobInput || !ageInput) return;
+      const val = dobInput.value || '';
+      const match = val.match(/\b(19\d\d|20\d\d)\b/);
+      if (match) {
+        const birthYear = parseInt(match[1], 10);
+        const currentYear = new Date().getFullYear();
+        if (birthYear > 1950 && birthYear <= currentYear) {
+          ageInput.value = currentYear - birthYear;
+        }
+      }
+    };
+    if (dobInput) {
+      dobInput.addEventListener('change', updateAgeFromDob);
+      dobInput.addEventListener('input', updateAgeFromDob);
+    }
+
+    // 5. Auto BMI calculation from Weight & Height
+    const weightInput = document.getElementById('studentWeight');
+    const heightInput = document.getElementById('studentHeight');
+    const bmiInput = document.getElementById('studentBmi');
+    const assessmentInput = document.getElementById('studentAssessmentResult');
+
+    const updateBmi = () => {
+      if (!weightInput || !heightInput || !bmiInput) return;
+      const w = parseFloat(weightInput.value);
+      let h = parseFloat(heightInput.value);
+      if (!w || !h || w <= 0 || h <= 0) {
+        bmiInput.value = '';
+        if (assessmentInput) assessmentInput.value = '';
+        return;
+      }
+      // If height was entered in cm (e.g. 150), convert to meters
+      if (h > 3.0) h = h / 100;
+      const bmi = (w / (h * h)).toFixed(1);
+      bmiInput.value = bmi;
+
+      if (assessmentInput) {
+        const numBmi = parseFloat(bmi);
+        if (numBmi < 18.5) {
+          assessmentInput.value = 'ស្គម (Underweight)';
+        } else if (numBmi < 23.0) {
+          assessmentInput.value = 'ធម្មតា (Normal)';
+        } else if (numBmi < 25.0) {
+          assessmentInput.value = 'លើសទម្ងន់កម្រិតស្រាល (Overweight)';
+        } else {
+          assessmentInput.value = 'ធាត់ (Obese)';
+        }
+      }
+    };
+
+    if (weightInput) weightInput.addEventListener('input', updateBmi);
+    if (heightInput) heightInput.addEventListener('input', updateBmi);
+
+    // 6. Template Download Button (#btnTplGEIP)
+    const btnTpl = document.getElementById('btnTplGEIP');
+    if (btnTpl) {
+      btnTpl.addEventListener('click', () => {
+        this.downloadGeipImportTemplate();
+      });
+    }
+
+    // 7. Student Profile Modal Close & Print buttons
+    const btnCloseProfile = document.getElementById('btnCloseStudentProfileModal');
+    if (btnCloseProfile) {
+      btnCloseProfile.addEventListener('click', () => {
+        this.closeStudentProfileModal();
+      });
+    }
+    const profileModal = document.getElementById('studentProfileModal');
+    if (profileModal) {
+      profileModal.addEventListener('click', (e) => {
+        if (e.target === profileModal) {
+          this.closeStudentProfileModal();
+        }
+      });
+    }
+    const btnPrintProfile = document.getElementById('btnPrintStudentProfile');
+    if (btnPrintProfile) {
+      btnPrintProfile.addEventListener('click', () => {
+        const content = document.getElementById('studentProfileContent');
+        if (!content) return;
+        const printWin = window.open('', '_blank');
+        printWin.document.write(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>ជីវប្រវត្តិសង្ខេបសិស្ស_GEIP</title>
+            <link rel="stylesheet" href="css/style.css">
+            <style>
+              body { background: #fff !important; padding: 20px; font-family: 'Khmer OS Battambang', 'Hanuman', sans-serif; }
+              @media print {
+                body { padding: 0; }
+                .no-print { display: none !important; }
+              }
+            </style>
+          </head>
+          <body>
+            ${content.innerHTML}
+            <script>
+              window.onload = function() { window.print(); };
+            <\/script>
+          </body>
+          </html>
+        `);
+        printWin.document.close();
+      });
+    }
+  }
+
+  populateGeipModalFields(student = null) {
+    // Reset active tab to Tab 1
+    const tabButtons = document.querySelectorAll('#geipModalTabs .geip-tab-btn');
+    const tabContents = document.querySelectorAll('#studentForm .geip-tab-content');
+    tabButtons.forEach((btn, idx) => {
+      if (idx === 0) btn.classList.add('active');
+      else btn.classList.remove('active');
+    });
+    tabContents.forEach((pane, idx) => {
+      if (idx === 0) pane.classList.add('active');
+      else pane.classList.remove('active');
+    });
+
+    const setVal = (id, val) => {
+      const el = document.getElementById(id);
+      if (el) el.value = val !== undefined && val !== null ? val : '';
+    };
+
+    if (!student) {
+      setVal('studentGeipId', '');
+      setVal('studentKhmerLastName', '');
+      setVal('studentKhmerFirstName', '');
+      setVal('studentAge', '');
+      setVal('studentPisa', '✖️');
+      setVal('studentType', 'សិស្សចាស់');
+      setVal('studentCondition', 'សិស្សដើមឆ្នាំ');
+      setVal('studentFromSchoolType', 'សាលាគោលដៅ');
+      setVal('studentSchoolAffiliation', 'ចំណុះ');
+      setVal('studentPreviousSchool', '');
+      setVal('studentBirthPlace', '');
+      setVal('studentIndigenous', 'មិនមាន');
+      setVal('studentDisability', 'មិនមាន');
+      setVal('studentAssistiveDevice', 'មិនមាន');
+      setVal('studentOrphan', 'មិនមាន');
+      setVal('studentIdPoor', 'មិនមាន');
+      setVal('studentScholarship', 'មិនមាន');
+      setVal('studentInsuranceCard', '');
+      setVal('studentBirthCert', '');
+      setVal('studentStudentPhone', '');
+      setVal('studentFamilyShelter', 'ផ្ទះផ្ទាល់ខ្លួន');
+      setVal('studentFamilyIncome', '');
+      setVal('studentMigration', 'មិនមាន');
+      setVal('studentDomesticViolence', 'មិនមាន');
+      setVal('studentLivingCondition', 'រស់នៅជាមួយឪពុកម្តាយ');
+      setVal('studentSiblings', '');
+      setVal('studentFatherName', '');
+      setVal('studentFatherJob', '');
+      setVal('studentFatherPhone', '');
+      setVal('studentMotherName', '');
+      setVal('studentMotherJob', '');
+      setVal('studentMotherPhone', '');
+      setVal('studentGuardianJob', '');
+      setVal('studentGuardianAddress', '');
+      setVal('studentCaregiverName', '');
+      setVal('studentCaregiverJob', '');
+      setVal('studentCaregiverPhone', '');
+      setVal('studentCaregiverAddress', '');
+      setVal('studentWeight', '');
+      setVal('studentHeight', '');
+      setVal('studentBmi', '');
+      setVal('studentAssessmentResult', '');
+      setVal('studentNutritionIssue', 'មិនមាន');
+      setVal('studentNutritionIntervention', 'មិនមាន');
+      setVal('studentLifeThreatening', 'មិនមាន');
+      setVal('studentChronicDisease', 'មិនមាន');
+      setVal('studentHealthIssues', '');
+      setVal('studentTreatmentPlan', 'មិនមាន');
+      setVal('studentTreatmentMeans', 'មិនមាន');
+      setVal('studentHealthProvider', '');
+      setVal('studentHealthProviderPhone', '');
+      setVal('studentStatus', 'កំពុងរៀន');
+      setVal('studentStatusDate', '');
+      setVal('studentDropoutReason', '');
+      setVal('studentStudyPlan', '');
+      setVal('studentYouthCouncil', 'សមាជិក');
+      setVal('studentParentParticipation', '');
+      setVal('studentParentRequest', '');
+      return;
+    }
+
+    let lastName = student.lastName || '';
+    let firstName = student.firstName || '';
+    if (!lastName && !firstName && student.khmerName) {
+      const parts = student.khmerName.trim().split(/\s+/);
+      lastName = parts[0] || '';
+      firstName = parts.slice(1).join(' ') || '';
+    }
+
+    let age = student.age || '';
+    if (!age && student.dob) {
+      const yMatch = String(student.dob).match(/\b(19\d\d|20\d\d)\b/);
+      if (yMatch) {
+        age = new Date().getFullYear() - parseInt(yMatch[1], 10);
+      }
+    }
+
+    setVal('studentGeipId', student.geipId || '');
+    setVal('studentKhmerLastName', lastName);
+    setVal('studentKhmerFirstName', firstName);
+    setVal('studentAge', age);
+    setVal('studentPisa', student.pisa || '✖️');
+    setVal('studentType', student.studentType || 'សិស្សចាស់');
+    setVal('studentCondition', student.condition || 'សិស្សដើមឆ្នាំ');
+    setVal('studentFromSchoolType', student.fromSchoolType || 'សាលាគោលដៅ');
+    setVal('studentSchoolAffiliation', student.schoolAffiliation || 'ចំណុះ');
+    setVal('studentPreviousSchool', student.previousSchool || student.primarySchool || '');
+    setVal('studentBirthPlace', student.birthPlace || student.pob || '');
+    setVal('studentIndigenous', student.indigenous || 'មិនមាន');
+    setVal('studentDisability', student.disability || 'មិនមាន');
+    setVal('studentAssistiveDevice', student.assistiveDevice || 'មិនមាន');
+    setVal('studentOrphan', student.orphan || 'មិនមាន');
+    setVal('studentIdPoor', student.idPoor || 'មិនមាន');
+    setVal('studentScholarship', student.scholarship || 'មិនមាន');
+    setVal('studentInsuranceCard', student.insuranceCardNo || student.insuranceCard || '');
+    setVal('studentBirthCert', student.birthCertNo || student.birthCert || '');
+    setVal('studentStudentPhone', student.studentPhone || student.phone || '');
+    setVal('studentFamilyShelter', student.familyShelter || 'ផ្ទះផ្ទាល់ខ្លួន');
+    setVal('studentFamilyIncome', student.familyIncome || '');
+    setVal('studentMigration', student.migration || 'មិនមាន');
+    setVal('studentDomesticViolence', student.domesticViolence || 'មិនមាន');
+    setVal('studentLivingCondition', student.livingCondition || 'រស់នៅជាមួយឪពុកម្តាយ');
+    setVal('studentSiblings', student.siblings || '');
+    setVal('studentFatherName', student.fatherName || '');
+    setVal('studentFatherJob', student.fatherJob || '');
+    setVal('studentFatherPhone', student.fatherPhone || '');
+    setVal('studentMotherName', student.motherName || '');
+    setVal('studentMotherJob', student.motherJob || '');
+    setVal('studentMotherPhone', student.motherPhone || '');
+    setVal('studentGuardianJob', student.guardianJob || '');
+    setVal('studentGuardianAddress', student.guardianAddress || '');
+    setVal('studentCaregiverName', student.caregiverName || '');
+    setVal('studentCaregiverJob', student.caregiverJob || '');
+    setVal('studentCaregiverPhone', student.caregiverPhone || '');
+    setVal('studentCaregiverAddress', student.caregiverAddress || '');
+    setVal('studentWeight', student.weight || '');
+    setVal('studentHeight', student.height || '');
+    setVal('studentBmi', student.bmi || '');
+    setVal('studentAssessmentResult', student.assessmentResult || '');
+    setVal('studentNutritionIssue', student.nutritionIssue || 'មិនមាន');
+    setVal('studentNutritionIntervention', student.nutritionIntervention || 'មិនមាន');
+    setVal('studentLifeThreatening', student.lifeThreateningIllness || student.lifeThreatening || 'មិនមាន');
+    setVal('studentChronicDisease', student.chronicDisease || 'មិនមាន');
+    setVal('studentHealthIssues', student.healthIssues || '');
+    setVal('studentTreatmentPlan', student.treatmentPlan || 'មិនមាន');
+    setVal('studentTreatmentMeans', student.treatmentMeans || 'មិនមាន');
+    setVal('studentHealthProvider', student.healthProvider || '');
+    setVal('studentHealthProviderPhone', student.healthProviderPhone || '');
+    setVal('studentStatus', student.studentStatus || 'កំពុងរៀន');
+    setVal('studentStatusDate', student.statusDate || '');
+    setVal('studentDropoutReason', student.dropoutReason || '');
+    setVal('studentStudyPlan', student.studyPlan || '');
+    setVal('studentYouthCouncil', student.youthCouncilRole || student.youthCouncil || 'សមាជិក');
+    setVal('studentParentParticipation', student.parentParticipation || '');
+    setVal('studentParentRequest', student.parentRequest || '');
+  }
+
+  extractGeipModalFields() {
+    const getVal = (id) => {
+      const el = document.getElementById(id);
+      return el ? el.value.trim() : '';
+    };
+
+    return {
+      geipId: getVal('studentGeipId'),
+      lastName: getVal('studentKhmerLastName'),
+      firstName: getVal('studentKhmerFirstName'),
+      age: getVal('studentAge'),
+      pisa: getVal('studentPisa'),
+      studentType: getVal('studentType'),
+      condition: getVal('studentCondition'),
+      fromSchoolType: getVal('studentFromSchoolType'),
+      schoolAffiliation: getVal('studentSchoolAffiliation'),
+      previousSchool: getVal('studentPreviousSchool'),
+      birthPlace: getVal('studentBirthPlace'),
+      pob: getVal('studentBirthPlace'),
+      pobProvinceCode: document.getElementById('studentPobProvince')?.value || '',
+      pobDistrictCode: document.getElementById('studentPobDistrict')?.value || '',
+      pobCommuneCode: document.getElementById('studentPobCommune')?.value || '',
+      pobVillageCode: document.getElementById('studentPobVillage')?.value || '',
+      provinceCode: document.getElementById('studentAddressProvince')?.value || '',
+      districtCode: document.getElementById('studentAddressDistrict')?.value || '',
+      communeCode: document.getElementById('studentAddressCommune')?.value || '',
+      villageCode: document.getElementById('studentAddressVillage')?.value || '',
+      indigenous: getVal('studentIndigenous'),
+      disability: getVal('studentDisability'),
+      assistiveDevice: getVal('studentAssistiveDevice'),
+      orphan: getVal('studentOrphan'),
+      idPoor: getVal('studentIdPoor'),
+      scholarship: getVal('studentScholarship'),
+      insuranceCardNo: getVal('studentInsuranceCard'),
+      birthCertNo: getVal('studentBirthCert'),
+      studentPhone: getVal('studentStudentPhone'),
+      familyShelter: getVal('studentFamilyShelter'),
+      familyIncome: getVal('studentFamilyIncome'),
+      migration: getVal('studentMigration'),
+      domesticViolence: getVal('studentDomesticViolence'),
+      livingCondition: getVal('studentLivingCondition'),
+      siblings: getVal('studentSiblings'),
+      fatherName: getVal('studentFatherName'),
+      fatherJob: getVal('studentFatherJob'),
+      fatherPhone: getVal('studentFatherPhone'),
+      motherName: getVal('studentMotherName'),
+      motherJob: getVal('studentMotherJob'),
+      motherPhone: getVal('studentMotherPhone'),
+      guardianJob: getVal('studentGuardianJob'),
+      guardianAddress: getVal('studentGuardianAddress'),
+      caregiverName: getVal('studentCaregiverName'),
+      caregiverJob: getVal('studentCaregiverJob'),
+      caregiverPhone: getVal('studentCaregiverPhone'),
+      caregiverAddress: getVal('studentCaregiverAddress'),
+      weight: getVal('studentWeight'),
+      height: getVal('studentHeight'),
+      bmi: getVal('studentBmi'),
+      assessmentResult: getVal('studentAssessmentResult'),
+      nutritionIssue: getVal('studentNutritionIssue'),
+      nutritionIntervention: getVal('studentNutritionIntervention'),
+      lifeThreateningIllness: getVal('studentLifeThreatening'),
+      chronicDisease: getVal('studentChronicDisease'),
+      healthIssues: getVal('studentHealthIssues'),
+      treatmentPlan: getVal('studentTreatmentPlan'),
+      treatmentMeans: getVal('studentTreatmentMeans'),
+      healthProvider: getVal('studentHealthProvider'),
+      healthProviderPhone: getVal('studentHealthProviderPhone'),
+      studentStatus: getVal('studentStatus'),
+      statusDate: getVal('studentStatusDate'),
+      dropoutReason: getVal('studentDropoutReason'),
+      studyPlan: getVal('studentStudyPlan'),
+      youthCouncilRole: getVal('studentYouthCouncil'),
+      parentParticipation: getVal('studentParentParticipation'),
+      parentRequest: getVal('studentParentRequest')
+    };
+  }
+
+  viewStudentProfile(studentId) {
+    const stu = this.students.find(s => s.id === studentId);
+    if (!stu) {
+      this.showToast('រកមិនឃើញទិន្នន័យសិស្សឡើយ!', 'error');
+      return;
+    }
+
+    const modal = document.getElementById('studentProfileModal');
+    const container = document.getElementById('studentProfileContent');
+    if (!modal || !container) return;
+
+    const initials = (stu.khmerName || '').split(' ').map(w => w[0]).join('').slice(0, 2);
+    const dobFormatted = this.formatReportDob(stu.dob) || '-';
+
+    container.innerHTML = `
+      <div style="background: #ffffff; border-radius: 8px; padding: 1.5rem; color: #1e293b;">
+        <!-- Header -->
+        <div style="text-align: center; border-bottom: 2px solid #0284c7; padding-bottom: 1rem; margin-bottom: 1.25rem;">
+          <div style="font-weight: 700; font-size: 1.15rem; color: #0f172a;">ព្រះរាជាណាចក្រកម្ពុជា</div>
+          <div style="font-size: 0.95rem; font-weight: 600; color: #475569;">ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+          <div style="margin: 0.5rem auto; width: 60px; height: 2px; background: #cbd5e1;"></div>
+          <div style="font-size: 0.9rem; color: #0284c7; font-weight: 600;">ក្រសួងអប់រំ យុវជន និងកីឡា · គម្រោងកែលម្អការអប់រំចំណេះទូទៅ (GEIP)</div>
+          <h2 style="margin: 0.5rem 0 0.2rem; font-size: 1.35rem; color: #0369a1; font-weight: 800;">
+            <i class="ri-profile-fill"></i> ប្រវត្តិរូបសង្ខេបសិស្សានុសិស្ស (Student Profile Dossier)
+          </h2>
+          <span style="display: inline-block; background: #e0f2fe; color: #0369a1; padding: 2px 10px; border-radius: 12px; font-size: 0.8rem; font-weight: 700; border: 1px solid #bae6fd;">
+            ${stu.geipId ? `GEIP-ID: ${stu.geipId}` : 'សាលាគម្រោង GEIP'}
+          </span>
+        </div>
+
+        <!-- Top Overview Banner -->
+        <div style="display: flex; gap: 1.25rem; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; margin-bottom: 1.25rem;">
+          <div style="width: 80px; height: 95px; border-radius: 6px; overflow: hidden; background: #e2e8f0; display: flex; align-items: center; justify-content: center; border: 1px solid #cbd5e1; flex-shrink: 0;">
+            ${stu.avatar
+        ? `<img src="${stu.avatar}" style="width: 100%; height: 100%; object-fit: cover;">`
+        : `<div style="font-size: 1.5rem; font-weight: 700; color: #64748b;">${initials}</div>`
+      }
+          </div>
+          <div style="flex: 1; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.5rem;">
+            <div>
+              <div style="font-size: 0.75rem; color: #64748b;">គោត្តនាម និងនាម</div>
+              <div style="font-size: 1.15rem; font-weight: 700; color: #0f172a;">${stu.khmerName || '-'}</div>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: #64748b;">អក្សរឡាតាំង</div>
+              <div style="font-size: 1rem; font-weight: 600; font-family: 'Outfit', sans-serif;">${stu.latinName || '-'}</div>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: #64748b;">អត្តលេខ / ថ្នាក់</div>
+              <div style="font-weight: 700; color: #0284c7;">${stu.id} · <span style="background: #e0f2fe; padding: 1px 6px; border-radius: 4px;">${stu.class || '-'}</span></div>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: #64748b;">ភេទ / ថ្ងៃកំណើត (អាយុ)</div>
+              <div style="font-weight: 600;">${stu.gender || '-'} · ${dobFormatted} ${stu.age ? `(${stu.age} ឆ្នាំ)` : ''}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 1: ការចូលរៀន & អាសយដ្ឋាន -->
+        <div style="margin-bottom: 1.25rem;">
+          <div style="font-weight: 700; font-size: 0.95rem; color: #0369a1; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 0.25rem; margin-bottom: 0.6rem;">
+            <i class="ri-book-open-line"></i> ១. ព័ត៌មាននៃការចូលរៀន & អាសយដ្ឋាន
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.6rem; font-size: 0.88rem;">
+            <div><span style="color: #64748b;">ប្រភេទសិស្ស:</span> <strong>${stu.studentType || 'សិស្សចាស់'}</strong></div>
+            <div><span style="color: #64748b;">លក្ខខណ្ឌ:</span> <strong>${stu.condition || 'សិស្សដើមឆ្នាំ'}</strong></div>
+            <div><span style="color: #64748b;">សាលារៀនពីមុន:</span> <strong>${stu.previousSchool || stu.primarySchool || '-'}</strong> (${stu.schoolAffiliation || 'ចំណុះ'})</div>
+            <div><span style="color: #64748b;">ទីកន្លែងកំណើត:</span> <strong>${stu.birthPlace || stu.pob || '-'}</strong></div>
+            <div style="grid-column: 1 / -1;"><span style="color: #64748b;">អាសយដ្ឋានបច្ចុប្បន្ន:</span> <strong>${stu.address || '-'}</strong></div>
+          </div>
+        </div>
+
+        <!-- Section 2: សមធម៌ & ភាពងាយរងគ្រោះ -->
+        <div style="margin-bottom: 1.25rem;">
+          <div style="font-weight: 700; font-size: 0.95rem; color: #0369a1; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 0.25rem; margin-bottom: 0.6rem;">
+            <i class="ri-shield-star-line"></i> ២. ស្ថានភាពសមធម៌ & ភាពងាយរងគ្រោះ
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; font-size: 0.88rem;">
+            <div><span style="color: #64748b;">បណ្ណក្រីក្រ (IDPoor):</span> <strong style="color: ${stu.idPoor && stu.idPoor !== 'មិនមាន' ? '#b91c1c' : '#334155'};">${stu.idPoor || 'មិនមាន'}</strong></div>
+            <div><span style="color: #64748b;">អាហារូបករណ៍:</span> <strong>${stu.scholarship || 'មិនមាន'}</strong></div>
+            <div><span style="color: #64748b;">កំព្រា:</span> <strong>${stu.orphan || 'មិនមាន'}</strong></div>
+            <div><span style="color: #64748b;">ជនជាតិដើមភាគតិច:</span> <strong>${stu.indigenous || 'មិនមាន'}</strong></div>
+            <div><span style="color: #64748b;">ពិការភាព / ឧបករណ៍ជំនួយ:</span> <strong>${stu.disability || 'មិនមាន'}</strong> ${stu.assistiveDevice && stu.assistiveDevice !== 'មិនមាន' ? `(${stu.assistiveDevice})` : ''}</div>
+            <div><span style="color: #64748b;">ស្ថានភាពរស់នៅ:</span> <strong>${stu.livingCondition || 'រស់នៅជាមួយឪពុកម្តាយ'}</strong></div>
+            <div><span style="color: #64748b;">ផ្ទះសំបែង / ចំណូល:</span> <strong>${stu.familyShelter || 'ផ្ទះផ្ទាល់ខ្លួន'}</strong> ${stu.familyIncome ? `(${stu.familyIncome})` : ''}</div>
+            <div><span style="color: #64748b;">ចំណាកស្រុក:</span> <strong>${stu.migration || 'មិនមាន'}</strong></div>
+            <div><span style="color: #64748b;">ហិង្សាក្នុងគ្រួសារ:</span> <strong>${stu.domesticViolence || 'មិនមាន'}</strong></div>
+            <div><span style="color: #64748b;">បងប្អូនបង្កើត:</span> <strong>${stu.siblings || '-'}</strong></div>
+          </div>
+        </div>
+
+        <!-- Section 3: ឪពុកម្តាយ & អាណាព្យាបាល -->
+        <div style="margin-bottom: 1.25rem;">
+          <div style="font-weight: 700; font-size: 0.95rem; color: #0369a1; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 0.25rem; margin-bottom: 0.6rem;">
+            <i class="ri-parent-line"></i> ៣. ព័ត៌មានឪពុកម្តាយ & អាណាព្យាបាល
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.8rem; font-size: 0.88rem;">
+            <div style="background: #f8fafc; padding: 0.6rem; border-radius: 6px; border: 1px solid #e2e8f0;">
+              <div style="font-weight: 700; color: #1e293b; margin-bottom: 0.2rem;"><i class="ri-user-heart-line"></i> ឪពុក: ${stu.fatherName || '-'}</div>
+              <div style="color: #64748b;">មុខរបរ: <strong>${stu.fatherJob || '-'}</strong></div>
+              <div style="color: #64748b;">ទូរស័ព្ទ: <strong>${stu.fatherPhone || '-'}</strong></div>
+            </div>
+            <div style="background: #f8fafc; padding: 0.6rem; border-radius: 6px; border: 1px solid #e2e8f0;">
+              <div style="font-weight: 700; color: #1e293b; margin-bottom: 0.2rem;"><i class="ri-user-heart-line"></i> ម្តាយ: ${stu.motherName || '-'}</div>
+              <div style="color: #64748b;">មុខរបរ: <strong>${stu.motherJob || '-'}</strong></div>
+              <div style="color: #64748b;">ទូរស័ព្ទ: <strong>${stu.motherPhone || '-'}</strong></div>
+            </div>
+            <div style="background: #f8fafc; padding: 0.6rem; border-radius: 6px; border: 1px solid #e2e8f0;">
+              <div style="font-weight: 700; color: #1e293b; margin-bottom: 0.2rem;"><i class="ri-shield-user-line"></i> អាណាព្យាបាល: ${stu.guardian || '-'}</div>
+              <div style="color: #64748b;">មុខរបរ: <strong>${stu.guardianJob || '-'}</strong></div>
+              <div style="color: #64748b;">ទូរស័ព្ទ: <strong>${stu.phone || '-'}</strong></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 4: សុខភាព & អាហារូបត្ថម្ភ (BMI) -->
+        <div style="margin-bottom: 1.25rem;">
+          <div style="font-weight: 700; font-size: 0.95rem; color: #0369a1; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 0.25rem; margin-bottom: 0.6rem;">
+            <i class="ri-heart-pulse-line"></i> ៤. សុខភាព & អាហារូបត្ថម្ភ (BMI)
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; font-size: 0.88rem;">
+            <div><span style="color: #64748b;">ទម្ងន់ / កម្ពស់:</span> <strong>${stu.weight ? `${stu.weight} kg` : '-'}</strong> / <strong>${stu.height ? `${stu.height} m` : '-'}</strong></div>
+            <div><span style="color: #64748b;">BMI / ការវាយតម្លៃ:</span> <strong>${stu.bmi || '-'}</strong> ${stu.assessmentResult ? `<span style="font-size: 0.8rem; background: #fef3c7; color: #92400e; padding: 1px 6px; border-radius: 4px;">${stu.assessmentResult}</span>` : ''}</div>
+            <div><span style="color: #64748b;">បញ្ហាអាហារូបត្ថម្ភ:</span> <strong>${stu.nutritionIssue || 'មិនមាន'}</strong></div>
+            <div><span style="color: #64748b;">ជំងឺប្រចាំកាយ:</span> <strong>${stu.chronicDisease || 'មិនមាន'}</strong></div>
+            <div><span style="color: #64748b;">គ្រោះថ្នាក់ដល់ជីវិត:</span> <strong>${stu.lifeThreateningIllness || 'មិនមាន'}</strong></div>
+            <div><span style="color: #64748b;">ផែនការព្យាបាល:</span> <strong>${stu.treatmentPlan || 'មិនមាន'}</strong></div>
+          </div>
+        </div>
+
+        <!-- Section 5: ស្ថានភាពសិក្សា & សកម្មភាព -->
+        <div>
+          <div style="font-weight: 700; font-size: 0.95rem; color: #0369a1; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 0.25rem; margin-bottom: 0.6rem;">
+            <i class="ri-line-chart-line"></i> ៥. ស្ថានភាពសិក្សា & តាមដាន
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; font-size: 0.88rem;">
+            <div><span style="color: #64748b;">ស្ថានភាពសិស្ស:</span> <strong style="color: #0284c7;">${stu.studentStatus || 'កំពុងរៀន'}</strong></div>
+            <div><span style="color: #64748b;">ក្រុមប្រឹក្សាយុវជន-កុមារ:</span> <strong>${stu.youthCouncilRole || 'សមាជិក'}</strong></div>
+            <div><span style="color: #64748b;">ផែនការរៀនសូត្រ:</span> <strong>${stu.studyPlan || '-'}</strong></div>
+            ${stu.diplomaCenter || stu.diplomaSession ? `<div><span style="color: #64748b;">ប្រឡងឌីប្លូម:</span> <strong>${stu.diplomaCenter || ''} (${stu.diplomaSession || ''})</strong> បន្ទប់: ${stu.diplomaRoom || '-'} តុ: ${stu.diplomaDesk || '-'}</div>` : ''}
+            ${stu.parentRequest ? `<div style="grid-column: 1 / -1;"><span style="color: #64748b;">សំណូមពរអាណាព្យាបាល:</span> <strong>${stu.parentRequest}</strong></div>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+
+    modal.classList.add('open');
+  }
+
+  closeStudentProfileModal() {
+    const modal = document.getElementById('studentProfileModal');
+    if (modal) modal.classList.remove('open');
+  }
+
+  downloadGeipImportTemplate() {
+    if (typeof XLSX === 'undefined') {
+      this.showToast('បណ្ណាល័យ XLSX មិនទាន់ដំណើរការឡើយ!', 'error');
+      return;
+    }
+
+    const headersRow1 = [
+      'Next ID', '260000539', 'គោត្តនាម និងនាម', '1638', 'ថ្ងៃ ខែ ឆ្នាំ កំណើត', '2026', '✓', 'សិស្សបានជ្រើសរើស', 'ព័ត៌មាននៃការចូលរៀនរបស់សិស្ស',
+      '', '', '', '', '', '', '', '', '', 'ទីកន្លែងកំណើតរបស់សិស្ស', 'ទិន្នន័យប្រឡងសញ្ញាបត្រមធ្យមសិក្សាបឋមភូមិ',
+      'សម័យប្រឡង', 'ព័ត៌មានរបស់ឪពុកម្ដាយ', 'ព័ត៌មានអ្នកអាណាព្យាបាលសិស្ស', 'ស្ថានភាពគ្រួសារ', 'ព័ត៌មានអ្នកមើលថែទាំផ្សេងទៀត',
+      '', 'ព័ត៌មានបងប្អូនបង្កើត', 'ជំងឺគ្រោះថ្នាក់ដល់ជីវិត', '', '', '', '', 'សំណូមពរអាណាព្យាបាល', 'សិស្សបោះបង់',
+      'ផែនការរៀនសូត្រ', 'តួនាទីសិស្សក្នុងសាលា', 'ទិន្នន័យសុខភាព', '', '', '', '', '', '', '', '', '', '', '', '', '',
+      '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''
+    ];
+
+    const headersRow2 = [
+      'GEIP-ID Students', 'អត្តលេខ', 'នាមត្រកូល', 'នាមខ្លួន', 'ភេទ', 'ថ្ងៃ DD', 'ខែ MM', 'ឆ្នាំ YYYY', 'DD/MM/YYYY', 'អាយុ',
+      'PISA', 'ធ្វើតេស្តជាក់ស្តែង(PISA)', 'ថ្នាក់ទី', 'បន្ទប់', 'ប្រភេទថ្នាក់', 'ប្រភេទសិស្ស', 'លក្ខខណ្ឌ', 'មកពីសាលារៀន',
+      'សាលាចំណុះឬក្រៅចំណុះ', 'ឈ្មោះសាលា', 'ជនជាតិដើមភាគតិច', 'ប្រភេទពិការភាព', 'ឧបករណ៍ជំនួយ', 'កំព្រា', 'បណ្ណក្រីក្រ',
+      'អាហារូបករណ៍', 'លេខបណ្ណធានារ៉ាប់រង', 'លេខសំបុត្រកំណើត', 'លេខទូរស័ព្ទសិស្ស', 'ទីកន្លែងកំណើត', 'លេខបន្ទប់', 'មណ្ឌលប្រឡង',
+      'ថ្ងៃប្រឡង', 'ខែប្រឡង', 'ឆ្នាំប្រឡង', 'ឈ្មោះឪពុក', 'មុខរបរឪពុក', 'លេខទូរស័ព្ទឪពុក', 'ឈ្មោះម្តាយ', 'មុខរបរម្តាយ',
+      'លេខទូរស័ព្ទម្តាយ', 'អាសយដ្ឋានបច្ចុប្បន្ន', 'ឈ្មោះអាណាព្យាបាល', 'មុខរបរអាណាព្យាបាល', 'លេខទូរស័ព្ទអាណាព្យាបាល', 'អាសយដ្ឋានអាណាព្យាបាល',
+      'ចំណាកស្រុក', 'ហិង្សាក្នុងគ្រួសារ', 'ផ្ទះសំបែង(ជម្រក)', 'ប្រាក់ចំណូលគ្រួសារ/ខែ($)', 'ឈ្មោះអ្នកមើលថែទាំ', 'មុខរបរអ្នកមើលថែទាំ',
+      'ទូរស័ព្ទអ្នកមើលថែទាំ', 'អាសយដ្ឋានអ្នកមើលថែទាំ', 'ស្ថានភាពរស់នៅ', 'បងប្អូនបង្កើត', 'ឈ្មោះជំងឺប្រចាំកាយ', 'ផែនការព្យាបាល',
+      'មធ្យោបាយព្យាបាល', 'បញ្ហាសុខភាពសិស្ស', 'អ្នកផ្ដល់ការព្យាបាល', 'ទូរស័ព្ទអ្នកផ្តល់ព្យាបាល', 'ការចូលរួមអាណាព្យាបាល',
+      'ដើម្បីសាលាជួយសិស្សបានល្អ', 'ស្ថានភាពសិស្ស', 'កាលបរិច្ឆេទ', 'មូលហេតុបោះបង់', 'ផែនការរៀនសូត្រ', 'ក្រុមប្រឹក្សាយុវជន-កុមារ',
+      'ទម្ងន់(kg)', 'កម្ពស់(m)', 'BMI', 'លទ្ធផលវាយតម្លៃ', 'សិស្សមានបញ្ហាអាហារូបត្ថម្ភ', 'ទទួលបានកិច្ចអន្តរាគមន៍', 'ផ្សេងៗ'
+    ];
+
+    const sampleRow = [
+      '424-224010131', '224010131', 'ឆន', 'ចន្ទគ្រីណាហ្កា', 'ស្រី', '13', '8', '2012', '13/08/2012', '14',
+      '✖️', '', 'ថ្នាក់ទី 8', 'A', 'ទូទៅ', 'សិស្សចូលថ្មី', 'សិស្សដើមឆ្នាំ', 'សាលាគោលដៅ',
+      'ផ្សេងៗ', 'វិ.២៨ មករា', 'មិនមាន', 'មិនមាន', 'មិនមាន', 'មិនមាន', 'មិនមាន',
+      'មិនមាន', '0', '0', '012345678', 'ភូមិត្រុំខាងជើង ឃុំជ្រោយនាងងួន ស្រុកស្រីស្នំ ខេត្តសៀមរាប', '', '',
+      '', '', '', 'ឆន ប៉ាយ', 'គ្រូបង្រៀន', '0888822942', 'ធិញ សាផា', 'គ្រូបង្រៀន',
+      '016376799', 'ភូមិត្រុំខាងជើង ឃុំជ្រោយនាងងួន ស្រុកស្រីស្នំ ខេត្តសៀមរាប', 'ឆន ប៉ាយ', 'គ្រូបង្រៀន', '0888822942', 'ភូមិត្រុំខាងជើង ឃុំជ្រោយនាងងួន ស្រុកស្រីស្នំ ខេត្តសៀមរាប',
+      'មិនមាន', 'មិនមាន', 'ផ្ទះឈើប្រកស័ង្កសី', '150', '', '',
+      '', '', 'រស់នៅជាមួយឪពុកម្តាយ', '២នាក់ (ប្រុស១ ស្រី១)', 'មិនមាន', 'មិនមាន',
+      'មិនមាន', 'សុខភាពល្អ', 'គ្រួសារសាច់ញាតិ', '0888822942', 'ចូលរួមទៀងទាត់',
+      'ជួយបំប៉នគណិតវិទ្យា', 'កំពុងរៀន', '', '', 'បន្តថ្នាក់ទី៩', 'សមាជិក',
+      '45', '1.52', '19.5', 'ធម្មតា (Normal)', 'មិនមាន', 'មិនមាន', ''
+    ];
+
+    const wsData = [headersRow1, headersRow2, sampleRow];
+    const ws = XLSX.utils.aoa_to_sheet(wsData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'GEIP_Students');
+    XLSX.writeFile(wb, 'គំរូទិន្នន័យសាលាគម្រោង_GEIP_MoEYS_Template.xlsx');
+    this.showToast('បានទាញយកតារាងគំរូទិន្នន័យសិស្សសាលាគម្រោង GEIP ជោគជ័យ!', 'success');
+  }
+
+  openStudentModal(studentToEdit = null) {
+    const titleEl = document.getElementById('studentModalTitle');
+    const editIdInput = document.getElementById('studentEditId');
+    const idInput = document.getElementById('studentIdInput');
+    const classInput = document.getElementById('studentClassInput');
+    const classTypeInput = document.getElementById('studentClassTypeInput');
+    const khmerNameInput = document.getElementById('studentKhmerName');
+    const latinNameInput = document.getElementById('studentLatinName');
+    const genderSelect = document.getElementById('studentGender');
+    const dobInput = document.getElementById('studentDOB');
+    const phoneInput = document.getElementById('studentPhone');
+    const guardianInput = document.getElementById('studentGuardian');
+    const addressInput = document.getElementById('studentAddress');
+    const avatarInput = document.getElementById('studentAvatarUrl');
+
+    if (studentToEdit) {
+      titleEl.innerHTML = `<i class="ri-edit-line"></i> កែប្រែព័ត៌មានសិស្ស (${studentToEdit.id})`;
+      editIdInput.value = studentToEdit.id;
+      idInput.value = studentToEdit.id;
+      idInput.readOnly = true;
+
+      // Determine student's grade level key (grade_7 .. grade_12_soc)
+      let stuGradeKey = studentToEdit.gradeLevel || '';
+      if (!stuGradeKey) {
+        const allGradeKeys = ['grade_7', 'grade_8', 'grade_9', 'grade_10', 'grade_11_sci', 'grade_11_soc', 'grade_12_sci', 'grade_12_soc'];
+        stuGradeKey = allGradeKeys.find(gk => this.studentMatchesGrade(studentToEdit, gk)) || this.activeClass || 'grade_7';
+      }
+      const gradeLabel = this.resolveGradeLabelFromKey(stuGradeKey);
+      if (classInput) {
+        classInput.value = gradeLabel;
+      }
+
+      this.populateStudentSectionSelect(stuGradeKey, studentToEdit.class || '');
+      const oldClassInput = document.getElementById('studentOldClassInput');
+      if (oldClassInput) {
+        oldClassInput.value = studentToEdit.oldClass || '';
+      }
+
+      let defaultClassType = 'ទូទៅ';
+      if (stuGradeKey.endsWith('_soc')) defaultClassType = 'វិទ្យាសាស្ត្រសង្គម';
+      else if (stuGradeKey.endsWith('_sci')) defaultClassType = 'វិទ្យាសាស្ត្រ';
+
+      if (classTypeInput) classTypeInput.value = studentToEdit.classType || defaultClassType;
+      khmerNameInput.value = studentToEdit.khmerName || '';
+      latinNameInput.value = studentToEdit.latinName || '';
+      genderSelect.value = studentToEdit.gender || 'ស្រី';
+
+      // Robust Date of Birth mapping & display in HTML5 input
+      const inputIsoDob = this.toInputDateFormat(studentToEdit.dob);
+      dobInput.value = inputIsoDob;
+      dobInput.setAttribute('data-original-dob', studentToEdit.dob || '');
+      const previewEl = document.getElementById('studentDOBPreview');
+      if (previewEl) {
+        const dStr = this.formatReportDob(studentToEdit.dob);
+        previewEl.innerHTML = dStr ? `ថ្ងៃខែឆ្នាំកំណើត៖ <strong>${dStr}</strong>` : '<span style="color: #ef4444;">(មិនទាន់មានថ្ងៃខែឆ្នាំកំណើត - សូមជ្រើសរើស)</span>';
+      }
+
+      phoneInput.value = studentToEdit.phone || '';
+      guardianInput.value = studentToEdit.guardian || '';
+      addressInput.value = studentToEdit.address || '';
+      avatarInput.value = studentToEdit.avatar || '';
+
+      // Populate Cambodia Administrative Geography Dropdowns (ខេត្ត ស្រុក ឃុំ ភូមិ)
+      this.populateStudentAddressDropdowns(studentToEdit);
+
+      // Populate GEIP School Tabs (Tabs 1-6)
+      this.populateGeipModalFields(studentToEdit);
+
+      const fromClassInput = document.getElementById('studentFromClassInput');
+      if (fromClassInput) fromClassInput.value = studentToEdit.fromClass || studentToEdit.oldClass || '';
+      const primarySchoolInput = document.getElementById('studentPrimarySchoolInput');
+      if (primarySchoolInput) primarySchoolInput.value = studentToEdit.primarySchool || '';
+      const repeatGradeInput = document.getElementById('studentRepeatGradeInput');
+      if (repeatGradeInput) repeatGradeInput.value = studentToEdit.repeatGrade || '';
+      const transferFromInput = document.getElementById('studentTransferFromInput');
+      if (transferFromInput) transferFromInput.value = studentToEdit.transferFrom || '';
+      const diplomaSessionInput = document.getElementById('studentDiplomaSessionInput');
+      if (diplomaSessionInput) diplomaSessionInput.value = studentToEdit.diplomaSession || '';
+      const diplomaCenterInput = document.getElementById('studentDiplomaCenterInput');
+      if (diplomaCenterInput) diplomaCenterInput.value = studentToEdit.diplomaCenter || '';
+      const diplomaRoomInput = document.getElementById('studentDiplomaRoomInput');
+      if (diplomaRoomInput) diplomaRoomInput.value = studentToEdit.diplomaRoom || '';
+      const diplomaDeskInput = document.getElementById('studentDiplomaDeskInput');
+      if (diplomaDeskInput) diplomaDeskInput.value = studentToEdit.diplomaDesk || '';
+      const noteInput = document.getElementById('studentNoteInput');
+      if (noteInput) noteInput.value = studentToEdit.note || '';
+    } else {
+      titleEl.innerHTML = `<i class="ri-user-add-line"></i> បន្ថែមសិស្សថ្មី`;
+      editIdInput.value = '';
+      idInput.readOnly = false;
+      const nextNum = this.students.length + 1;
+      idInput.value = `STU-${String(nextNum).padStart(3, '0')}`;
+      const activeGradeKey = this.activeClass || 'grade_7';
+      const defaultGradeLabel = this.resolveGradeLabelFromKey(activeGradeKey);
+      if (classInput) classInput.value = defaultGradeLabel;
+      this.populateStudentSectionSelect(activeGradeKey);
+      const oldClassInput = document.getElementById('studentOldClassInput');
+      if (oldClassInput) {
+        oldClassInput.value = '';
+      }
+
+      let defaultClassType = 'ទូទៅ';
+      if (activeGradeKey.endsWith('_soc')) defaultClassType = 'វិទ្យាសាស្ត្រសង្គម';
+      else if (activeGradeKey.endsWith('_sci')) defaultClassType = 'វិទ្យាសាស្ត្រ';
+      if (classTypeInput) classTypeInput.value = defaultClassType;
+
+      khmerNameInput.value = '';
+      latinNameInput.value = '';
+      genderSelect.value = 'ស្រី';
+      dobInput.value = '2008-01-01';
+      dobInput.removeAttribute('data-original-dob');
+      const previewEl = document.getElementById('studentDOBPreview');
+      if (previewEl) {
+        previewEl.innerHTML = `ថ្ងៃខែឆ្នាំកំណើត៖ <strong>01/01/2008</strong>`;
+      }
+      phoneInput.value = '';
+      guardianInput.value = '';
+      addressInput.value = '';
+      avatarInput.value = '';
+
+      // Reset Cambodia Administrative Geography Dropdowns (ខេត្ត ស្រុក ឃុំ ភូមិ)
+      this.populateStudentAddressDropdowns(null);
+
+      // Reset GEIP School Tabs (Tabs 1-6)
+      this.populateGeipModalFields(null);
+
+      const fromClassInput = document.getElementById('studentFromClassInput');
+      if (fromClassInput) fromClassInput.value = '';
+      const primarySchoolInput = document.getElementById('studentPrimarySchoolInput');
+      if (primarySchoolInput) primarySchoolInput.value = '';
+      const repeatGradeInput = document.getElementById('studentRepeatGradeInput');
+      if (repeatGradeInput) repeatGradeInput.value = '';
+      const transferFromInput = document.getElementById('studentTransferFromInput');
+      if (transferFromInput) transferFromInput.value = '';
+      const diplomaSessionInput = document.getElementById('studentDiplomaSessionInput');
+      if (diplomaSessionInput) diplomaSessionInput.value = '';
+      const diplomaCenterInput = document.getElementById('studentDiplomaCenterInput');
+      if (diplomaCenterInput) diplomaCenterInput.value = '';
+      const diplomaRoomInput = document.getElementById('studentDiplomaRoomInput');
+      if (diplomaRoomInput) diplomaRoomInput.value = '';
+      const diplomaDeskInput = document.getElementById('studentDiplomaDeskInput');
+      if (diplomaDeskInput) diplomaDeskInput.value = '';
+      const noteInput = document.getElementById('studentNoteInput');
+      if (noteInput) noteInput.value = '';
+    }
+
+    this.studentModal.classList.add('open');
+  }
+
+  closeStudentModal() {
+    this.studentModal.classList.remove('open');
+  }
+
+  saveStudentFromForm() {
+    const editId = document.getElementById('studentEditId').value;
+    const id = document.getElementById('studentIdInput').value.trim();
+    const gradeLevelLabel = document.getElementById('studentClassInput').value.trim();
+    const sectionSelectEl = document.getElementById('studentSectionSelect');
+    const selectedSectionClass = sectionSelectEl ? sectionSelectEl.value.trim() : '';
+    const className = selectedSectionClass || gradeLevelLabel;
+    const oldClassInputEl = document.getElementById('studentOldClassInput');
+    const manualOldClass = oldClassInputEl ? oldClassInputEl.value.trim() : '';
+    const classTypeInput = document.getElementById('studentClassTypeInput');
+    const classType = classTypeInput ? classTypeInput.value : 'ទូទៅ';
+    const khmerName = document.getElementById('studentKhmerName').value.trim();
+    const latinName = document.getElementById('studentLatinName').value.trim();
+    const gender = document.getElementById('studentGender').value;
+    const rawDob = document.getElementById('studentDOB').value.trim();
+    const originalDob = document.getElementById('studentDOB').getAttribute('data-original-dob') || '';
+    const phone = document.getElementById('studentPhone').value.trim();
+    const guardian = document.getElementById('studentGuardian').value.trim();
+    const address = document.getElementById('studentAddress').value.trim();
+    const avatar = document.getElementById('studentAvatarUrl').value.trim();
+
+    // Cambodia Geography Selection Codes
+    const provSelect = document.getElementById('studentAddressProvince');
+    const distSelect = document.getElementById('studentAddressDistrict');
+    const commSelect = document.getElementById('studentAddressCommune');
+    const villSelect = document.getElementById('studentAddressVillage');
+    const provinceCode = provSelect ? provSelect.value : '';
+    const districtCode = distSelect ? distSelect.value : '';
+    const communeCode = commSelect ? commSelect.value : '';
+    const villageCode = villSelect ? villSelect.value : '';
+
+    // Grade-level extra report fields
+    const fromClass = document.getElementById('studentFromClassInput')?.value.trim() || '';
+    const primarySchool = document.getElementById('studentPrimarySchoolInput')?.value.trim() || '';
+    const repeatGrade = document.getElementById('studentRepeatGradeInput')?.value.trim() || '';
+    const transferFrom = document.getElementById('studentTransferFromInput')?.value.trim() || '';
+    const diplomaSession = document.getElementById('studentDiplomaSessionInput')?.value.trim() || '';
+    const diplomaCenter = document.getElementById('studentDiplomaCenterInput')?.value.trim() || '';
+    const diplomaRoom = document.getElementById('studentDiplomaRoomInput')?.value.trim() || '';
+    const diplomaDesk = document.getElementById('studentDiplomaDeskInput')?.value.trim() || '';
+    const note = document.getElementById('studentNoteInput')?.value.trim() || '';
+
+    // GEIP Project School Fields (Tabs 1-6)
+    const geipFields = this.extractGeipModalFields();
+
+    if (!id || !khmerName) {
+      this.showToast('សូមបញ្ចូលអត្តលេខ និងឈ្មោះសិស្សជាកំហិត!', 'error');
+      return;
+    }
+
+    // Auto-derive classType from the selected grade level or class name
+    let finalClassType = classType;
+    if (gradeLevelLabel.includes('វិទ្យាសាស្ត្រសង្គម') || className.includes('វិទ្យាសាស្ត្រសង្គម') || className.includes('soc')) {
+      finalClassType = 'វិទ្យាសាស្ត្រសង្គម';
+    } else if (gradeLevelLabel.includes('វិទ្យាសាស្ត្រ') || className.includes('វិទ្យាសាស្ត្រ') || className.includes('sci')) {
+      finalClassType = 'វិទ្យាសាស្ត្រ';
+    } else if (/^ថ្នាក់ទី(៧|៨|៩|១០)/.test(gradeLevelLabel) || /^(7|8|9|10)/.test(className)) {
+      finalClassType = 'ទូទៅ';
+    }
+
+    if (editId) {
+      // Edit existing student
+      const index = this.students.findIndex(s => s.id === editId);
+      if (index !== -1) {
+        const prevStu = this.students[index];
+        let resolvedOldClass = manualOldClass;
+        if (!resolvedOldClass && prevStu.class && prevStu.class !== className && !prevStu.class.startsWith('ថ្នាក់ទី')) {
+          resolvedOldClass = prevStu.class;
+        }
+
+        // Safeguard DOB: format if picked, or preserve existing DOB so it is NEVER accidentally deleted
+        let finalDob = '';
+        if (rawDob) {
+          finalDob = this.formatReportDob(rawDob);
+        } else {
+          finalDob = originalDob || prevStu.dob || '';
+        }
+
+        this.students[index] = {
+          ...prevStu,
+          ...geipFields,
+          class: className,
+          oldClass: resolvedOldClass,
+          classType: finalClassType,
+          khmerName,
+          latinName,
+          gender,
+          dob: finalDob,
+          phone,
+          guardian,
+          address,
+          provinceCode: provinceCode || prevStu.provinceCode || '',
+          districtCode: districtCode || prevStu.districtCode || '',
+          communeCode: communeCode || prevStu.communeCode || '',
+          villageCode: villageCode || prevStu.villageCode || '',
+          avatar,
+          fromClass: fromClass || prevStu.fromClass || resolvedOldClass,
+          primarySchool: primarySchool || prevStu.primarySchool || '',
+          repeatGrade: repeatGrade || prevStu.repeatGrade || '',
+          transferFrom: transferFrom || prevStu.transferFrom || '',
+          diplomaSession: diplomaSession || prevStu.diplomaSession || '',
+          diplomaCenter: diplomaCenter || prevStu.diplomaCenter || '',
+          diplomaRoom: diplomaRoom || prevStu.diplomaRoom || '',
+          diplomaDesk: diplomaDesk || prevStu.diplomaDesk || '',
+          note: note || prevStu.note || ''
+        };
+        const prevGradeKey = this.getStudentGradeKey(prevStu);
+        const newGradeKey = this.getStudentGradeKey({ ...prevStu, class: className, classType: finalClassType });
+        const classChanged = (prevStu.class !== className) || (prevStu.classType !== finalClassType) || (prevGradeKey !== newGradeKey);
+
+        if (classChanged) {
+          this.students[index].isClassTransferred = true;
+          this.students[index].oldClass = prevStu.class || resolvedOldClass;
+          this.students[index].oldGradeLevel = prevGradeKey;
+          this.students[index].status = 'សិស្សប្ដូរថ្នាក់';
+        }
+
+        // Sync updated student info into examArrangements if present
+        if (Array.isArray(this.examArrangements)) {
+          if (classChanged) {
+            // Student changed class or grade: remove old arrangement and re-arrange both affected grades!
+            this.examArrangements = this.examArrangements.filter(item => item.studentId !== editId);
+            if (prevGradeKey) {
+              this.reassignExamArrangementsForGrade(prevGradeKey);
+            }
+            if (newGradeKey) {
+              this.reassignExamArrangementsForGrade(newGradeKey);
+            }
+          } else {
+            // Same class, update profile fields
+            this.examArrangements = this.examArrangements.map(item => {
+              if (item.studentId === editId) {
+                return {
+                  ...item,
+                  khmerName: this.cleanStudentName(khmerName),
+                  latinName: latinName || '',
+                  gender: gender || '',
+                  dob: finalDob || '',
+                  status: (khmerName && gender && finalDob) ? 'ធម្មតា' : item.status
+                };
+              }
+              return item;
+            });
+          }
+        }
+        this.showToast(`បានកែប្រែព័ត៌មានសិស្ស ${khmerName} រួចរាល់!`, 'success');
+      }
+    } else {
+      // Check duplicate ID
+      if (this.students.some(s => s.id === id)) {
+        this.showToast(`អត្តលេខ ${id} មានក្នុងប្រព័ន្ធរួចហើយ!`, 'error');
+        return;
+      }
+
+      const finalDob = rawDob ? this.formatReportDob(rawDob) : '01/01/2008';
+      const newStudent = {
+        ...geipFields,
+        id,
+        class: className,
+        oldClass: manualOldClass || '',
+        classType: finalClassType,
+        khmerName,
+        latinName,
+        gender,
+        dob: finalDob,
+        phone,
+        guardian,
+        address,
+        provinceCode,
+        districtCode,
+        communeCode,
+        villageCode,
+        avatar,
+        fromClass: fromClass || manualOldClass || '',
+        primarySchool,
+        repeatGrade,
+        transferFrom,
+        diplomaSession,
+        diplomaCenter,
+        diplomaRoom,
+        diplomaDesk,
+        note
+      };
+      this.students.push(newStudent);
+
+      // If new student belongs to an already-arranged grade, automatically reassign clean rooms/desks!
+      const newGradeKey = this.getStudentGradeKey(newStudent);
+      if (newGradeKey && Array.isArray(this.examArrangements) && this.examArrangements.some(item => this.studentMatchesGrade(item, newGradeKey))) {
+        this.reassignExamArrangementsForGrade(newGradeKey);
+      }
+
+      this.showToast(`បានបន្ថែមសិស្ស ${khmerName} ជោគជ័យ!`, 'success');
+    }
+
+    this.saveState();
+    this.closeStudentModal();
+    this.populateClassSectionToolbarFilter();
+    this.renderNavigation();
+    this.renderCurrentView();
+  }
+
+  editStudent(studentId) {
+    const stu = this.students.find(s => s.id === studentId);
+    if (stu) {
+      this.openStudentModal(stu);
+    }
+  }
+
+  deleteStudent(studentId) {
+    const stu = this.students.find(s => s.id === studentId);
+    if (!stu) return;
+
+    if (confirm(`តើអ្នកពិតជាចង់លុបសិស្សឈ្មោះ "${stu.khmerName || stu.id}" (អត្តលេខ: ${stu.id}) មែនទេ? ពិន្ទុ និងការរៀបចំប្រឡងទាំងអស់របស់សិស្សនេះនឹងត្រូវលុបចេញពីប្រព័ន្ធ។`)) {
+      const stuGradeKey = this.getStudentGradeKey(stu);
+      this.students = this.students.filter(s => s.id !== studentId);
+      if (this.scores[studentId]) {
+        delete this.scores[studentId];
+      }
+      if (Array.isArray(this.examArrangements)) {
+        this.examArrangements = this.examArrangements.filter(item => item.studentId !== studentId && item.id !== studentId);
+        if (String(studentId).startsWith('END-')) {
+          if (this.examLateStudentCounts && this.examLateStudentCounts[stuGradeKey] > 0) {
+            this.examLateStudentCounts[stuGradeKey]--;
+          }
+          if (this.examGradeSettings && this.examGradeSettings[stuGradeKey] && this.examGradeSettings[stuGradeKey].lateCount > 0) {
+            this.examGradeSettings[stuGradeKey].lateCount--;
+          }
+          if (this.examLateStudentsInput && parseInt(this.examLateStudentsInput.value, 10) > 0) {
+            this.examLateStudentsInput.value = Math.max(0, parseInt(this.examLateStudentsInput.value, 10) - 1);
+          }
+        }
+        if (stuGradeKey) {
+          this.reassignExamArrangementsForGrade(stuGradeKey);
+        }
+      }
+      this.saveState();
+      this.renderNavigation();
+      this.renderCurrentView();
+      this.showToast(`បានលុបសិស្ស ${stu.khmerName || stu.id} រួចរាល់!`, 'info');
+    }
+  }
+
+  // ==========================================================================
+  // Individual Student Transcript / Report Card (ព្រឹត្តិបត្រពិន្ទុបុគ្គល)
+  // ==========================================================================
+  viewStudentTranscript(studentId) {
+    const stu = this.students.find(s => s.id === studentId);
+    if (!stu) return;
+
+    const period = this.currentPeriod === 'student_info' || this.currentPeriod === 'overview_stats'
+      ? 'yearly'
+      : this.currentPeriod;
+    const periodMeta = PERIOD_DEFINITIONS[period];
+    const isSemester = (period === 'sem1_exam' || period === 'sem2_exam' || period === 'sem1_overall' || period === 'sem2_overall' || period === 'yearly');
+    const stuGradeKey = this.getStandardGradeKey(stu.class || this.activeClass);
+    const activeSubjects = this.getActiveSubjectsForGrade(stuGradeKey, isSemester);
+    const results = this.calculatePeriodResults(period);
+    const stuResult = results.find(r => r.student.id === studentId) || {
+      total: 0, average: 0, percentage: 0, rank: '-', mention: '-', mentionKhmer: '-', isPassed: false
+    };
+
+    const stuScores = (this.scores[stu.id] && this.scores[stu.id][period]) || {};
+
+    let subjectRowsHtml = '';
+
+    activeSubjects.forEach((sub, idx) => {
+      const score = stuScores[sub.code] !== undefined ? stuScores[sub.code] : 0;
+      const contrib = this.computeSubjectScoreContribution(score, sub, stuGradeKey, isSemester);
+      const conf = this.getSubjectCurriculumConfig(stuGradeKey, sub.code);
+      const maxScore = conf ? (isSemester ? (parseFloat(conf.maxScoreSemester) || sub.maxScore) : (parseFloat(conf.maxScoreMonthly) || sub.maxScore)) : sub.maxScore;
+      let coefDisplay = contrib.isBonus ? 0 : contrib.coef;
+      let weightedDisplay = contrib.isBonus ? `${contrib.weighted} (បន្ថែម)` : contrib.weighted;
+      if (sub.scoreType === 'none') {
+        coefDisplay = '0';
+        weightedDisplay = `${score} (មិនយកពិន្ទុ)`;
+      }
+
+      subjectRowsHtml += `
+        <tr>
+          <td style="text-align: center;">${idx + 1}</td>
+          <td><strong>${sub.name}</strong></td>
+          <td style="text-align: center;">${maxScore}</td>
+          <td style="text-align: center;">${coefDisplay}</td>
+          <td style="text-align: center; font-weight: 700;">${score}</td>
+          <td style="text-align: center; font-weight: 700; color: var(--primary);">${weightedDisplay}</td>
+          <td style="text-align: center;">${score >= (maxScore * 0.5) ? 'ល្អ' : 'ខ្សោយ'}</td>
+        </tr>
+      `;
+    });
+
+    const transcriptHtml = `
+      <div class="transcript-card">
+        <div class="cambodia-header">
+          <div class="kingdom-title">ព្រះរាជាណាចក្រកម្ពុជា</div>
+          <div class="motto">ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+          <div class="emblem-curve"><img src="${this.getKhmerHeaderDivider()}" style="height:16px; width:auto; max-width:200px; object-fit:contain;" alt="divider"></div>
+        </div>
+
+        <div class="ministry-block">
+          <div><strong>ក្រសួងអប់រំ យុវជន និងកីឡា</strong></div>
+          <div>សាលារៀនជំនាន់ថ្មី / វិទ្យាល័យព្រះស៊ីសុវត្ថិ</div>
+          <div>ថ្នាក់ទី: <strong>${stu.class}</strong> | ឆ្នាំសិក្សា: <strong>${this.activeYear}</strong></div>
+        </div>
+
+        <h2 class="transcript-title">ព្រឹត្តិបត្រពិន្ទុ ${periodMeta.title}</h2>
+
+        <div class="student-meta-grid">
+          <div><strong>អត្តលេខ:</strong> ${stu.id}</div>
+          <div><strong>គោត្តនាម-នាម:</strong> ${stu.khmerName}</div>
+          <div><strong>ឈ្មោះជាឡាតាំង:</strong> ${stu.latinName || '-'}</div>
+          <div><strong>ភេទ:</strong> ${stu.gender}</div>
+          <div><strong>ថ្ងៃខែឆ្នាំកំណើត:</strong> ${stu.dob || '-'}</div>
+          <div><strong>អាណាព្យាបាល:</strong> ${stu.guardian || '-'}</div>
+        </div>
+
+        <table class="modern-table" style="width: 100%; margin-bottom: 1.5rem;">
+          <thead>
+            <tr>
+              <th style="width: 45px; text-align: center;">ល.រ</th>
+              <th>មុខវិជ្ជា</th>
+              <th style="width: 90px; text-align: center;">ពិន្ទុពេញ</th>
+              <th style="width: 70px; text-align: center;">មេគុណ</th>
+              <th style="width: 90px; text-align: center;">ពិន្ទុជាក់ស្តែង</th>
+              <th style="width: 100px; text-align: center;">ពិន្ទុគុណមេគុណ</th>
+              <th style="width: 90px; text-align: center;">ការវាយតម្លៃ</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${subjectRowsHtml}
+          </tbody>
+          <tfoot>
+            <tr style="background: var(--bg-surface-elevated); font-weight: 700;">
+              <td colspan="5" style="text-align: right; padding-right: 1rem;">ពិន្ទុសរុប:</td>
+              <td style="text-align: center; color: var(--primary); font-size: 1.1rem;">${stuResult.total.toFixed(1)}</td>
+              <td></td>
+            </tr>
+            <tr style="background: var(--bg-surface-elevated); font-weight: 700;">
+              <td colspan="5" style="text-align: right; padding-right: 1rem;">មធ្យមភាគ:</td>
+              <td style="text-align: center; font-size: 1.1rem;">${stuResult.average.toFixed(2)}</td>
+              <td></td>
+            </tr>
+            <tr style="background: var(--bg-surface-elevated); font-weight: 700;">
+              <td colspan="5" style="text-align: right; padding-right: 1rem;">ចំណាត់ថ្នាក់ក្នុងថ្នាក់:</td>
+              <td style="text-align: center; color: #d97706; font-size: 1.2rem;">លេខ ${stuResult.rank}</td>
+              <td style="text-align: center;">និទ្ទេស: <strong>${stuResult.mention} (${stuResult.mentionKhmer})</strong></td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <div style="margin: 1.5rem 0; padding: 1rem; border-radius: 8px; background: #f8fafc; border: 1px solid #e2e8f0;">
+          <strong>លទ្ធផលរួម:</strong> 
+          <span style="font-weight: 700; color: ${stuResult.isPassed ? '#10b981' : '#ef4444'}; font-size: 1.1rem; margin-left: 0.5rem;">
+            ${stuResult.isPassed ? 'ជាប់មធ្យមភាគ (Passed)' : 'ក្រោមមធ្យមភាគ (Failed)'}
+          </span>
+        </div>
+
+        <div class="signatures-section">
+          <div class="signature-box">
+            <div class="signature-role">ហត្ថលេខាអាណាព្យាបាល</div>
+            <div>........................................</div>
+          </div>
+          <div class="signature-box">
+            <div class="signature-role">គ្រូបន្ទុកថ្នាក់</div>
+            <div>........................................</div>
+          </div>
+          <div class="signature-box">
+            <div class="signature-role">នាយកសាលា</div>
+            <div>........................................</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    this.singleTranscriptContent.innerHTML = transcriptHtml;
+    this.transcriptModal.classList.add('open');
+  }
+
+  // ==========================================================================
+  // Subject Configuration Modal (Presets, Add, Edit, Delete)
+  // ==========================================================================
+  openSubjectModal() {
+    // Sync grade preset select with active class if it matches
+    const presetSelect = document.getElementById('gradePresetSelect');
+    if (presetSelect && GRADE_PRESETS[this.activeClass]) {
+      presetSelect.value = this.activeClass;
+    }
+    this.renderSubjectModalTable();
+    this.subjectModal.classList.add('open');
+  }
+
+  closeSubjectModal() {
+    this.subjectModal.classList.remove('open');
+  }
+
+  captureSubjectFormValues() {
+    const updated = [];
+    this.subjects.forEach((sub, idx) => {
+      const codeInput = document.getElementById(`sub_code_${idx}`);
+      const nameInput = document.getElementById(`sub_name_${idx}`);
+      const maxInput = document.getElementById(`sub_max_${idx}`);
+      const coefInput = document.getElementById(`sub_coef_${idx}`);
+      const enInput = document.getElementById(`sub_en_${idx}`);
+
+      if (codeInput && nameInput) {
+        updated.push({
+          code: codeInput.value.trim().toLowerCase() || sub.code,
+          name: nameInput.value.trim() || sub.name,
+          maxScore: parseFloat(maxInput?.value) || sub.maxScore,
+          coef: parseFloat(coefInput?.value) || sub.coef,
+          enabled: enInput ? enInput.checked : sub.enabled
+        });
+      } else {
+        updated.push({ ...sub });
+      }
+    });
+    this.subjects = updated;
+  }
+
+  renderSubjectModalTable() {
+    const tbody = document.getElementById('subjectConfigBody');
+    tbody.innerHTML = '';
+
+    this.subjects.forEach((sub, idx) => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>
+          <input type="text" class="subject-table-input subject-code-input" id="sub_code_${idx}" value="${sub.code}" placeholder="កូដ">
+        </td>
+        <td>
+          <input type="text" class="subject-table-input" id="sub_name_${idx}" value="${sub.name}" placeholder="ឈ្មោះមុខវិជ្ជា">
+        </td>
+        <td style="text-align: center;">
+          <input type="number" class="subject-table-input" id="sub_max_${idx}" value="${sub.maxScore}" min="1" max="500" style="text-align: center;">
+        </td>
+        <td style="text-align: center;">
+          <input type="number" step="0.5" class="subject-table-input" id="sub_coef_${idx}" value="${sub.coef}" min="0.5" max="10" style="text-align: center;">
+        </td>
+        <td style="text-align: center;">
+          <input type="checkbox" id="sub_en_${idx}" ${sub.enabled ? 'checked' : ''} style="transform: scale(1.3); cursor: pointer;" title="បើក/បិទមុខវិជ្ជានេះ">
+        </td>
+        <td style="text-align: center;">
+          <button type="button" class="btn-delete-subject" onclick="app.removeSubjectRow(${idx})" title="លុបមុខវិជ្ជានេះ">
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  addSubjectRow() {
+    this.captureSubjectFormValues();
+    const newIdx = this.subjects.length + 1;
+    this.subjects.push({
+      code: `sub_${newIdx}`,
+      name: `មុខវិជ្ជាទី ${newIdx}`,
+      maxScore: 50,
+      coef: 1,
+      enabled: true
+    });
+    this.renderSubjectModalTable();
+    this.showToast('បានបន្ថែមជួរមុខវិជ្ជាថ្មី! សូមបញ្ចូលឈ្មោះ និងពិន្ទុ។', 'info');
+  }
+
+  removeSubjectRow(index) {
+    this.captureSubjectFormValues();
+    const target = this.subjects[index];
+    if (!target) return;
+
+    if (confirm(`តើអ្នកពិតជាចង់លុបមុខវិជ្ជា "${target.name}" មែនទេ?`)) {
+      this.subjects.splice(index, 1);
+      this.renderSubjectModalTable();
+      this.showToast(`បានលុបមុខវិជ្ជា "${target.name}" រួចរាល់!`, 'info');
+    }
+  }
+
+  applyGradePreset(presetKey) {
+    const preset = GRADE_PRESETS[presetKey];
+    if (!preset) return;
+
+    if (confirm(`តើអ្នកចង់ផ្ទុកមុខវិជ្ជាគំរូផ្លូវការរបស់ "${preset.label}" មែនទេ? មុខវិជ្ជាបច្ចុប្បន្ននឹងត្រូវជំនួសដោយមុខវិជ្ជារបស់ ${preset.label}។`)) {
+      this.subjects = JSON.parse(JSON.stringify(preset.subjects));
+      this.activeClass = presetKey;
+      if (this.classSelect) this.classSelect.value = presetKey;
+      this.renderSubjectModalTable();
+      this.showToast(`បានផ្ទុកមុខវិជ្ជាគំរូសម្រាប់ ${preset.label} ជោគជ័យ!`, 'success');
+    }
+  }
+
+  saveSubjectConfig() {
+    this.captureSubjectFormValues();
+
+    // Validate that at least one subject exists and has a name
+    if (this.subjects.length === 0) {
+      this.showToast('សូមរក្សាទុកយ៉ាងហោចណាស់មុខវិជ្ជាចំនួន ១!', 'error');
+      return;
+    }
+
+    const emptyName = this.subjects.some(s => !s.name || !s.code);
+    if (emptyName) {
+      this.showToast('សូមបញ្ចូលកូដ និងឈ្មោះមុខវិជ្ជាឱ្យបានគ្រប់គ្រាន់!', 'error');
+      return;
+    }
+
+    this.saveState();
+    this.closeSubjectModal();
+    this.renderCurrentView();
+    this.showToast('បានរក្សាទុកការកំណត់មុខវិជ្ជាជោគជ័យ!', 'success');
+  }
+
+  // ==========================================================================
+  // Class Section Management Modal (ផ្នែកថ្នាក់រៀន)
+  // ==========================================================================
+  openClassSectionModal() {
+    this.renderClassSectionTable();
+    this.classSectionModal.classList.add('open');
+  }
+
+  closeClassSectionModal() {
+    this.classSectionModal.classList.remove('open');
+  }
+
+  renderClassSectionTable() {
+    const tbody = document.getElementById('classSectionConfigBody');
+    tbody.innerHTML = '';
+    const gradeKey = this.sectionGradeSelect ? this.sectionGradeSelect.value : 'grade_12_sci';
+
+    const gradeEntry = this.classSections.find(c => c.gradeLevel === gradeKey);
+    const sections = gradeEntry ? gradeEntry.sections : [];
+
+    sections.forEach((section, idx) => {
+      const formattedClassCode = this.formatSectionClassName(gradeKey, section);
+      const legacyClassName = `${gradeEntry.name} ${section}`;
+      const studentCount = this.students.filter(
+        s => s.class === formattedClassCode || s.class === legacyClassName
+      ).length;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td><strong>${formattedClassCode}</strong></td>
+        <td><input type="text" class="section-table-input" id="sec_name_${idx}" value="${section}" placeholder="A, B, C..."></td>
+        <td>${gradeEntry.type === 'general' ? 'ទូទៅ' : gradeEntry.type === 'science' ? 'វិទ្យាសាស្ត្រ' : 'វិទ្យាសាស្ត្រសង្គម'}</td>
+        <td style="text-align: center;">${studentCount}</td>
+        <td style="text-align: center;"><span class="badge-status active">ប្រើប្រាស់</span></td>
+        <td style="text-align: center;">
+          <button type="button" class="btn-delete-section" onclick="app.removeClassSection(${idx})" title="លុបផ្នែកថ្នាក់នេះ">
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  addClassSectionRow() {
+    const gradeKey = this.sectionGradeSelect.value;
+    const gradeEntry = this.classSections.find(c => c.gradeLevel === gradeKey);
+    if (!gradeEntry) return;
+
+    const existingSections = gradeEntry.sections;
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    let nextLetter = 'A';
+    for (let i = 0; i < letters.length; i++) {
+      if (!existingSections.includes(letters[i])) {
+        nextLetter = letters[i];
+        break;
+      }
+    }
+
+    if (existingSections.includes(nextLetter)) {
+      this.showToast('មិនអាចបន្ថែមផ្នែកថ្នាក់បន្ទាប់មុនតែងតែ!', 'error');
+      return;
+    }
+
+    gradeEntry.sections.push(nextLetter);
+    this.renderClassSectionTable();
+    this.showToast(`បានបន្ថែមផ្នែកថ្នាក់ ${gradeEntry.name} ${nextLetter} រួចរាល់!`, 'success');
+  }
+
+  removeClassSection(index) {
+    const gradeKey = this.sectionGradeSelect.value;
+    const gradeEntry = this.classSections.find(c => c.gradeLevel === gradeKey);
+    if (!gradeEntry || !gradeEntry.sections[index]) return;
+
+    const section = gradeEntry.sections[index];
+    const className = `${gradeEntry.name} ${section}`;
+    const hasStudents = this.students.some(s => s.class === className);
+
+    if (hasStudents) {
+      this.showToast(`មិនអាចលុបផ្នែកថ្នាក់ ${className} ដោយមានសិស្សនៅក្នុងផ្នែកនេះហើយ!`, 'error');
+      return;
+    }
+
+    if (confirm(`តើអ្នកពិតជាចង់លុបផ្នែកថ្នាក់ "${className}" មែនទេ?`)) {
+      gradeEntry.sections.splice(index, 1);
+      this.renderClassSectionTable();
+      this.showToast(`បានលុបផ្នែកថ្នាក់ ${className} រួចរាល់!`, 'info');
+    }
+  }
+
+  saveClassSectionConfig() {
+    const gradeKey = this.sectionGradeSelect.value;
+    const gradeEntry = this.classSections.find(c => c.gradeLevel === gradeKey);
+    if (!gradeEntry) return;
+
+    // Capture section name inputs
+    const updatedSections = [];
+    gradeEntry.sections.forEach((_, idx) => {
+      const nameInput = document.getElementById(`sec_name_${idx}`);
+      const val = nameInput ? nameInput.value.trim().toUpperCase() : '';
+      if (val) updatedSections.push(val);
+    });
+    gradeEntry.sections = updatedSections;
+
+    this.saveState();
+    this.renderClassSectionTable();
+    const studentClassInputEl = document.getElementById('studentClassInput');
+    if (studentClassInputEl) {
+      this.populateStudentSectionSelect(studentClassInputEl.value);
+    }
+    this.populateClassSectionToolbarFilter();
+    this.renderCurrentView();
+    this.showToast('បានរក្សាទុកការកំណត់ផ្នែកថ្នាក់ជោគជ័យ!', 'success');
+  }
+
+  // =========================================================================
+  // Auto Class Placement & Reassignment (គ្រប់ដំណាក់កាល៖ តេស្តដើមឆ្នាំ, ខែ, ឆមាស, ប្រចាំឆមាស, ប្រចាំឆ្នាំ)
+  // =========================================================================
+  openAutoClassAssignModal() {
+    if (!this.autoClassAssignModal) return;
+    if (this.assignGradeSelect && this.activeClass) {
+      this.assignGradeSelect.value = this.activeClass;
+    }
+    const gradeKey = this.assignGradeSelect ? this.assignGradeSelect.value : (this.activeClass || 'grade_7');
+    this.syncAssignClassListFromGrade(gradeKey);
+    this.computeAutoClassAssignment('init');
+    this.autoClassAssignModal.classList.add('open');
+  }
+
+  closeAutoClassAssignModal() {
+    if (this.autoClassAssignModal) {
+      this.autoClassAssignModal.classList.remove('open');
+    }
+  }
+
+  getAssignStageDisplayName(periodKey) {
+    if (!periodKey) return 'តេស្តដើមឆ្នាំ';
+    if (periodKey === 'stage_1' || periodKey === 'test_early') return 'ប្រឡងតេស្តដើមឆ្នាំ';
+    if (periodKey === 'stage_2' || periodKey === 'sem1_overall') return 'ប្រចាំឆមាសទី១';
+    if (typeof PERIOD_DEFINITIONS !== 'undefined' && PERIOD_DEFINITIONS[periodKey] && PERIOD_DEFINITIONS[periodKey].title) {
+      return PERIOD_DEFINITIONS[periodKey].title;
+    }
+    if (this.assignStageSelect && this.assignStageSelect.selectedOptions && this.assignStageSelect.selectedOptions[0]) {
+      return this.assignStageSelect.selectedOptions[0].textContent.trim();
+    }
+    return periodKey;
+  }
+
+  syncAssignClassListFromGrade(gradeKey) {
+    if (!this.assignClassListInput) return;
+    const configured = this.getClassListForGradeKey(gradeKey);
+    const existing = (this.students || [])
+      .filter(s => this.studentMatchesGrade(s, gradeKey) && !this.isIncompleteLateStudent(s))
+      .map(s => String(s.class || '').trim())
+      .filter(c => c && !c.startsWith('ថ្នាក់ទី'));
+    const merged = [...new Set([...configured, ...existing])].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    this.assignClassListInput.value = merged.join(', ');
+  }
+
+  getStudentScoreStatsForClassAssign(stu, gradeKey, periodKey) {
+    const preset = GRADE_PRESETS[gradeKey] || GRADE_PRESETS.grade_7;
+    const subjects = (preset && Array.isArray(preset.subjects)) ? preset.subjects.filter(s => s.enabled !== false) : [];
+    const stuScores = (this.scores && this.scores[stu.id]) ? this.scores[stu.id] : {};
+
+    const codeAliases = {
+      kh: ['kh', 'K'],
+      math: ['math', 'M'],
+      phy: ['phy', 'P'],
+      chem: ['chem', 'C'],
+      bio: ['bio', 'B'],
+      his: ['his', 'H'],
+      ict: ['ict', 'IT'],
+      moral: ['moral', 'MO'],
+      geo_env: ['geo_env', 'ES'],
+      geo: ['geo', 'G'],
+      home_ec: ['home_ec', 'HE'],
+      eng: ['eng', 'E'],
+      sport: ['sport', 'SP']
+    };
+
+    const readPeriodSubScore = (periodObj, subCode) => {
+      if (!periodObj) return null;
+      const aliases = codeAliases[subCode] || [subCode];
+      for (const k of aliases) {
+        if (periodObj[k] !== undefined && periodObj[k] !== null && periodObj[k] !== '') {
+          const v = parseFloat(periodObj[k]);
+          if (!isNaN(v)) return v;
+        }
+      }
+      if (subCode === 'kh' && (periodObj['essay'] !== undefined || periodObj['dictation'] !== undefined)) {
+        const eVal = parseFloat(periodObj['essay']) || 0;
+        const dVal = parseFloat(periodObj['dictation']) || 0;
+        if (eVal > 0 || dVal > 0) return eVal + dVal;
+      }
+      return null;
+    };
+
+    const computeMonthlyAvgForRange = (monthsList, subCode) => {
+      let mSum = 0, mCount = 0;
+      monthsList.forEach(m => {
+        const mv = readPeriodSubScore(stuScores[m], subCode);
+        if (mv !== null) {
+          mSum += mv;
+          mCount++;
+        }
+      });
+      return mCount > 0 ? (mSum / mCount) : null;
+    };
+
+    const computeSemesterOverall = (semNum, subCode) => {
+      const overallKey = semNum === 1 ? 'sem1_overall' : 'sem2_overall';
+      const mAvgKey = semNum === 1 ? 'sem1_monthly_avg' : 'sem2_monthly_avg';
+      const examKey = semNum === 1 ? 'sem1_exam' : 'sem2_exam';
+      const legacyExamKey = semNum === 1 ? 'sem1' : 'sem2';
+      const monthsList = semNum === 1
+        ? ['m01', 'm02', 'm03', 'm04', 'm05', 'm06']
+        : ['m07', 'm08', 'm09', 'm10', 'm11', 'm12'];
+
+      let val = readPeriodSubScore(stuScores[overallKey], subCode);
+      if (val !== null && val > 0) return val;
+
+      let mAvg = readPeriodSubScore(stuScores[mAvgKey], subCode);
+      if (mAvg === null) {
+        mAvg = computeMonthlyAvgForRange(monthsList, subCode);
+      }
+      let exScore = readPeriodSubScore(stuScores[examKey], subCode);
+      if (exScore === null) exScore = readPeriodSubScore(stuScores[legacyExamKey], subCode);
+
+      if (mAvg !== null && exScore !== null) return (mAvg + exScore) / 2;
+      if (exScore !== null) return exScore;
+      if (mAvg !== null) return mAvg;
+      return val;
+    };
+
+    const normalizedPeriod = periodKey === 'stage_1'
+      ? 'test_early'
+      : (periodKey === 'stage_2' ? 'sem1_overall' : (periodKey || 'test_early'));
+
+    let totalWeighted = 0;
+    let totalCoef = 0;
+
+    const isSem = (normalizedPeriod === 'sem1_exam' || normalizedPeriod === 'sem2_exam' || normalizedPeriod === 'sem1_overall' || normalizedPeriod === 'sem2_overall' || normalizedPeriod === 'yearly');
+
+    subjects.forEach(sub => {
+      const conf = this.getSubjectCurriculumConfig(gradeKey, sub.code);
+      const isBonus = conf
+        ? (isSem ? conf.isBonusSemester : conf.isBonusMonthly)
+        : (((gradeKey === 'grade_9' || gradeKey.includes('12')) && (sub.code === 'eng' || sub.code === 'lag')));
+      const coef = isBonus ? 0 : (conf ? (isSem ? (parseFloat(conf.coefSemester) || 0) : (parseFloat(conf.coefMonthly) || 0)) : (Number(sub.coef) || 1));
+      totalCoef += coef;
+      let val = null;
+
+      if (normalizedPeriod === 'test_early') {
+        val = readPeriodSubScore(stuScores['test_early'], sub.code);
+        if (val === null) val = readPeriodSubScore(stuScores['year_start_test'], sub.code);
+        if (val === null) val = readPeriodSubScore(stuScores['year_start'], sub.code);
+      } else if (normalizedPeriod === 'sem1_exam') {
+        val = readPeriodSubScore(stuScores['sem1_exam'], sub.code);
+        if (val === null) val = readPeriodSubScore(stuScores['sem1'], sub.code);
+      } else if (normalizedPeriod === 'sem2_exam') {
+        val = readPeriodSubScore(stuScores['sem2_exam'], sub.code);
+        if (val === null) val = readPeriodSubScore(stuScores['sem2'], sub.code);
+      } else if (normalizedPeriod === 'sem1_monthly_avg') {
+        val = readPeriodSubScore(stuScores['sem1_monthly_avg'], sub.code);
+        if (val === null || val === 0) {
+          val = computeMonthlyAvgForRange(['m01', 'm02', 'm03', 'm04', 'm05', 'm06'], sub.code);
+        }
+      } else if (normalizedPeriod === 'sem2_monthly_avg') {
+        val = readPeriodSubScore(stuScores['sem2_monthly_avg'], sub.code);
+        if (val === null || val === 0) {
+          val = computeMonthlyAvgForRange(['m07', 'm08', 'm09', 'm10', 'm11', 'm12'], sub.code);
+        }
+      } else if (normalizedPeriod === 'sem1_overall') {
+        val = computeSemesterOverall(1, sub.code);
+      } else if (normalizedPeriod === 'sem2_overall') {
+        val = computeSemesterOverall(2, sub.code);
+      } else if (normalizedPeriod === 'yearly') {
+        val = readPeriodSubScore(stuScores['yearly'], sub.code);
+        if (val === null || val === 0) {
+          const s1 = computeSemesterOverall(1, sub.code);
+          const s2 = computeSemesterOverall(2, sub.code);
+          if (s1 !== null && s2 !== null) val = (s1 + s2) / 2;
+          else if (s1 !== null) val = s1;
+          else if (s2 !== null) val = s2;
+        }
+      } else {
+        // Monthly score (m01..m12) or custom period key
+        val = readPeriodSubScore(stuScores[normalizedPeriod], sub.code);
+      }
+
+      if (val !== null && !isNaN(val)) {
+        const contrib = this.computeSubjectScoreContribution(val, sub, gradeKey, isSem);
+        totalWeighted += contrib.weighted;
+      }
+    });
+
+    const average = totalCoef > 0 ? (totalWeighted / totalCoef) : 0;
+    return {
+      total: Math.round(totalWeighted * 100) / 100,
+      average: Math.round(average * 100) / 100
+    };
+  }
+
+  computeAutoClassAssignment(triggerSource = '') {
+    const periodKey = this.assignStageSelect ? this.assignStageSelect.value : 'test_early';
+    const gradeKey = this.assignGradeSelect ? this.assignGradeSelect.value : (this.activeClass || 'grade_7');
+    const method = this.assignMethodSelect ? this.assignMethodSelect.value : 'all_by_avg';
+
+    let rawClassStr = this.assignClassListInput ? this.assignClassListInput.value : '';
+    let targetClasses = rawClassStr
+      .split(/[,;/\s]+/)
+      .map(s => this.formatSectionClassName(gradeKey, s))
+      .filter(Boolean);
+
+    if (targetClasses.length === 0) {
+      targetClasses = this.getClassListForGradeKey(gradeKey);
+    }
+    targetClasses = [...new Set(targetClasses)];
+
+    // Get all valid students in this grade
+    const gradeStudents = (this.students || []).filter(
+      s => this.studentMatchesGrade(s, gradeKey) && !this.isIncompleteLateStudent(s)
+    );
+    const totalStudents = gradeStudents.length;
+
+    // When grade changes, modal opens, or class list is edited, auto-calculate per-class count so all students fit in targetClasses
+    if (
+      (triggerSource === 'init' || triggerSource === 'grade' || triggerSource === 'classList') &&
+      this.assignMaxPerClassInput &&
+      targetClasses.length > 0 &&
+      totalStudents > 0
+    ) {
+      this.assignMaxPerClassInput.value = Math.max(1, Math.ceil(totalStudents / targetClasses.length));
+    }
+
+    const maxPerClass = Math.max(1, parseInt(this.assignMaxPerClassInput ? this.assignMaxPerClassInput.value : 45, 10) || 45);
+
+    // Compute scores & averages for the selected period
+    const evaluated = gradeStudents.map(stu => {
+      const stats = this.getStudentScoreStatsForClassAssign(stu, gradeKey, periodKey);
+      return {
+        studentId: stu.id,
+        khmerName: stu.khmerName || '',
+        gender: stu.gender || '',
+        oldClass: stu.class || '',
+        total: stats.total,
+        average: stats.average,
+        rank: 1,
+        newClass: stu.class || (targetClasses[0] || '7A'),
+        placementMode: 'avg'
+      };
+    });
+
+    // Sort all students from highest average/total to lowest; ties broken alphabetically by Khmer name
+    evaluated.sort((a, b) => {
+      if (b.average !== a.average) return b.average - a.average;
+      if (b.total !== a.total) return b.total - a.total;
+      return (a.khmerName || '').localeCompare(b.khmerName || '', 'km');
+    });
+
+    // Assign overall competition ranks by average
+    let currentRank = 1;
+    for (let i = 0; i < evaluated.length; i++) {
+      if (i > 0 && (evaluated[i].average < evaluated[i - 1].average || evaluated[i].total < evaluated[i - 1].total)) {
+        currentRank = i + 1;
+      }
+      evaluated[i].rank = currentRank;
+    }
+
+    let finalOrderedList = [];
+
+    if ((method === 'avg_2_rest_name' || method === 'avg_1_rest_name') && targetClasses.length > 1) {
+      const topClassCount = method === 'avg_2_rest_name'
+        ? Math.min(2, targetClasses.length - 1)
+        : Math.min(1, targetClasses.length - 1);
+      const topStudentLimit = Math.min(evaluated.length, topClassCount * maxPerClass);
+
+      const topStudents = evaluated.slice(0, topStudentLimit);
+      const remainingStudents = evaluated.slice(topStudentLimit);
+
+      // Assign top students to the first 1 or 2 classes by average
+      topStudents.forEach((item, idx) => {
+        const clsIdx = Math.min(topClassCount - 1, Math.floor(idx / maxPerClass));
+        item.newClass = targetClasses[clsIdx] || item.oldClass;
+        item.placementMode = 'avg';
+      });
+
+      // Sort remaining students alphabetically by Khmer name (ក ➔ អ)
+      remainingStudents.sort((a, b) => {
+        const cmp = (a.khmerName || '').localeCompare(b.khmerName || '', 'km');
+        if (cmp !== 0) return cmp;
+        return String(a.studentId || '').localeCompare(String(b.studentId || ''), undefined, { numeric: true });
+      });
+
+      // Distribute remaining students across the remaining classes (e.g. 7C, 7D, 7E)
+      const restClasses = targetClasses.slice(topClassCount);
+      const restPerClass = (restClasses.length * maxPerClass >= remainingStudents.length)
+        ? maxPerClass
+        : Math.max(1, Math.ceil(remainingStudents.length / Math.max(1, restClasses.length)));
+
+      remainingStudents.forEach((item, idx) => {
+        const restIdx = Math.min(restClasses.length - 1, Math.floor(idx / restPerClass));
+        item.newClass = restClasses[restIdx] || targetClasses[targetClasses.length - 1] || item.oldClass;
+        item.placementMode = 'alpha';
+      });
+
+      finalOrderedList = [...topStudents, ...remainingStudents];
+    } else {
+      // Option 1: All classes sorted by average from highest to lowest
+      const effectivePerClass = (targetClasses.length * maxPerClass >= evaluated.length)
+        ? maxPerClass
+        : Math.max(1, Math.ceil(evaluated.length / Math.max(1, targetClasses.length)));
+
+      evaluated.forEach((item, idx) => {
+        const classIdx = Math.min(targetClasses.length - 1, Math.floor(idx / effectivePerClass));
+        item.newClass = targetClasses[classIdx] || item.oldClass;
+        item.placementMode = 'avg';
+      });
+      finalOrderedList = evaluated;
+    }
+
+    this.pendingClassAssignments = finalOrderedList;
+    this.pendingAssignTargetClasses = targetClasses;
+
+    // Populate preview filter dropdown
+    if (this.assignPreviewClassFilter) {
+      const prevFilter = this.assignPreviewClassFilter.value || 'ALL';
+      this.assignPreviewClassFilter.innerHTML = `<option value="ALL">ទាំងអស់ (${finalOrderedList.length} នាក់)</option>`;
+      targetClasses.forEach(cls => {
+        const countInCls = finalOrderedList.filter(e => e.newClass === cls).length;
+        const opt = document.createElement('option');
+        opt.value = cls;
+        opt.textContent = `${cls} (${countInCls} នាក់)`;
+        this.assignPreviewClassFilter.appendChild(opt);
+      });
+      if (prevFilter !== 'ALL' && targetClasses.includes(prevFilter)) {
+        this.assignPreviewClassFilter.value = prevFilter;
+      } else {
+        this.assignPreviewClassFilter.value = 'ALL';
+      }
+    }
+
+    this.renderAutoClassAssignPreview();
+  }
+
+  renderAutoClassAssignPreview() {
+    if (!this.assignPreviewTableBody) return;
+    const list = this.pendingClassAssignments || [];
+    const targetClasses = this.pendingAssignTargetClasses || [];
+    const filterCls = this.assignPreviewClassFilter ? this.assignPreviewClassFilter.value : 'ALL';
+    const filtered = filterCls === 'ALL' ? list : list.filter(item => item.newClass === filterCls);
+
+    // Update Summary Stats & Filter Dropdown counts dynamically
+    if (this.assignPreviewClassFilter) {
+      Array.from(this.assignPreviewClassFilter.options).forEach(opt => {
+        if (opt.value === 'ALL') {
+          opt.textContent = `ទាំងអស់ (${list.length} នាក់)`;
+        } else {
+          const c = list.filter(e => e.newClass === opt.value).length;
+          opt.textContent = `${opt.value} (${c} នាក់)`;
+        }
+      });
+    }
+
+    if (this.assignSummaryStats) {
+      const activeList = filterCls === 'ALL' ? list : filtered;
+      const total = activeList.length;
+      const changedCount = activeList.filter(item => item.oldClass !== item.newClass).length;
+      const sameCount = total - changedCount;
+      const method = this.assignMethodSelect ? this.assignMethodSelect.value : 'all_by_avg';
+      const topClassCount = method === 'avg_2_rest_name' ? 2 : (method === 'avg_1_rest_name' ? 1 : targetClasses.length);
+
+      const classBreakdown = targetClasses.map((cls, idx) => {
+        const c = list.filter(i => i.newClass === cls).length;
+        const isAlphaClass = (method === 'avg_2_rest_name' || method === 'avg_1_rest_name') && idx >= topClassCount;
+        const modeTag = isAlphaClass ? 'ក➔អ' : 'មធ្យមភាគ';
+        const isSelected = filterCls === cls;
+        const bg = isSelected ? '#1d4ed8' : (isAlphaClass ? '#f3e8ff' : '#dbeafe');
+        const col = isSelected ? '#ffffff' : (isAlphaClass ? '#6b21a8' : '#1e40af');
+        return `<span style="background:${bg}; color:${col}; padding:0.18rem 0.55rem; border-radius:6px; font-size:0.82rem; font-weight:700;">${cls}: ${c}នាក់ <small style="font-weight:500; opacity:0.85;">(${modeTag})</small></span>`;
+      }).join(' ');
+
+      const totalLabel = filterCls === 'ALL'
+        ? `👥 សិស្សសរុប (${targetClasses.length} ថ្នាក់)៖ <strong style="color: var(--primary);">${total} នាក់</strong>`
+        : `👥 សិស្សថ្នាក់ ${filterCls}៖ <strong style="color: var(--primary);">${total} នាក់</strong> <span style="color:#64748b; font-size:0.82rem;">(សរុបរួម ${list.length} នាក់)</span>`;
+
+      this.assignSummaryStats.innerHTML = `
+        <span>${totalLabel}</span>
+        <span>🔄 ប្ដូរថ្នាក់ថ្មី៖ <strong style="color: #d97706;">${changedCount} នាក់</strong></span>
+        <span>✅ រក្សាថ្នាក់ដដែល៖ <strong style="color: #16a34a;">${sameCount} នាក់</strong></span>
+        <div style="display:flex; flex-wrap:wrap; gap:0.35rem; align-items:center;">${classBreakdown}</div>
+      `;
+    }
+
+    this.assignPreviewTableBody.innerHTML = '';
+
+    if (filtered.length === 0) {
+      this.assignPreviewTableBody.innerHTML = `
+        <tr>
+          <td colspan="10" style="text-align: center; padding: 2rem; color: var(--text-muted);">
+            មិនមានទិន្នន័យសិស្សក្នុងកម្រិតថ្នាក់នេះឡើយ
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    filtered.forEach(item => {
+      const tr = document.createElement('tr');
+      const isChanged = item.oldClass && item.oldClass !== item.newClass;
+      const genderBadgeClass = item.gender === 'ស្រី' ? 'gender-female' : 'gender-male';
+      const rankClass = item.rank === 1 ? 'rank-1' : item.rank === 2 ? 'rank-2' : item.rank === 3 ? 'rank-3' : '';
+
+      const optionsHtml = targetClasses.map(cls =>
+        `<option value="${cls}" ${cls === item.newClass ? 'selected' : ''}>${cls}</option>`
+      ).join('');
+
+      const modePill = item.placementMode === 'alpha'
+        ? `<span style="display:inline-block; margin-left:4px; padding:0.1rem 0.4rem; border-radius:4px; background:#f3e8ff; color:#6b21a8; font-size:0.72rem; font-weight:600;">តាមឈ្មោះ ក➔អ</span>`
+        : `<span style="display:inline-block; margin-left:4px; padding:0.1rem 0.4rem; border-radius:4px; background:#e0f2fe; color:#0369a1; font-size:0.72rem; font-weight:600;">តាមមធ្យមភាគ</span>`;
+
+      const statusBadge = isChanged
+        ? `<span style="display:inline-block; padding:0.2rem 0.55rem; border-radius:999px; background:#fef3c7; color:#b45309; font-weight:700; font-size:0.78rem;">ប្ដូរ (${item.oldClass} ➔ ${item.newClass})</span>${modePill}`
+        : `<span style="display:inline-block; padding:0.2rem 0.55rem; border-radius:999px; background:#dcfce7; color:#15803d; font-weight:700; font-size:0.78rem;">ថ្នាក់ដដែល</span>${modePill}`;
+
+      tr.innerHTML = `
+        <td style="text-align: center;"><span class="rank-badge ${rankClass}">${item.rank}</span></td>
+        <td><strong style="color: var(--primary);">${item.studentId}</strong></td>
+        <td><strong>${item.khmerName}</strong></td>
+        <td style="text-align: center;"><span class="gender-badge ${genderBadgeClass}">${item.gender}</span></td>
+        <td style="text-align: center; font-weight: 700; color: var(--primary);">${item.total.toFixed(1)}</td>
+        <td style="text-align: center; font-weight: 700; color: #0f766e;">${item.average.toFixed(2)}</td>
+        <td style="text-align: center;"><span style="display:inline-block; padding:0.18rem 0.5rem; border-radius:6px; background:#f1f5f9; color:#475569; font-weight:700;">${item.oldClass || '-'}</span></td>
+        <td style="text-align: center; font-weight: 700; color: ${isChanged ? '#d97706' : '#94a3b8'};">➔</td>
+        <td style="text-align: center;">
+          <select class="assign-new-class-select" data-stuid="${item.studentId}" style="padding: 0.25rem 0.5rem; border-radius: 6px; border: 1.5px solid #3b82f6; font-weight: 700; color: #1e3a8a; background: #eff6ff; cursor: pointer;">
+            ${optionsHtml}
+          </select>
+        </td>
+        <td style="text-align: center;">${statusBadge}</td>
+      `;
+
+      const sel = tr.querySelector('.assign-new-class-select');
+      if (sel) {
+        sel.addEventListener('change', (e) => {
+          item.newClass = e.target.value;
+          this.renderAutoClassAssignPreview();
+        });
+      }
+
+      this.assignPreviewTableBody.appendChild(tr);
+    });
+  }
+
+  confirmAutoClassAssignment() {
+    const list = this.pendingClassAssignments || [];
+    if (list.length === 0) {
+      this.showToast('មិនមានសិស្សសម្រាប់បែងចែកថ្នាក់ឡើយ!', 'error');
+      return;
+    }
+
+    const periodKey = this.assignStageSelect ? this.assignStageSelect.value : 'test_early';
+    const stageTitle = this.getAssignStageDisplayName(periodKey);
+    const gradeKey = this.assignGradeSelect ? this.assignGradeSelect.value : (this.activeClass || 'grade_7');
+    const gradeLabel = this.resolveGradeLabelFromKey(gradeKey);
+
+    if (!confirm(`តើអ្នកពិតជាចង់អនុម័តការបែងចែកថ្នាក់ថ្មី (${stageTitle}) សម្រាប់សិស្ស ${list.length} នាក់ ក្នុង «${gradeLabel}» មែនទេ?\n\nប្រព័ន្ធនឹងរក្សាទុកថ្នាក់មុនជា «ថ្នាក់ចាស់» និងប្ដូរទៅ «ថ្នាក់ថ្មី» ដោយស្វ័យប្រវត្តិ។`)) {
+      return;
+    }
+
+    const assignMap = new Map(list.map(item => [item.studentId, item]));
+    let updatedCount = 0;
+
+    this.students = (this.students || []).map(stu => {
+      const assigned = assignMap.get(stu.id);
+      if (!assigned) return stu;
+
+      const prevClass = stu.class || '';
+      const nextClass = assigned.newClass || prevClass;
+      const oldClassToStore = (prevClass && !prevClass.startsWith('ថ្នាក់ទី'))
+        ? prevClass
+        : (stu.oldClass || '');
+
+      const updatedStu = {
+        ...stu,
+        oldClass: oldClassToStore,
+        class: nextClass
+      };
+
+      if (periodKey === 'test_early' || periodKey === 'stage_1') {
+        updatedStu.initialClass = stu.initialClass || prevClass;
+        updatedStu.sem1Class = nextClass;
+      } else {
+        updatedStu.sem1Class = stu.sem1Class || prevClass;
+        updatedStu.sem2Class = nextClass;
+      }
+
+      if (prevClass !== nextClass) updatedCount++;
+      return updatedStu;
+    });
+
+    // Ensure all assigned class section letters are registered in this.classSections for this grade
+    if (!this.classSections) this.classSections = this.getDefaultClassSections();
+    const gradeSectionEntry = this.classSections.find(c => c.gradeLevel === gradeKey);
+    if (gradeSectionEntry) {
+      const gradeDigits = gradeKey.match(/\d+/) ? gradeKey.match(/\d+/)[0] : '';
+      (this.pendingAssignTargetClasses || []).forEach(fullCls => {
+        const secLetter = fullCls.replace(new RegExp('^' + gradeDigits, 'i'), '').trim().toUpperCase();
+        if (secLetter && !gradeSectionEntry.sections.includes(secLetter)) {
+          gradeSectionEntry.sections.push(secLetter);
+        }
+      });
+    }
+
+    // Sync updated student classes into examArrangements
+    if (Array.isArray(this.examArrangements) && updatedCount > 0) {
+      this.reassignExamArrangementsForGrade(gradeKey);
+    }
+
+    this.activeClass = gradeKey;
+    if (this.classSelect) this.classSelect.value = gradeKey;
+    this.populateClassSectionToolbarFilter();
+    this.saveState(true);
+    this.createAutoBackup(`បែងចែកថ្នាក់ស្វ័យប្រវត្តិ ${gradeLabel} (${stageTitle})`);
+    this.renderNavigation();
+    this.renderCurrentView();
+    this.updateKPIOverview();
+    this.closeAutoClassAssignModal();
+    this.showToast(`បានបែងចែកថ្នាក់ថ្មីជូនសិស្ស ${list.length} នាក់ (ប្ដូរថ្នាក់ ${updatedCount} នាក់) ក្នុង ${gradeLabel} ដោយជោគជ័យ!`, 'success');
+  }
+
+  undoAutoClassAssignment() {
+    const gradeKey = this.assignGradeSelect ? this.assignGradeSelect.value : (this.activeClass || 'grade_7');
+    const gradeLabel = this.resolveGradeLabelFromKey(gradeKey);
+
+    const hasOldClasses = (this.students || []).some(
+      s => this.studentMatchesGrade(s, gradeKey) && s.oldClass && s.oldClass !== s.class
+    );
+
+    if (!hasOldClasses) {
+      this.showToast(`មិនមានប្រវត្តិថ្នាក់ចាស់សម្រាប់ត្រឡប់វិញក្នុង ${gradeLabel} ឡើយ!`, 'warning');
+      return;
+    }
+
+    if (!confirm(`តើអ្នកពិតជាចង់ត្រឡប់សិស្សក្នុង «${gradeLabel}» ទៅកាន់ «ថ្នាក់ចាស់» របស់ពួកគេវិញមែនទេ?`)) {
+      return;
+    }
+
+    let restoredCount = 0;
+    this.students = (this.students || []).map(stu => {
+      if (this.studentMatchesGrade(stu, gradeKey) && stu.oldClass && stu.oldClass !== stu.class) {
+        restoredCount++;
+        return {
+          ...stu,
+          class: stu.oldClass
+        };
+      }
+      return stu;
+    });
+
+    this.populateClassSectionToolbarFilter();
+    if (restoredCount > 0 && Array.isArray(this.examArrangements)) {
+      this.reassignExamArrangementsForGrade(gradeKey);
+    }
+    this.saveState(true);
+    this.computeAutoClassAssignment('undo');
+    this.renderCurrentView();
+    this.showToast(`បានត្រឡប់សិស្ស ${restoredCount} នាក់ ទៅកាន់ថ្នាក់ចាស់វិញដោយជោគជ័យ!`, 'info');
+  }
+
+  exportAutoClassAssignmentCSV() {
+    const list = this.pendingClassAssignments || [];
+    if (list.length === 0) {
+      this.showToast('មិនមានទិន្នន័យសម្រាប់ទាញយកឡើយ!', 'error');
+      return;
+    }
+
+    const gradeKey = this.assignGradeSelect ? this.assignGradeSelect.value : (this.activeClass || 'grade_7');
+    const gradeLabel = this.resolveGradeLabelFromKey(gradeKey);
+    const periodKey = this.assignStageSelect ? this.assignStageSelect.value : 'test_early';
+    const stageName = this.getAssignStageDisplayName(periodKey);
+
+    let csv = '\uFEFF';
+    csv += 'ចំណាត់ថ្នាក់,អត្តលេខ,គោត្តនាមនិងនាម,ភេទ,ពិន្ទុសរុប,មធ្យមភាគ,ថ្នាក់ចាស់,ថ្នាក់ថ្មី,របៀបរៀប\n';
+    list.forEach(item => {
+      const modeLabel = item.placementMode === 'alpha' ? 'តាមឈ្មោះ (ក➔អ)' : 'តាមមធ្យមភាគ';
+      csv += `"${item.rank}","${item.studentId}","${item.khmerName}","${item.gender}","${item.total.toFixed(1)}","${item.average.toFixed(2)}","${item.oldClass || ''}","${item.newClass || ''}","${modeLabel}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `បញ្ជីបែងចែកថ្នាក់_${gradeLabel}_${stageName}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.showToast('បានទាញយកបញ្ជីបែងចែកថ្នាក់ (CSV) ដោយជោគជ័យ!', 'success');
+  }
+
+  printAutoClassAssignment() {
+    const list = this.pendingClassAssignments || [];
+    if (list.length === 0) {
+      this.showToast('មិនមានទិន្នន័យសម្រាប់បោះពុម្ពឡើយ!', 'error');
+      return;
+    }
+
+    const gradeKey = this.assignGradeSelect ? this.assignGradeSelect.value : (this.activeClass || 'grade_7');
+    const gradeLabel = this.resolveGradeLabelFromKey(gradeKey);
+    const periodKey = this.assignStageSelect ? this.assignStageSelect.value : 'test_early';
+    const stageTitle = this.getAssignStageDisplayName(periodKey);
+    const filterCls = this.assignPreviewClassFilter ? this.assignPreviewClassFilter.value : 'ALL';
+    const classesToPrint = filterCls === 'ALL'
+      ? (this.pendingAssignTargetClasses || [])
+      : [filterCls];
+
+    let pagesHtml = '';
+    classesToPrint.forEach((clsName, pageIdx) => {
+      const clsStudents = list.filter(i => i.newClass === clsName);
+      if (clsStudents.length === 0) return;
+      const femaleCount = clsStudents.filter(i => i.gender === 'ស្រី').length;
+
+      let rowsHtml = '';
+      clsStudents.forEach((stu, idx) => {
+        rowsHtml += `
+          <tr>
+            <td style="text-align:center;">${idx + 1}</td>
+            <td style="text-align:center; font-weight:700;">${stu.studentId}</td>
+            <td style="font-weight:600;">${stu.khmerName}</td>
+            <td style="text-align:center;">${stu.gender}</td>
+            <td style="text-align:center;">${stu.average.toFixed(2)}</td>
+            <td style="text-align:center;">${stu.rank}</td>
+            <td style="text-align:center;">${stu.oldClass || '-'}</td>
+            <td style="text-align:center; font-weight:700;">${stu.newClass}</td>
+          </tr>
+        `;
+      });
+
+      pagesHtml += `
+        <div class="sheet" style="${pageIdx > 0 ? 'page-break-before: always;' : ''}">
+          <div style="text-align:center; font-family:'Khmer OS Muol Light','Moul',serif; font-size:13pt; line-height:1.6;">
+            ព្រះរាជាណាចក្រកម្ពុជា<br>ជាតិ សាសនា ព្រះមហាក្សត្រ
+          </div>
+          <div style="text-align:center; font-family:'Khmer OS Muol Light','Moul',serif; font-size:12pt; margin: 10px 0 4px;">
+            បញ្ជីរាយនាមសិស្សបែងចែកថ្នាក់ថ្មី - ថ្នាក់ទី ${clsName} (${gradeLabel})
+          </div>
+          <div style="text-align:center; font-size:10.5pt; margin-bottom:10px;">
+            ដំណាក់កាល៖ ${stageTitle} | ឆ្នាំសិក្សា៖ ${this.activeYear}
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th style="width:45px;">ល.រ</th>
+                <th style="width:95px;">អត្តលេខ</th>
+                <th>គោត្តនាម និងនាមខ្លួន</th>
+                <th style="width:60px;">ភេទ</th>
+                <th style="width:85px;">មធ្យមភាគ</th>
+                <th style="width:85px;">ចំណាត់ថ្នាក់</th>
+                <th style="width:85px;">ថ្នាក់ចាស់</th>
+                <th style="width:85px;">ថ្នាក់ថ្មី</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHtml}</tbody>
+          </table>
+          <div style="margin-top:10px; font-weight:700; font-size:10.5pt;">
+            បិទបញ្ចប់បញ្ជីត្រឹមសិស្សសរុបចំនួន៖ ${clsStudents.length} នាក់ (ស្រី៖ ${femaleCount} នាក់)
+          </div>
+        </div>
+      `;
+    });
+
+    const fullHtml = `
+      <!DOCTYPE html>
+      <html lang="km">
+      <head>
+        <meta charset="UTF-8">
+        <title>បញ្ជីបែងចែកថ្នាក់ថ្មី - ${gradeLabel}</title>
+        <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600;700&family=Moul&display=swap" rel="stylesheet">
+        <style>
+          body { font-family: 'Khmer OS Siemreap', 'Kantumruy Pro', sans-serif; margin: 12mm; color: #000; }
+          table { width: 100%; border-collapse: collapse; font-size: 10.5pt; }
+          th, td { border: 1px solid #000; padding: 5px 8px; }
+          th { background: #f1f5f9; text-align: center; font-weight: 700; }
+          @media print { body { margin: 8mm; } }
+        </style>
+      </head>
+      <body>
+        ${pagesHtml}
+      </body>
+      </html>
+    `;
+    this.printHtmlDirectly(fullHtml);
+  }
+
+  // =========================================================================
+  // Exam Subject Order Settings per Grade (កំណត់លំដាប់មុខវិជ្ជាប្រឡង)
+  // =========================================================================
+  openExamSubjectOrderModal() {
+    if (!this.examSubjectOrders) {
+      this.examSubjectOrders = this.getDefaultExamSubjectOrders();
+    }
+    this.renderExamSubjectOrderTable();
+    if (this.examSubjectOrderModal) {
+      this.examSubjectOrderModal.classList.add('open');
+    }
+  }
+
+  closeExamSubjectOrderModal() {
+    if (this.examSubjectOrderModal) {
+      this.examSubjectOrderModal.classList.remove('open');
+    }
+  }
+
+  syncCurrentExamSubjectOrderInputs() {
+    const gradeKey = this.examSubjectOrderGradeSelect ? this.examSubjectOrderGradeSelect.value : 'grade_7';
+    if (!this.examSubjectOrders) this.examSubjectOrders = this.getDefaultExamSubjectOrders();
+    const list = this.examSubjectOrders[gradeKey] || [];
+    const inputs = document.querySelectorAll('.exam-subject-order-input');
+    if (inputs.length === list.length && inputs.length > 0) {
+      this.examSubjectOrders[gradeKey] = Array.from(inputs).map(inp => inp.value.trim()).filter(Boolean);
+    }
+  }
+
+  renderExamSubjectOrderTable() {
+    if (!this.examSubjectOrderTableBody) return;
+    this.examSubjectOrderTableBody.innerHTML = '';
+    if (!this.examSubjectOrders) this.examSubjectOrders = this.getDefaultExamSubjectOrders();
+
+    const gradeKey = this.examSubjectOrderGradeSelect ? this.examSubjectOrderGradeSelect.value : 'grade_7';
+    if (!this.examSubjectOrders[gradeKey]) {
+      const defaults = this.getDefaultExamSubjectOrders();
+      this.examSubjectOrders[gradeKey] = [...(defaults[gradeKey] || defaults.grade_7)];
+    }
+
+    const subjectsList = this.examSubjectOrders[gradeKey];
+    let draggedIdx = null;
+
+    subjectsList.forEach((subName, idx) => {
+      const tr = document.createElement('tr');
+      tr.className = 'exam-subject-order-row';
+      tr.setAttribute('draggable', 'true');
+      tr.setAttribute('data-idx', String(idx));
+
+      tr.innerHTML = `
+        <td style="text-align: center; font-weight: 700; color: var(--primary); user-select: none;" title="ចាប់ទាញដើម្បីប្ដូរលំដាប់ (Drag & Drop)">
+          <span class="subject-drag-handle"><i class="ri-draggable"></i></span>
+          <span>ទី ${this.toKhmerNum(idx + 1)}</span>
+        </td>
+        <td>
+          <input type="text" class="section-table-input exam-subject-order-input" data-idx="${idx}" value="${subName}" style="width: 100%; font-family: var(--font-khmer); font-weight: 600; padding: 0.35rem 0.6rem;">
+        </td>
+        <td style="text-align: center;">
+          <input type="number" class="exam-order-num-input" data-idx="${idx}" min="1" max="${subjectsList.length}" value="${idx + 1}" title="វាយលេខរៀង (1-${subjectsList.length}) រួចចុច Enter ឬចុចក្រៅប្រអប់ដើម្បីតម្រៀបស្វ័យប្រវត្តិ">
+        </td>
+        <td style="text-align: center;">
+          <button type="button" class="btn-delete-section" onclick="app.removeExamSubjectOrderItem(${idx})" title="លុបមុខវិជ្ជានេះ">
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </td>
+      `;
+
+      // Prevent dragging when user is interacting with text/number inputs inside the row
+      const rowInputs = tr.querySelectorAll('input');
+      rowInputs.forEach(inp => {
+        inp.addEventListener('mousedown', () => tr.setAttribute('draggable', 'false'));
+        inp.addEventListener('mouseup', () => tr.setAttribute('draggable', 'true'));
+        inp.addEventListener('blur', () => tr.setAttribute('draggable', 'true'));
+      });
+
+      // Order number input: auto-reorder on change or Enter
+      const orderNumInput = tr.querySelector('.exam-order-num-input');
+      if (orderNumInput) {
+        const applyOrderChange = () => {
+          const rawVal = parseInt(orderNumInput.value, 10);
+          if (isNaN(rawVal)) {
+            orderNumInput.value = idx + 1;
+            return;
+          }
+          const targetIdx = Math.max(0, Math.min(subjectsList.length - 1, rawVal - 1));
+          if (targetIdx !== idx) {
+            this.reorderExamSubjectOrderItem(idx, targetIdx);
+          } else {
+            orderNumInput.value = idx + 1;
+          }
+        };
+        orderNumInput.addEventListener('change', applyOrderChange);
+        orderNumInput.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            applyOrderChange();
+          }
+        });
+      }
+
+      // HTML5 Drag & Drop Events
+      tr.addEventListener('dragstart', (e) => {
+        this.syncCurrentExamSubjectOrderInputs();
+        draggedIdx = idx;
+        tr.classList.add('dragging');
+        if (e.dataTransfer) {
+          e.dataTransfer.effectAllowed = 'move';
+          e.dataTransfer.setData('text/plain', String(idx));
+        }
+      });
+
+      tr.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        if (e.dataTransfer) e.dataTransfer.dropEffect = 'move';
+        if (draggedIdx !== null && draggedIdx !== idx) {
+          tr.classList.add('drag-over-row');
+        }
+      });
+
+      tr.addEventListener('dragleave', () => {
+        tr.classList.remove('drag-over-row');
+      });
+
+      tr.addEventListener('drop', (e) => {
+        e.preventDefault();
+        tr.classList.remove('drag-over-row');
+        const fromIdx = draggedIdx !== null
+          ? draggedIdx
+          : parseInt(e.dataTransfer ? e.dataTransfer.getData('text/plain') : '-1', 10);
+        if (!isNaN(fromIdx) && fromIdx >= 0 && fromIdx !== idx) {
+          this.reorderExamSubjectOrderItem(fromIdx, idx);
+        }
+        draggedIdx = null;
+      });
+
+      tr.addEventListener('dragend', () => {
+        tr.classList.remove('dragging');
+        this.examSubjectOrderTableBody.querySelectorAll('.drag-over-row').forEach(el => {
+          el.classList.remove('drag-over-row');
+        });
+        draggedIdx = null;
+      });
+
+      this.examSubjectOrderTableBody.appendChild(tr);
+    });
+  }
+
+  reorderExamSubjectOrderItem(fromIdx, toIdx) {
+    this.syncCurrentExamSubjectOrderInputs();
+    const gradeKey = this.examSubjectOrderGradeSelect ? this.examSubjectOrderGradeSelect.value : 'grade_7';
+    const list = this.examSubjectOrders[gradeKey] || [];
+    if (fromIdx < 0 || fromIdx >= list.length || toIdx < 0 || toIdx >= list.length || fromIdx === toIdx) return;
+    const [movedItem] = list.splice(fromIdx, 1);
+    list.splice(toIdx, 0, movedItem);
+    this.renderExamSubjectOrderTable();
+  }
+
+  addExamSubjectOrderItem() {
+    this.syncCurrentExamSubjectOrderInputs();
+    const gradeKey = this.examSubjectOrderGradeSelect ? this.examSubjectOrderGradeSelect.value : 'grade_7';
+    const val = this.newExamSubjectOrderInput ? this.newExamSubjectOrderInput.value.trim() : '';
+    if (!val) {
+      this.showToast('សូមវាយបញ្ចូលឈ្មោះមុខវិជ្ជាជាមុនសិន!', 'error');
+      return;
+    }
+    if (!this.examSubjectOrders[gradeKey]) this.examSubjectOrders[gradeKey] = [];
+    this.examSubjectOrders[gradeKey].push(val);
+    if (this.newExamSubjectOrderInput) this.newExamSubjectOrderInput.value = '';
+    this.renderExamSubjectOrderTable();
+    this.showToast(`បានបន្ថែមមុខវិជ្ជា "${val}" ក្នុងលំដាប់ទី ${this.examSubjectOrders[gradeKey].length}!`, 'success');
+  }
+
+  moveExamSubjectOrderItem(idx, direction) {
+    this.syncCurrentExamSubjectOrderInputs();
+    const gradeKey = this.examSubjectOrderGradeSelect ? this.examSubjectOrderGradeSelect.value : 'grade_7';
+    const list = this.examSubjectOrders[gradeKey] || [];
+    const targetIdx = idx + direction;
+    if (targetIdx < 0 || targetIdx >= list.length) return;
+    const temp = list[idx];
+    list[idx] = list[targetIdx];
+    list[targetIdx] = temp;
+    this.renderExamSubjectOrderTable();
+  }
+
+  removeExamSubjectOrderItem(idx) {
+    this.syncCurrentExamSubjectOrderInputs();
+    const gradeKey = this.examSubjectOrderGradeSelect ? this.examSubjectOrderGradeSelect.value : 'grade_7';
+    const list = this.examSubjectOrders[gradeKey] || [];
+    if (idx < 0 || idx >= list.length) return;
+    list.splice(idx, 1);
+    this.renderExamSubjectOrderTable();
+  }
+
+  resetExamSubjectOrderDefault() {
+    const gradeKey = this.examSubjectOrderGradeSelect ? this.examSubjectOrderGradeSelect.value : 'grade_7';
+    const defaults = this.getDefaultExamSubjectOrders();
+    this.examSubjectOrders[gradeKey] = [...(defaults[gradeKey] || defaults.grade_7)];
+    this.renderExamSubjectOrderTable();
+    this.showToast('បានកំណត់លំដាប់មុខវិជ្ជាលំនាំដើមឡើងវិញ!', 'info');
+  }
+
+  saveExamSubjectOrderConfig() {
+    this.syncCurrentExamSubjectOrderInputs();
+    this.selectedSecretSubjectCodes = null;
+    this.saveState();
+    this.renderExamSecretMatrixTable();
+    this.renderExamAttendanceDoc();
+    this.renderExamSubjectScoresTable();
+    if (typeof this.renderExamAuditTable === 'function') {
+      this.renderExamAuditTable();
+    }
+    this.showToast('បានរក្សាទុកលំដាប់មុខវិជ្ជាប្រឡងដោយជោគជ័យ!', 'success');
+  }
+
+  // ==========================================================================
+  // Data Export & Import (JSON & CSV)
+  // ==========================================================================
+  exportJSON() {
+    const payload = {
+      version: 'SMS-V0.1',
+      academicYear: this.activeYear,
+      className: this.activeClass,
+      exportedAt: new Date().toISOString(),
+      students: this.students,
+      subjects: this.subjects,
+      scores: this.scores
+    };
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `SMS_Backup_${this.activeClass}_${this.activeYear}_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.showToast('បានទាញយកឯកសារបម្រុងទុក (JSON) រួចរាល់!', 'success');
+  }
+
+  importJSON(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const imported = JSON.parse(event.target.result);
+        if (imported.students && Array.isArray(imported.students)) {
+          this.students = imported.students;
+          if (imported.subjects) this.subjects = imported.subjects;
+          if (imported.scores) this.scores = imported.scores;
+          this.saveState();
+          this.renderNavigation();
+          this.renderCurrentView();
+          this.showToast('បានបញ្ចូលទិន្នន័យពីឯកសារជោគជ័យ!', 'success');
+        } else {
+          this.showToast('ឯកសារ JSON មិនត្រឹមត្រូវតាមទម្រង់ SMS ឡើយ!', 'error');
+        }
+      } catch (err) {
+        this.showToast('មានបញ្ហាក្នុងការអានឯកសារ JSON!', 'error');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = ''; // reset file input
+  }
+
+  getExportTemplateDefinitions() {
+    return {
+      grade_7: {
+        key: 'grade_7',
+        name: 'ថ្នាក់ទី ៧',
+        title: 'គំរូទម្រង់ថ្នាក់ទី៧',
+        columns: [
+          { header: 'ល.រ', key: 'index', width: 6 },
+          { header: 'អត្តលេខ', key: 'id', width: 12 },
+          { header: 'គោត្តនាម.នាម', key: 'khmerName', width: 22 },
+          { header: 'ភេទ', key: 'gender', width: 8 },
+          { header: 'ថ្ងៃខែឆ្នាំកំណើត', key: 'dob', width: 16 },
+          { header: 'ថ្នាក់', key: 'class', width: 10 },
+          { header: 'ប្រភេទថ្នាក់', key: 'classType', width: 14 },
+          { header: 'ឡើងពីថ្នាក់', key: 'fromClass', width: 14 },
+          { header: 'មកពីសាលា', key: 'primarySchool', width: 22 },
+          { header: 'ត្រួតថ្នាក់ទី', key: 'repeatGrade', width: 14 },
+          { header: 'ផ្ទេរមកពី', key: 'transferFrom', width: 18 },
+          { header: 'ផ្សេងៗ', key: 'note', width: 20 }
+        ]
+      },
+      grade_8_9: {
+        key: 'grade_8_9',
+        name: 'ថ្នាក់ទី ៨ និង ទី ៩',
+        title: 'គំរូទម្រង់ថ្នាក់ទី៨-៩',
+        columns: [
+          { header: 'ល.រ', key: 'index', width: 6 },
+          { header: 'អត្តលេខ', key: 'id', width: 12 },
+          { header: 'គោត្តនាម.នាម', key: 'khmerName', width: 22 },
+          { header: 'ភេទ', key: 'gender', width: 8 },
+          { header: 'ថ្ងៃខែឆ្នាំកំណើត', key: 'dob', width: 16 },
+          { header: 'ថ្នាក់', key: 'class', width: 10 },
+          { header: 'ប្រភេទថ្នាក់', key: 'classType', width: 14 },
+          { header: 'ឡើងពីថ្នាក់ទី', key: 'fromClass', width: 15 },
+          { header: 'ត្រួតថ្នាក់ទី', key: 'repeatGrade', width: 14 },
+          { header: 'ផ្ទេរមកពី', key: 'transferFrom', width: 18 },
+          { header: 'ផ្សេងៗ', key: 'note', width: 20 }
+        ]
+      },
+      grade_10_12: {
+        key: 'grade_10_12',
+        name: 'ថ្នាក់ទី ១០, ១១ និង ១២',
+        title: 'គំរូទម្រង់ថ្នាក់ទី១០-១២',
+        columns: [
+          { header: 'ល.រ', key: 'index', width: 6 },
+          { header: 'អត្តលេខ', key: 'id', width: 12 },
+          { header: 'គោត្តនាម.នាម', key: 'khmerName', width: 22 },
+          { header: 'ភេទ', key: 'gender', width: 8 },
+          { header: 'ថ្ងៃខែឆ្នាំកំណើត', key: 'dob', width: 16 },
+          { header: 'ថ្នាក់', key: 'class', width: 10 },
+          { header: 'ប្រភេទថ្នាក់', key: 'classType', width: 16 },
+          { header: 'ឡើងពីថ្នាក់', key: 'fromClass', width: 14 },
+          { header: 'ត្រួត', key: 'repeatGrade', width: 10 },
+          { header: 'សម័យប្រឡង', key: 'diplomaSession', width: 18 },
+          { header: 'ម.ប្រឡង', key: 'diplomaCenter', width: 22 },
+          { header: 'បន្ទប់', key: 'diplomaRoom', width: 10 },
+          { header: 'លេខតុ', key: 'diplomaDesk', width: 10 },
+          { header: 'ផ្សេងៗ', key: 'note', width: 20 }
+        ]
+      },
+      full_master: {
+        key: 'full_master',
+        name: 'ទម្រង់ពេញលេញ (Full Master)',
+        title: 'គំរូទម្រង់ពេញលេញ',
+        columns: [
+          { header: 'ល.រ', key: 'index', width: 6 },
+          { header: 'អត្តលេខ', key: 'id', width: 12 },
+          { header: 'គោត្តនាម.នាម', key: 'khmerName', width: 22 },
+          { header: 'ឈ្មោះឡាតាំង', key: 'latinName', width: 20 },
+          { header: 'ភេទ', key: 'gender', width: 8 },
+          { header: 'ថ្ងៃខែឆ្នាំកំណើត', key: 'dob', width: 16 },
+          { header: 'ថ្នាក់បច្ចុប្បន្ន', key: 'class', width: 12 },
+          { header: 'ប្រភេទថ្នាក់', key: 'classType', width: 16 },
+          { header: 'ឡើងពីថ្នាក់', key: 'fromClass', width: 14 },
+          { header: 'មកពីសាលា', key: 'primarySchool', width: 20 },
+          { header: 'ត្រួតថ្នាក់', key: 'repeatGrade', width: 12 },
+          { header: 'ផ្ទេរមកពី', key: 'transferFrom', width: 18 },
+          { header: 'សម័យប្រឡងបឋមភូមិ', key: 'diplomaSession', width: 18 },
+          { header: 'មណ្ឌលប្រឡងបឋមភូមិ', key: 'diplomaCenter', width: 22 },
+          { header: 'បន្ទប់ប្រឡង', key: 'diplomaRoom', width: 12 },
+          { header: 'លេខតុប្រឡង', key: 'diplomaDesk', width: 12 },
+          { header: 'លេខទូរស័ព្ទ', key: 'phone', width: 14 },
+          { header: 'អាណាព្យាបាល', key: 'guardian', width: 18 },
+          { header: 'អាសយដ្ឋាន', key: 'address', width: 25 },
+          { header: 'ផ្សេងៗ', key: 'note', width: 20 }
+        ]
+      }
+    };
+  }
+
+  openExportStudentModal() {
+    if (!this.exportStudentModal) {
+      this.exportStudentListCSVDirect();
+      return;
+    }
+
+    // Smart pre-select based on active class
+    let tplKey = 'grade_7';
+    if (this.activeClass === 'grade_7') tplKey = 'grade_7';
+    else if (this.activeClass === 'grade_8' || this.activeClass === 'grade_9') tplKey = 'grade_8_9';
+    else if (this.activeClass.startsWith('grade_10') || this.activeClass.startsWith('grade_11') || this.activeClass.startsWith('grade_12')) tplKey = 'grade_10_12';
+
+    if (this.exportGradeTemplateSelect) {
+      this.exportGradeTemplateSelect.value = tplKey;
+    }
+    this.updateExportColumnsPreview();
+    this.exportStudentModal.classList.add('open');
+  }
+
+  closeExportStudentModal() {
+    if (this.exportStudentModal) {
+      this.exportStudentModal.classList.remove('open');
+    }
+  }
+
+  updateExportColumnsPreview() {
+    if (!this.exportColumnsPreviewText) return;
+    const tplDefs = this.getExportTemplateDefinitions();
+    const tplKey = this.exportGradeTemplateSelect ? this.exportGradeTemplateSelect.value : 'grade_7';
+    const tpl = tplDefs[tplKey] || tplDefs.grade_7;
+
+    const badges = tpl.columns.map(c => `
+      <span style="display: inline-block; padding: 2px 7px; margin: 2px; border-radius: 4px; background: #dbeafe; color: #1e40af; border: 1px solid #bfdbfe; font-size: 0.8rem; font-weight: 600;">
+        ${c.header}
+      </span>
+    `).join(' ');
+
+    this.exportColumnsPreviewText.innerHTML = badges;
+  }
+
+  executeStudentExport(format = 'xlsx', explicitGradeKey = null, forceBlank = false) {
+    const tplDefs = this.getExportTemplateDefinitions();
+    const tplKey = explicitGradeKey || (this.exportGradeTemplateSelect ? this.exportGradeTemplateSelect.value : 'grade_7');
+    const tpl = tplDefs[tplKey] || tplDefs.grade_7;
+
+    const scopeSelect = this.exportClassScopeSelect ? this.exportClassScopeSelect.value : 'current';
+    const dataModeRadio = document.querySelector('input[name="exportDataModeRadio"]:checked');
+    const isBlank = forceBlank || (dataModeRadio ? dataModeRadio.value === 'blank_template' : false);
+
+    let targetStudents = [];
+    if (!isBlank) {
+      if (scopeSelect === 'all') {
+        targetStudents = [...this.students];
+      } else {
+        const curFiltered = this.getFilteredStudents();
+        targetStudents = curFiltered.length > 0 ? curFiltered : this.students.filter(s => this.studentMatchesGrade(s, this.activeClass));
+      }
+    }
+
+    const colDefs = tpl.columns;
+    const rows = [colDefs.map(c => c.header)];
+
+    if (isBlank || targetStudents.length === 0) {
+      // Provide 2 illustrative sample rows for blank template
+      if (tplKey === 'grade_7') {
+        rows.push(['1', 'STU-001', 'សុខ ចាន់ដារ៉ា', 'ប្រុស', '2012-05-10', '7A', 'ទូទៅ', '៦ក', 'បឋមវត្តបូព៌', '', '', '']);
+        rows.push(['2', 'STU-002', 'កែវ ធីតា', 'ស្រី', '2012-08-15', '7B', 'ទូទៅ', '៦ខ', 'បឋមអនុវត្ត', '៧', '', '']);
+      } else if (tplKey === 'grade_8_9') {
+        rows.push(['1', 'STU-001', 'ស៊ឹម វីរៈ', 'ប្រុស', '2011-03-20', '8A', 'ទូទៅ', '៧ក', '', '', '']);
+        rows.push(['2', 'STU-002', 'មាស បុប្ផា', 'ស្រី', '2011-09-12', '8B', 'ទូទៅ', '៧ខ', '៨', 'អនុ.អង្គរ', '']);
+      } else if (tplKey === 'grade_10_12') {
+        rows.push(['1', 'STU-001', 'ជា សុផាត', 'ប្រុស', '2008-01-15', '10A', 'ទូទៅ', '៩ក', '', '០៥ សីហា ២០២៤', 'អនុ.វត្តបូព៌', '០១', '០១', '']);
+        rows.push(['2', 'STU-002', 'លី សុគន្ធា', 'ស្រី', '2008-06-25', '12A', 'វិទ្យាសាស្ត្រ', '៩ខ', '១០', '០៥ សីហា ២០២៤', 'អនុ.វត្តបូព៌', '០១', '០២', '']);
+      } else {
+        rows.push(['1', 'STU-001', 'សុខ ចាន់ដារ៉ា', 'SOK CHANDARA', 'ប្រុស', '2008-01-15', '12A', 'វិទ្យាសាស្ត្រ', '11A', '', '', '', '០៥ សីហា ២០២៤', 'អនុ.វត្តបូព៌', '០១', '០១', '012345678', 'សុខ មាស', 'ភ្នំពេញ', '']);
+      }
+    } else {
+      targetStudents.forEach((stu, idx) => {
+        const row = colDefs.map(col => {
+          if (col.key === 'index') return String(idx + 1);
+          if (col.key === 'class') return stu.class || '';
+          if (col.key === 'classType') {
+            if (/^(ថ្នាក់ទី\s*)?(7|8|9|10|[៧៨៩]|១០)/i.test(stu.class || '')) return 'ទូទៅ';
+            return stu.classType || 'ទូទៅ';
+          }
+          if (col.key === 'fromClass') return stu.fromClass || stu.oldClass || '';
+          const val = stu[col.key];
+          return val !== undefined && val !== null ? String(val) : '';
+        });
+        rows.push(row);
+      });
+    }
+
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const cleanTplName = tpl.name.replace(/[\/\s()]/g, '_');
+    const filename = isBlank ? `ទម្រង់គំរូ_${cleanTplName}` : `បញ្ជីសិស្ស_${cleanTplName}_${dateStr}`;
+
+    if (format === 'xlsx' && typeof XLSX !== 'undefined') {
+      const wb = XLSX.utils.book_new();
+      const ws = XLSX.utils.aoa_to_sheet(rows);
+      ws['!cols'] = colDefs.map(c => ({ wch: c.width || 14 }));
+      XLSX.utils.book_append_sheet(wb, ws, tpl.name.slice(0, 30));
+      XLSX.writeFile(wb, `${filename}.xlsx`);
+    } else {
+      let csv = '\uFEFF'; // UTF-8 BOM
+      rows.forEach(r => {
+        csv += r.map(c => `"${String(c || '').replace(/"/g, '""')}"`).join(',') + '\n';
+      });
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${filename}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    this.closeExportStudentModal();
+    this.showToast(isBlank ? `បានទាញយកទម្រង់គំរូ (${tpl.name}) រួចរាល់!` : `បាននាំចេញបញ្ជីសិស្ស (${tpl.name}) ចំនួន ${targetStudents.length} នាក់ ដោយជោគជ័យ!`, 'success');
+  }
+
+  downloadTemplateForGrade(gradeKey) {
+    this.executeStudentExport('xlsx', gradeKey, true);
+  }
+
+  exportStudentListCSV() {
+    this.openExportStudentModal();
+  }
+
+  exportStudentListCSVDirect() {
+    let csv = '\uFEFF'; // UTF-8 BOM for Excel Khmer support
+    csv += 'ល.រ,អត្តលេខ,គោត្តនាមនិងនាម,ឈ្មោះឡាតាំង,ភេទ,ថ្ងៃខែឆ្នាំកំណើត,ថ្នាក់ចាស់,ថ្នាក់ថ្មី,ប្រភេទថ្នាក់,លេខទូរស័ព្ទ,អាណាព្យាបាល,អាសយដ្ឋាន\n';
+
+    this.students.forEach((s, idx) => {
+      csv += `"${idx + 1}","${s.id}","${s.khmerName}","${s.latinName || ''}","${s.gender}","${s.dob || ''}","${s.oldClass || ''}","${s.class || ''}","${s.classType || 'ទូទៅ'}","${s.phone || ''}","${s.guardian || ''}","${s.address || ''}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `បញ្ជីឈ្មោះសិស្ស_ថ្នាក់${this.activeClass}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.showToast('បានទាញយកបញ្ជីសិស្សរួចរាល់!', 'success');
+  }
+
+  exportPeriodScoresCSV() {
+    const period = this.currentPeriod;
+    const periodMeta = PERIOD_DEFINITIONS[period];
+    const activeSubjects = this.subjects.filter(s => s.enabled);
+    const results = this.calculatePeriodResults(period);
+
+    let csv = '\uFEFF'; // UTF-8 BOM
+    csv += `ចំណាត់ថ្នាក់,អត្តលេខ,គោត្តនាមនិងនាម,ភេទ,`;
+    activeSubjects.forEach(s => {
+      csv += `"${s.name} (${s.maxScore}x${s.coef})",`;
+    });
+    csv += 'ពិន្ទុសរុប,មធ្យមភាគ,និទ្ទេស,លទ្ធផល\n';
+
+    results.forEach(item => {
+      const stu = item.student;
+      csv += `"${item.rank}","${stu.id}","${stu.khmerName}","${stu.gender}",`;
+      activeSubjects.forEach(s => {
+        const val = this.scores[stu.id]?.[period]?.[s.code] || 0;
+        csv += `"${val}",`;
+      });
+      csv += `"${item.total.toFixed(1)}","${item.average.toFixed(2)}","${item.mention}","${item.isPassed ? 'ជាប់' : 'ធ្លាក់'}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ពិន្ទុ_${periodMeta.title.replace(/[\/\s()]/g, '_')}_${this.activeClass}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.showToast('បានទាញយកតារាងពិន្ទុរួចរាល់!', 'success');
+  }
+
+  // ==========================================================================
+  // VIEW 4: Exam Arrangement & Preparation (ការរៀបចំការប្រឡង)
+  // ==========================================================================
+  switchExamTab(tabName) {
+    this.activeExamTab = tabName;
+
+    // Toggle active tab button
+    if (this.tabExamListBtn) this.tabExamListBtn.classList.toggle('active', tabName === 'examList');
+    if (this.tabExamSecretBtn) this.tabExamSecretBtn.classList.toggle('active', tabName === 'examSecret');
+    if (this.tabExamAttendanceBtn) this.tabExamAttendanceBtn.classList.toggle('active', tabName === 'examAttendance');
+
+    // Toggle tab content display
+    if (this.examTabListContent) this.examTabListContent.style.display = tabName === 'examList' ? 'block' : 'none';
+    if (this.examTabSecretContent) this.examTabSecretContent.style.display = tabName === 'examSecret' ? 'block' : 'none';
+    if (this.examTabAttendanceContent) this.examTabAttendanceContent.style.display = tabName === 'examAttendance' ? 'block' : 'none';
+
+    this.renderExamView();
+  }
+
+  renderExamView() {
+    this.updateExamGradeDropdownLabels();
+    const curGrade = this.examGradeSelect ? this.examGradeSelect.value : (this.activeClass || 'grade_7');
+    if (this.examGradeSelect && !this.examGradeSelect.value) {
+      this.examGradeSelect.value = curGrade;
+    }
+    this.syncExamConfigControls(curGrade);
+    this.updateExamRoomDropdowns();
+    if (this.activeExamTab === 'examList') {
+      this.renderExamArrangementTable();
+    } else if (this.activeExamTab === 'examSecret') {
+      this.renderExamSecretMatrixTable();
+    } else if (this.activeExamTab === 'examAttendance') {
+      this.renderExamAttendanceDoc();
+    }
+  }
+
+  updateExamRoomDropdowns() {
+    const rooms = [...new Set((this.examArrangements || []).map(item => item.roomNumber))].sort();
+
+    // Update Tab 2 Room Filter
+    if (this.examSecretRoomFilter) {
+      const currentVal = this.examSecretRoomFilter.value;
+      this.examSecretRoomFilter.innerHTML = '<option value="ALL">គ្រប់បន្ទប់ទាំងអស់</option>';
+      rooms.forEach(rm => {
+        const opt = document.createElement('option');
+        opt.value = rm;
+        opt.textContent = `បន្ទប់ ${rm}`;
+        if (rm === currentVal) opt.selected = true;
+        this.examSecretRoomFilter.appendChild(opt);
+      });
+    }
+
+    // Update Tab 3 Room Filter
+    if (this.examAttendanceRoomSelect) {
+      const currentVal = this.examAttendanceRoomSelect.value;
+      this.examAttendanceRoomSelect.innerHTML = '<option value="ALL">គ្រប់បន្ទប់ទាំងអស់</option>';
+      rooms.forEach(rm => {
+        const opt = document.createElement('option');
+        opt.value = rm;
+        opt.textContent = `បន្ទប់ ${rm}`;
+        if (rm === currentVal) opt.selected = true;
+        this.examAttendanceRoomSelect.appendChild(opt);
+      });
+    }
+  }
+
+  reassignExamArrangementsForGrade(gradeKey) {
+    if (!gradeKey) return;
+    if (gradeKey === 'ALL') {
+      const allGrades = ['grade_7', 'grade_8', 'grade_9', 'grade_10', 'grade_11_sci', 'grade_11_soc', 'grade_12_sci', 'grade_12_soc'];
+      allGrades.forEach(g => this.reassignExamArrangementsForGrade(g));
+      return;
+    }
+
+    // Check if this grade currently has any arrangements or students
+    const hasArrangements = (this.examArrangements || []).some(item => this.studentMatchesGrade(item, gradeKey));
+    const gradeStudents = (this.students || []).filter(s => this.studentMatchesGrade(s, gradeKey));
+
+    if (!hasArrangements && gradeStudents.length === 0) return;
+
+    // Load saved settings for startRoom, studentsPerRoom, sortOrder, lateCount
+    if (!this.examGradeSettings) {
+      try {
+        const raw = localStorage.getItem('sms_exam_grade_settings');
+        this.examGradeSettings = raw ? JSON.parse(raw) : {};
+      } catch (e) {
+        this.examGradeSettings = {};
+      }
+    }
+    const gradeSetting = this.examGradeSettings[gradeKey] || {};
+
+    let startRoom = 1;
+    let studentsPerRoom = 25;
+    let sortOrder = 'normal';
+    let lateCount = (this.examLateStudentCounts && this.examLateStudentCounts[gradeKey]) || 0;
+
+    const existingGradeArr = (this.examArrangements || []).filter(item => this.studentMatchesGrade(item, gradeKey));
+    if (existingGradeArr.length > 0) {
+      const roomNums = existingGradeArr.map(i => parseInt(i.roomNumber, 10)).filter(n => !isNaN(n));
+      if (roomNums.length > 0) {
+        startRoom = Math.min(...roomNums);
+        const firstRoomCount = existingGradeArr.filter(i => parseInt(i.roomNumber, 10) === startRoom).length;
+        if (firstRoomCount > 0) studentsPerRoom = firstRoomCount;
+      }
+      if (lateCount === 0) {
+        const liveLate = (this.students || []).filter(s => this.isIncompleteLateStudent(s) && this.studentMatchesGrade(s, gradeKey)).length;
+        if (liveLate > 0) lateCount = liveLate;
+      }
+    } else if (gradeSetting.startRoom) {
+      startRoom = gradeSetting.startRoom;
+      studentsPerRoom = gradeSetting.studentsPerRoom || 25;
+      sortOrder = gradeSetting.sortOrder || 'normal';
+      if (gradeSetting.lateCount !== undefined) lateCount = gradeSetting.lateCount;
+    } else {
+      const otherGradeRooms = (this.examArrangements || [])
+        .filter(item => !this.studentMatchesGrade(item, gradeKey))
+        .map(item => parseInt(item.roomNumber, 10))
+        .filter(n => !isNaN(n) && n > 0);
+      startRoom = otherGradeRooms.length > 0 ? (Math.max(...otherGradeRooms) + 1) : 1;
+    }
+
+    if (gradeSetting.sortOrder) sortOrder = gradeSetting.sortOrder;
+    if (gradeSetting.studentsPerRoom) studentsPerRoom = gradeSetting.studentsPerRoom;
+
+    // Temporary set UI controls if available to ensure buildExamArrangementListForGrade uses them
+    const origStartVal = this.examStartRoomInput ? this.examStartRoomInput.value : null;
+    const origPerRoomVal = this.examStudentsPerRoomInput ? this.examStudentsPerRoomInput.value : null;
+    const origSortVal = this.examSortOrderSelect ? this.examSortOrderSelect.value : null;
+    const origLateVal = this.examLateStudentsInput ? this.examLateStudentsInput.value : null;
+
+    if (this.examStartRoomInput) this.examStartRoomInput.value = startRoom;
+    if (this.examStudentsPerRoomInput) this.examStudentsPerRoomInput.value = studentsPerRoom;
+    if (this.examSortOrderSelect) this.examSortOrderSelect.value = sortOrder;
+    if (this.examLateStudentsInput) this.examLateStudentsInput.value = lateCount;
+
+    // Build fresh, clean arrangements for this grade with continuous desk and room numbering!
+    const newGradeArrangements = this.buildExamArrangementListForGrade(gradeKey);
+
+    // Restore UI inputs if they were for a different selected grade
+    const curSelectedGrade = this.examGradeSelect ? this.examGradeSelect.value : 'grade_7';
+    if (curSelectedGrade !== gradeKey) {
+      if (this.examStartRoomInput && origStartVal !== null) this.examStartRoomInput.value = origStartVal;
+      if (this.examStudentsPerRoomInput && origPerRoomVal !== null) this.examStudentsPerRoomInput.value = origPerRoomVal;
+      if (this.examSortOrderSelect && origSortVal !== null) this.examSortOrderSelect.value = origSortVal;
+      if (this.examLateStudentsInput && origLateVal !== null) this.examLateStudentsInput.value = origLateVal;
+    }
+
+    // Replace arrangements for this grade in this.examArrangements
+    const otherArrangements = (this.examArrangements || []).filter(item => !this.studentMatchesGrade(item, gradeKey));
+    this.examArrangements = [...otherArrangements, ...newGradeArrangements];
+
+    // Preserve late count in this.examLateStudentCounts
+    if (!this.examLateStudentCounts) this.examLateStudentCounts = {};
+    this.examLateStudentCounts[gradeKey] = lateCount;
+
+    // Save settings
+    if (!this.examGradeSettings) this.examGradeSettings = {};
+    this.examGradeSettings[gradeKey] = {
+      startRoom,
+      studentsPerRoom,
+      sortOrder,
+      lateCount
+    };
+    try {
+      localStorage.setItem('sms_exam_grade_settings', JSON.stringify(this.examGradeSettings));
+    } catch (e) { }
+  }
+
+  isTransferredStudent(stu, selectedGrade) {
+    if (!stu || typeof stu !== 'object') return false;
+    if (this.isIncompleteLateStudent(stu)) return false;
+
+    // Explicit override flags set by user action
+    if (stu.forceRegularExam === true || stu.examOrderPreference === 'regular') return false;
+    if (stu.examOrderPreference === 'bottom') return true;
+
+    // Check saved arrangement explicit preference
+    if (Array.isArray(this.examArrangements)) {
+      const existing = this.examArrangements.find(item => item && (item.studentId === stu.id || item.id === stu.id));
+      if (existing) {
+        if (existing.forceRegularExam === true || existing.examOrderPreference === 'regular') return false;
+        if (existing.examOrderPreference === 'bottom') return true;
+      }
+    }
+
+    const idStr = String(stu.id || stu.studentId || '').trim();
+    const isLateId = idStr.startsWith('END-') || idStr.startsWith('END ') || stu.isLateEntry === true;
+
+    // 1. Explicit transfer flag on student object
+    if (stu.isClassTransferred === true || stu.isTransferred === true) return true;
+
+    // 2. Status indicates transferred
+    const statusStr = String(stu.status || '');
+    if (statusStr === 'សិស្សប្ដូរថ្នាក់' || statusStr === 'ប្ដូរថ្នាក់' || statusStr.includes('ប្ដូរថ្នាក់') || statusStr.includes('ផ្លាស់ប្ដូរថ្នាក់')) {
+      return true;
+    }
+
+    // If student is an END student and not explicitly marked transferred above, they are a late join student, NOT transferred!
+    if (isLateId) return false;
+
+    // 3. Old class differs from current class (e.g. transferred from 7B to 7A, or 11B to 11A)
+    // NOTE: NEVER check stu.fromClass here! In MoEYS, fromClass is the previous academic year's
+    // graduating class (e.g. ឡើងពីថ្នាក់ ៦ក for Grade 7), NOT a mid-year transfer!
+    const currentCls = String(stu.class || stu.grade || '').trim();
+    const oldCls = String(stu.oldClass || '').trim();
+    if (oldCls && oldCls !== currentCls) {
+      const curGrade = this.getStudentGradeKey(stu);
+      const oldGrade = this.getStudentGradeKey({ class: oldCls });
+      if (curGrade && oldGrade && curGrade === oldGrade) return true;
+      if (selectedGrade && (selectedGrade.startsWith('grade_11') || selectedGrade.startsWith('grade_12'))) {
+        if (oldCls.includes('11') || oldCls.includes('12')) return true;
+      }
+    }
+
+    // 4. Old grade level differs from selectedGrade
+    if (stu.oldGradeLevel && selectedGrade && selectedGrade !== 'ALL' && stu.oldGradeLevel !== selectedGrade) {
+      return true;
+    }
+
+    return false;
+  }
+
+  isLateJoinStudent(stu) {
+    if (!stu || typeof stu !== 'object') return false;
+    if (this.isIncompleteLateStudent(stu)) return false;
+
+    // Explicit override flags set by user action
+    if (stu.forceRegularExam === true || stu.examOrderPreference === 'regular') return false;
+    if (stu.examOrderPreference === 'bottom') return true;
+
+    // Check saved arrangement explicit preference
+    if (Array.isArray(this.examArrangements)) {
+      const existing = this.examArrangements.find(item => item && (item.studentId === stu.id || item.id === stu.id));
+      if (existing) {
+        if (existing.forceRegularExam === true || existing.examOrderPreference === 'regular') return false;
+        if (existing.examOrderPreference === 'bottom') return true;
+      }
+    }
+
+    const idStr = String(stu.id || stu.studentId || '').trim();
+    const isLateFlag = Boolean(stu.isLateEntry) || idStr.startsWith('END-') || idStr.startsWith('END ');
+    if (isLateFlag) return true;
+
+    const statusStr = String(stu.status || '');
+    if (statusStr.includes('សុំចូល') || statusStr.includes('ចូលក្រោយ')) return true;
+
+    if (Array.isArray(this.examArrangements)) {
+      const existing = this.examArrangements.find(item => item && (item.studentId === stu.id || item.id === stu.id));
+      if (existing) {
+        if (existing.isLateEntry && !this.isIncompleteLateStudent(existing)) return true;
+        const exStatus = String(existing.status || '');
+        if (exStatus.includes('សុំចូល') || exStatus.includes('ចូលក្រោយ')) return true;
+      }
+    }
+
+    return false;
+  }
+
+  buildExamArrangementListForGrade(selectedGrade) {
+    const sortOrder = this.examSortOrderSelect ? this.examSortOrderSelect.value : 'normal';
+    const startRoom = parseInt(this.examStartRoomInput ? this.examStartRoomInput.value : 1, 10) || 1;
+    const studentsPerRoom = parseInt(this.examStudentsPerRoomInput ? this.examStudentsPerRoomInput.value : 25, 10) || 25;
+    let lateCount = Math.max(0, parseInt(this.examLateStudentsInput ? this.examLateStudentsInput.value : 0, 10) || 0);
+    if (lateCount === 0 && this.examLateStudentCounts && this.examLateStudentCounts[selectedGrade]) {
+      lateCount = this.examLateStudentCounts[selectedGrade];
+    }
+    if (lateCount === 0) {
+      const existingLate = (this.students || []).filter(
+        s => this.isIncompleteLateStudent(s) && (selectedGrade === 'ALL' || this.studentMatchesGrade(s, selectedGrade))
+      ).length;
+      if (existingLate > 0) lateCount = existingLate;
+    }
+
+    const presetEntry = GRADE_PRESETS[selectedGrade];
+    const gradeLabel = presetEntry ? presetEntry.label : 'គ្រប់កម្រិតថ្នាក់';
+    const examConfig = this.getExamConfigForGrade(selectedGrade);
+
+    let gradeMatched = [];
+    if (selectedGrade === 'ALL') {
+      gradeMatched = [...this.students];
+    } else {
+      gradeMatched = this.students.filter(s => this.studentMatchesGrade(s, selectedGrade));
+    }
+    // Filter out students explicitly excluded from this exam (their records remain in this.students)
+    gradeMatched = gradeMatched.filter(s => !s.excludedFromExam);
+
+    // MoEYS Examination Order Convention:
+    // Group 1: Original regular candidates (សិស្សធម្មតាដើម) -> Desks 1..N1, sorted alphabetically
+    // Group 2: Transferred students (ទើបផ្លាស់ប្ដូរថ្នាក់) & Late-join applicants (ទើបសុំចូលក្រោយ) -> Desks N1+1..N2, sorted alphabetically
+    // Group 3: Incomplete late backup placeholders (សិស្សចូលក្រោយ END-xxxx) -> Desks N2+1..N3 at the very end
+    const regularCandidates = [];
+    const lateAndTransferredCandidates = [];
+
+    gradeMatched.forEach(s => {
+      if (this.isIncompleteLateStudent(s)) return;
+
+      if (this.isTransferredStudent(s, selectedGrade) || this.isLateJoinStudent(s)) {
+        lateAndTransferredCandidates.push(s);
+      } else {
+        regularCandidates.push(s);
+      }
+    });
+
+    regularCandidates.sort((a, b) => (a.khmerName || '').localeCompare(b.khmerName || '', 'km'));
+
+    // In Group 2 (Transferred & Late-join students):
+    // 1. Transferred students come first
+    // 2. Late-join students (END-xxxx) come after transferred students
+    // 3. For END students, order by their number sequence (e.g. END-1800, END-1801...)
+    // 4. For transferred students, order by natural position / registration sequence
+    lateAndTransferredCandidates.sort((a, b) => {
+      const isEndA = Boolean(String(a.id || '').match(/END-\s*(\d+)/i) || a.isLateEntry);
+      const isEndB = Boolean(String(b.id || '').match(/END-\s*(\d+)/i) || b.isLateEntry);
+      if (!isEndA && isEndB) return -1; // Transferred student before late entry
+      if (isEndA && !isEndB) return 1;  // Late entry after transferred student
+      if (isEndA && isEndB) {
+        const numA = parseInt((String(a.id || '').match(/END-\s*(\d+)/i) || [0, 0])[1], 10);
+        const numB = parseInt((String(b.id || '').match(/END-\s*(\d+)/i) || [0, 0])[1], 10);
+        if (numA && numB && numA !== numB) return numA - numB;
+      }
+      const idxA = this.students.findIndex(s => s.id === a.id);
+      const idxB = this.students.findIndex(s => s.id === b.id);
+      if (idxA !== -1 && idxB !== -1) {
+        return idxA - idxB;
+      }
+      return (a.khmerName || '').localeCompare(b.khmerName || '', 'km');
+    });
+
+    // First reuse any existing incomplete late students belonging to this grade
+    const existingGradeLate = (this.students || []).filter(
+      s => this.isIncompleteLateStudent(s) && (selectedGrade === 'ALL' || this.studentMatchesGrade(s, selectedGrade))
+    );
+    existingGradeLate.sort((a, b) => {
+      const na = parseInt((String(a.id || '').match(/\d+/) || [0])[0], 10);
+      const nb = parseInt((String(b.id || '').match(/\d+/) || [0])[0], 10);
+      return na - nb;
+    });
+
+    // Calculate starting number for new END-xxxx based on current completed student count
+    const completedTotal = (this.students || []).filter(s => !this.isIncompleteLateStudent(s)).length;
+    const otherGradeMaxEnd = (this.students || [])
+      .filter(s => this.isIncompleteLateStudent(s) && (selectedGrade === 'ALL' ? false : !this.studentMatchesGrade(s, selectedGrade)))
+      .reduce((maxN, s) => {
+        const m = String(s.id || '').match(/END-\s*(\d+)/i);
+        return m ? Math.max(maxN, parseInt(m[1], 10)) : maxN;
+      }, 0);
+    const baseEndNumber = Math.max(completedTotal, otherGradeMaxEnd);
+
+    const lateCandidates = [];
+    for (let i = 0; i < lateCount; i++) {
+      if (i < existingGradeLate.length) {
+        const existingStu = existingGradeLate[i];
+        lateCandidates.push({
+          id: existingStu.id,
+          khmerName: existingStu.khmerName || '',
+          latinName: existingStu.latinName || '',
+          gender: existingStu.gender || '',
+          dob: existingStu.dob || '',
+          class: existingStu.class || '',
+          classType: existingStu.classType || '',
+          isLateEntry: true,
+          gradeLevel: selectedGrade
+        });
+      } else {
+        const endId = `END-${baseEndNumber + (i - existingGradeLate.length) + 1}`;
+        const existingStu = (this.students || []).find(s => s.id === endId);
+        if (existingStu && !this.isIncompleteLateStudent(existingStu)) {
+          // Already included in regular/transferred/late candidates if it belongs to this grade
+          continue;
+        }
+        lateCandidates.push({
+          id: endId,
+          khmerName: existingStu ? (existingStu.khmerName || '') : '',
+          latinName: existingStu ? (existingStu.latinName || '') : '',
+          gender: existingStu ? (existingStu.gender || '') : '',
+          dob: existingStu ? (existingStu.dob || '') : '',
+          class: existingStu ? (existingStu.class || '') : '',
+          classType: existingStu ? (existingStu.classType || '') : '',
+          isLateEntry: true,
+          gradeLevel: selectedGrade
+        });
+      }
+    }
+
+    const candidates = [
+      ...regularCandidates,
+      ...lateAndTransferredCandidates,
+      ...lateCandidates
+    ];
+    if (candidates.length === 0) return [];
+
+    const totalStudents = candidates.length;
+    const remainder = studentsPerRoom > 0 ? (totalStudents % studentsPerRoom) : 0;
+    const isLessFirst = (sortOrder === 'lessFirst' && remainder > 0);
+    const firstRoomCount = isLessFirst ? remainder : studentsPerRoom;
+
+    return candidates.map((stu, idx) => {
+      let roomIndex = 0;
+
+      if (isLessFirst) {
+        if (idx < firstRoomCount) {
+          roomIndex = 0;
+        } else {
+          const adjustedIdx = idx - firstRoomCount;
+          roomIndex = 1 + Math.floor(adjustedIdx / studentsPerRoom);
+        }
+      } else {
+        roomIndex = Math.floor(idx / studentsPerRoom);
+      }
+
+      const deskIndex = idx + 1;
+      const roomNum = startRoom + roomIndex;
+      const existing = (this.examArrangements || []).find(e => e.studentId === stu.id);
+      const isIncompleteLate = this.isIncompleteLateStudent(stu);
+      const isExplicitTransfer = Boolean(stu.isClassTransferred || stu.isTransferred || String(stu.status || '').includes('ប្ដូរថ្នាក់'));
+      const isLateJoin = !isExplicitTransfer && this.isLateJoinStudent(stu);
+      const isTransferred = isExplicitTransfer || (!isLateJoin && this.isTransferredStudent(stu, selectedGrade));
+
+      let statusDisplay = 'ធម្មតា';
+      if (isIncompleteLate) {
+        statusDisplay = 'សិស្សចូលក្រោយ';
+      } else if (isTransferred) {
+        statusDisplay = 'សិស្សប្ដូរថ្នាក់';
+      } else if (isLateJoin) {
+        statusDisplay = 'សុំចូលក្រោយ';
+      } else if (stu.status && stu.status !== 'ធម្មតា') {
+        statusDisplay = stu.status;
+      }
+
+      return {
+        studentId: stu.id,
+        khmerName: isIncompleteLate ? '' : this.cleanStudentName(stu.khmerName),
+        latinName: isIncompleteLate ? '' : (stu.latinName || ''),
+        gender: isIncompleteLate ? '' : stu.gender,
+        dob: isIncompleteLate ? '' : (stu.dob || '2008-01-01'),
+        grade: isIncompleteLate ? '' : (stu.class || gradeLabel),
+        class: isIncompleteLate ? '' : (stu.class || gradeLabel),
+        classType: isIncompleteLate ? '' : (stu.classType || ''),
+        status: statusDisplay,
+        isClassTransferred: Boolean(isTransferred),
+        isLateEntry: Boolean(stu.isLateEntry) || String(stu.id || '').startsWith('END-'),
+        gradeLevel: stu.gradeLevel || selectedGrade,
+        roomNumber: String(roomNum).padStart(2, '0'),
+        deskNumber: String(deskIndex).padStart(2, '0'),
+        secretCode: existing ? existing.secretCode : '',
+        examPeriod: examConfig.period,
+        examDate: examConfig.date
+      };
+    });
+  }
+
+  handleAssignExamRooms() {
+    const selectedGrade = this.examGradeSelect ? this.examGradeSelect.value : 'grade_7';
+    const presetEntry = GRADE_PRESETS[selectedGrade];
+    const gradeLabel = presetEntry ? presetEntry.label : 'គ្រប់កម្រិតថ្នាក់';
+    const lateCount = Math.max(0, parseInt(this.examLateStudentsInput ? this.examLateStudentsInput.value : 0, 10) || 0);
+
+    if (!this.examLateStudentCounts) this.examLateStudentCounts = {};
+    this.examLateStudentCounts[selectedGrade] = lateCount;
+
+    const newGradeArrangements = this.buildExamArrangementListForGrade(selectedGrade);
+    if (newGradeArrangements.length === 0) {
+      this.showToast(`មិនមានសិស្សសម្រាប់ ${gradeLabel} ក្នុងប្រព័ន្ធឡើយ!`, 'error');
+      return;
+    }
+
+    // Sync incomplete END-xxxx late students for selectedGrade into this.students
+    const newLateIds = new Set(
+      newGradeArrangements
+        .filter(item => this.isIncompleteLateStudent(item))
+        .map(item => item.studentId)
+    );
+
+    // Remove previous incomplete END-xxxx students for this grade that are no longer in newLateIds
+    this.students = (this.students || []).filter(s => {
+      if (this.isIncompleteLateStudent(s) && this.studentMatchesGrade(s, selectedGrade)) {
+        return newLateIds.has(s.id);
+      }
+      return true;
+    });
+
+    // Add any new incomplete END-xxxx students to this.students (only ID filled, other fields empty)
+    newGradeArrangements.forEach(item => {
+      if (this.isIncompleteLateStudent(item)) {
+        const existingIdx = this.students.findIndex(s => s.id === item.studentId);
+        const lateStuRecord = {
+          id: item.studentId,
+          khmerName: '',
+          latinName: '',
+          gender: '',
+          dob: '',
+          class: '',
+          classType: '',
+          phone: '',
+          guardian: '',
+          address: '',
+          avatar: '',
+          isLateEntry: true,
+          gradeLevel: selectedGrade
+        };
+        if (existingIdx !== -1) {
+          this.students[existingIdx] = { ...this.students[existingIdx], ...lateStuRecord };
+        } else {
+          this.students.push(lateStuRecord);
+        }
+      }
+    });
+
+    // Preserve saved arrangements for other grades and replace/save for selectedGrade
+    if (selectedGrade === 'ALL') {
+      this.examArrangements = newGradeArrangements;
+    } else {
+      const otherGradeArrangements = (this.examArrangements || []).filter(
+        item => !this.studentMatchesGrade(item, selectedGrade)
+      );
+      this.examArrangements = [...otherGradeArrangements, ...newGradeArrangements];
+    }
+
+    this.saveCurrentExamGradeSettings();
+    this.saveState();
+    this.renderNavigation();
+    this.renderExamView();
+    this.updateKPIOverview();
+    const totalRooms = new Set(newGradeArrangements.map(e => e.roomNumber)).size;
+    this.showToast(`បានរក្សាទុកសិស្ស ${newGradeArrangements.length} នាក់ (${gradeLabel}) ទៅក្នុង ${totalRooms} បន្ទប់ប្រឡងជោគជ័យ!`, 'success');
+  }
+
+  handleResetExamArrangement() {
+    const selectedGrade = this.examGradeSelect ? this.examGradeSelect.value : 'grade_7';
+    const presetEntry = GRADE_PRESETS[selectedGrade];
+    const gradeLabel = presetEntry ? presetEntry.label : 'គ្រប់កម្រិតថ្នាក់';
+    if (confirm(`តើអ្នកពិតជាចង់កំណត់ការរៀបចំការប្រឡងសម្រាប់ ${gradeLabel} ឡើងវិញមែនទេ?`)) {
+      if (selectedGrade === 'ALL') {
+        this.examArrangements = [];
+        this.examLateStudentCounts = {};
+        this.examGradeSettings = {};
+        this.students = (this.students || []).filter(s => !this.isIncompleteLateStudent(s));
+      } else {
+        this.examArrangements = (this.examArrangements || []).filter(
+          item => !this.studentMatchesGrade(item, selectedGrade)
+        );
+        if (this.examLateStudentCounts) {
+          this.examLateStudentCounts[selectedGrade] = 0;
+        }
+        if (this.examGradeSettings) {
+          delete this.examGradeSettings[selectedGrade];
+        }
+        if (this.examLateStudentsInput) {
+          this.examLateStudentsInput.value = 0;
+        }
+        this.students = (this.students || []).filter(
+          s => !(this.isIncompleteLateStudent(s) && this.studentMatchesGrade(s, selectedGrade))
+        );
+      }
+      try {
+        localStorage.setItem('sms_exam_grade_settings', JSON.stringify(this.examGradeSettings || {}));
+      } catch (e) { }
+
+      this.saveState();
+      this.renderNavigation();
+      this.syncExamConfigControls(selectedGrade);
+      this.renderExamView();
+      this.updateKPIOverview();
+      this.showToast(`បានកំណត់ការរៀបចំការប្រឡង (${gradeLabel}) ឡើងវិញរួចរាល់!`, 'info');
+    }
+  }
+
+  deleteExamArrangementRecord(studentId) {
+    if (!studentId) return;
+    const arrItem = (this.examArrangements || []).find(e => e.studentId === studentId || e.id === studentId);
+    const stu = (this.students || []).find(s => s.id === studentId);
+    const name = (arrItem && arrItem.khmerName) || (stu && stu.khmerName) || studentId;
+    const desk = arrItem ? parseInt(arrItem.deskNumber, 10) : '';
+    const room = arrItem ? parseInt(arrItem.roomNumber, 10) : '';
+    const deskInfo = desk ? `(បន្ទប់ ${room}, លេខតុ ${desk})` : '';
+
+    if (!confirm(`តើអ្នកពិតជាចង់លុបបេក្ខជន "${name}" ${deskInfo} ចេញពីប្រព័ន្ធប្រឡងមែនទេ?\nប្រព័ន្ធនឹងរៀបចំលេខបន្ទប់ និងលេខតុឡើងវិញដោយស្វ័យប្រវត្តិ។`)) {
+      return;
+    }
+
+    const selectedGrade = this.examGradeSelect ? this.examGradeSelect.value : 'grade_7';
+    const gradeKey = (arrItem && arrItem.gradeLevel) || (stu && this.getStudentGradeKey(stu)) || selectedGrade;
+
+    // 1. Remove from exam arrangements
+    this.examArrangements = (this.examArrangements || []).filter(e => e.studentId !== studentId && e.id !== studentId);
+
+    // 2. If it was an incomplete late entry slot, decrement lateCount
+    const isLateSlot = this.isIncompleteLateStudent(arrItem) || String(studentId).startsWith('END-');
+    if (isLateSlot) {
+      if (this.examLateStudentCounts && this.examLateStudentCounts[gradeKey] > 0) {
+        this.examLateStudentCounts[gradeKey]--;
+      }
+      if (this.examGradeSettings && this.examGradeSettings[gradeKey] && this.examGradeSettings[gradeKey].lateCount > 0) {
+        this.examGradeSettings[gradeKey].lateCount--;
+      }
+      if (this.examLateStudentsInput && parseInt(this.examLateStudentsInput.value, 10) > 0) {
+        this.examLateStudentsInput.value = Math.max(0, parseInt(this.examLateStudentsInput.value, 10) - 1);
+      }
+      // Remove placeholder from this.students
+      this.students = (this.students || []).filter(s => s.id !== studentId);
+    } else if (stu) {
+      // Also remove student from this.students to ensure they do not re-appear when reassigning
+      this.students = (this.students || []).filter(s => s.id !== studentId);
+      if (this.scores && this.scores[studentId]) {
+        delete this.scores[studentId];
+      }
+    }
+
+    // 3. Reassign arrangements for this grade so desk numbers shift smoothly
+    this.reassignExamArrangementsForGrade(gradeKey);
+    this.saveState();
+    this.renderNavigation();
+    this.renderExamView();
+    this.showToast(`បានលុបបេក្ខជន "${name}" និងរៀបចំលេខតុឡើងវិញជោគជ័យ!`, 'info');
+  }
+
+  openExamStudentActionModal(studentId) {
+    if (!studentId) return;
+    const arrItem = (this.examArrangements || []).find(e => e.studentId === studentId);
+    const stu = (this.students || []).find(s => s.id === studentId);
+
+    // If it is an incomplete placeholder slot with no name, simply remove the empty seat
+    if (this.isIncompleteLateStudent(arrItem) && (!stu || !stu.khmerName)) {
+      this.deleteExamArrangementRecord(studentId);
+      return;
+    }
+
+    this.currentExamActionStudentId = studentId;
+
+    const modal = document.getElementById('examStudentActionModal');
+    if (!modal) return;
+
+    const nameEl = document.getElementById('examActionStudentName');
+    const idEl = document.getElementById('examActionStudentId');
+    const genderEl = document.getElementById('examActionStudentGender');
+    const classEl = document.getElementById('examActionStudentClass');
+    const deskEl = document.getElementById('examActionCurrentDesk');
+
+    const name = (arrItem && arrItem.khmerName) || (stu && stu.khmerName) || studentId;
+    const gender = (arrItem && arrItem.gender) || (stu && stu.gender) || '-';
+    const cls = (arrItem && (arrItem.grade || arrItem.class)) || (stu && (stu.class || stu.grade)) || '-';
+    const desk = arrItem ? parseInt(arrItem.deskNumber, 10) : '-';
+    const room = arrItem ? parseInt(arrItem.roomNumber, 10) : '-';
+
+    if (nameEl) nameEl.textContent = name;
+    if (idEl) idEl.textContent = studentId;
+    if (genderEl) genderEl.textContent = gender;
+    if (classEl) classEl.textContent = cls;
+    if (deskEl) deskEl.textContent = `បន្ទប់ ${room}, តុ ${desk}`;
+
+    // Default to resort_alpha
+    const radio1 = modal.querySelector('input[name="examStudentActionType"][value="resort_alpha"]');
+    if (radio1) radio1.checked = true;
+
+    modal.classList.add('open');
+  }
+
+  closeExamStudentActionModal() {
+    const modal = document.getElementById('examStudentActionModal');
+    if (modal) modal.classList.remove('open');
+    this.currentExamActionStudentId = null;
+  }
+
+  applyExamStudentAction() {
+    const studentId = this.currentExamActionStudentId;
+    if (!studentId) return;
+
+    const actionRadio = document.querySelector('input[name="examStudentActionType"]:checked');
+    const actionType = actionRadio ? actionRadio.value : 'resort_alpha';
+
+    const selectedGrade = this.examGradeSelect ? this.examGradeSelect.value : 'grade_7';
+    const stu = (this.students || []).find(s => s.id === studentId);
+    const arrItem = (this.examArrangements || []).find(e => e.studentId === studentId || e.id === studentId);
+    const otherGrade = (arrItem && arrItem.gradeLevel) || (stu && this.getStudentGradeKey(stu));
+    const studentName = (stu && stu.khmerName) || (arrItem && arrItem.khmerName) || studentId;
+
+    if (actionType === 'resort_alpha') {
+      // 1. Re-sort Alphabetically with regular students
+      if (stu) {
+        stu.forceRegularExam = true;
+        stu.examOrderPreference = 'regular';
+        stu.isClassTransferred = false;
+        stu.isTransferred = false;
+        stu.isLateEntry = false;
+        stu.excludedFromExam = false;
+        stu.status = 'ធម្មតា';
+        if (stu.oldClass) delete stu.oldClass;
+        if (stu.oldGradeLevel) delete stu.oldGradeLevel;
+        if (stu.fromClass) delete stu.fromClass;
+        if (stu.transferFrom) delete stu.transferFrom;
+      }
+      if (arrItem) {
+        arrItem.forceRegularExam = true;
+        arrItem.examOrderPreference = 'regular';
+        arrItem.isClassTransferred = false;
+        arrItem.isLateEntry = false;
+        arrItem.status = 'ធម្មតា';
+        if (arrItem.oldClass) delete arrItem.oldClass;
+        if (arrItem.oldGradeLevel) delete arrItem.oldGradeLevel;
+        if (arrItem.fromClass) delete arrItem.fromClass;
+      }
+      this.reassignExamArrangementsForGrade(selectedGrade);
+      if (otherGrade && otherGrade !== selectedGrade) {
+        this.reassignExamArrangementsForGrade(otherGrade);
+      }
+      this.saveState();
+      this.showToast(`បានតម្រៀបសិស្ស «${studentName}» តាមលំដាប់អក្ខរក្រមធម្មតាឡើងវិញជោគជ័យ!`, 'success');
+
+    } else if (actionType === 'place_bottom') {
+      // 2. Place at bottom (last desk)
+      if (stu) {
+        stu.forceRegularExam = false;
+        stu.examOrderPreference = 'bottom';
+        stu.isClassTransferred = true;
+        stu.excludedFromExam = false;
+        if (!stu.status || stu.status === 'ធម្មតា') stu.status = 'សិស្សប្ដូរថ្នាក់';
+        // Move to end of this.students so entry order puts them at the very last desk
+        const curIdx = this.students.indexOf(stu);
+        if (curIdx !== -1) {
+          this.students.splice(curIdx, 1);
+          this.students.push(stu);
+        }
+      }
+      if (arrItem) {
+        arrItem.forceRegularExam = false;
+        arrItem.examOrderPreference = 'bottom';
+        arrItem.isClassTransferred = true;
+        if (!arrItem.status || arrItem.status === 'ធម្មតា') arrItem.status = 'សិស្សប្ដូរថ្នាក់';
+      }
+      this.reassignExamArrangementsForGrade(selectedGrade);
+      if (otherGrade && otherGrade !== selectedGrade) {
+        this.reassignExamArrangementsForGrade(otherGrade);
+      }
+      this.saveState();
+      this.showToast(`បានរុញសិស្ស «${studentName}» ទៅកាន់លេខតុចុងក្រោយគេជោគជ័យ!`, 'success');
+
+    } else if (actionType === 'exclude_exam') {
+      // 3. Exclude from this exam only (Record stays intact in this.students!)
+      if (stu) {
+        stu.excludedFromExam = true;
+      }
+      // Remove from exam arrangements
+      this.examArrangements = (this.examArrangements || []).filter(e => e.studentId !== studentId && e.id !== studentId);
+      // If it was an END- placeholder, decrement lateCount
+      if (String(studentId).startsWith('END-')) {
+        const targetG = selectedGrade;
+        if (this.examLateStudentCounts && this.examLateStudentCounts[targetG] > 0) {
+          this.examLateStudentCounts[targetG]--;
+        }
+        if (this.examGradeSettings && this.examGradeSettings[targetG] && this.examGradeSettings[targetG].lateCount > 0) {
+          this.examGradeSettings[targetG].lateCount--;
+        }
+        if (this.examLateStudentsInput && parseInt(this.examLateStudentsInput.value, 10) > 0) {
+          this.examLateStudentsInput.value = Math.max(0, parseInt(this.examLateStudentsInput.value, 10) - 1);
+        }
+      }
+      this.reassignExamArrangementsForGrade(selectedGrade);
+      if (otherGrade && otherGrade !== selectedGrade) {
+        this.reassignExamArrangementsForGrade(otherGrade);
+      }
+      this.saveState();
+      this.showToast(`បានដកសិស្ស «${studentName}» ចេញពីប្រឡង (ព័ត៌មានក្នុងប្រព័ន្ធរក្សាទុកដដែល)!`, 'info');
+    }
+
+    this.closeExamStudentActionModal();
+    this.renderExamView();
+  }
+
+  moveExamArrangement(studentId, direction) {
+    if (!studentId) return;
+    const selectedGrade = this.examGradeSelect ? this.examGradeSelect.value : 'grade_7';
+    let gradeList = (this.examArrangements || []).filter(item => this.studentMatchesGrade(item, selectedGrade));
+    if (gradeList.length === 0) return;
+
+    const idx = gradeList.findIndex(item => item.studentId === studentId);
+    if (idx === -1) return;
+
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= gradeList.length) return;
+
+    // Swap items in gradeList
+    const temp = gradeList[idx];
+    gradeList[idx] = gradeList[targetIdx];
+    gradeList[targetIdx] = temp;
+
+    // Re-assign desk numbers sequentially 1..N
+    const studentsPerRoom = parseInt(this.examStudentsPerRoomInput ? this.examStudentsPerRoomInput.value : 25, 10) || 25;
+    const startRoom = parseInt(this.examStartRoomInput ? this.examStartRoomInput.value : 1, 10) || 1;
+    const sortOrder = this.examSortOrderSelect ? this.examSortOrderSelect.value : 'normal';
+    const totalStudents = gradeList.length;
+    const remainder = studentsPerRoom > 0 ? (totalStudents % studentsPerRoom) : 0;
+    const isLessFirst = (sortOrder === 'lessFirst' && remainder > 0);
+    const firstRoomCount = isLessFirst ? remainder : studentsPerRoom;
+
+    gradeList.forEach((item, i) => {
+      let roomIndex = 0;
+      if (isLessFirst) {
+        if (i < firstRoomCount) {
+          roomIndex = 0;
+        } else {
+          roomIndex = 1 + Math.floor((i - firstRoomCount) / studentsPerRoom);
+        }
+      } else {
+        roomIndex = Math.floor(i / studentsPerRoom);
+      }
+      item.deskNumber = String(i + 1).padStart(2, '0');
+      item.roomNumber = String(startRoom + roomIndex).padStart(2, '0');
+    });
+
+    // Also update relative order in this.students if both exist
+    const stu1 = this.students.find(s => s.id === gradeList[idx].studentId);
+    const stu2 = this.students.find(s => s.id === gradeList[targetIdx].studentId);
+    if (stu1 && stu2) {
+      const sIdx1 = this.students.indexOf(stu1);
+      const sIdx2 = this.students.indexOf(stu2);
+      if (sIdx1 !== -1 && sIdx2 !== -1) {
+        this.students[sIdx1] = stu2;
+        this.students[sIdx2] = stu1;
+      }
+    }
+
+    // Save and re-render
+    const otherArrangements = (this.examArrangements || []).filter(item => !this.studentMatchesGrade(item, selectedGrade));
+    this.examArrangements = [...otherArrangements, ...gradeList];
+    this.saveState();
+    this.renderExamView();
+  }
+
+  renderExamArrangementTable(forceRecalculatePreview = false) {
+    if (!this.examArrangementTableBody) return;
+    this.examArrangementTableBody.innerHTML = '';
+
+    const selectedGrade = this.examGradeSelect ? this.examGradeSelect.value : 'grade_7';
+
+    // Filter saved arrangements by selectedGrade; if none saved yet (or user changed room/sort/late inputs), preview automatically
+    let list = [];
+    if (!forceRecalculatePreview) {
+      let savedAll = this.examArrangements || [];
+
+      // Auto-prune orphaned records: If a student was deleted from this.students,
+      // remove them from this.examArrangements immediately!
+      const validStudentIds = new Set((this.students || []).map(s => s.id));
+      const hasOrphaned = savedAll.some(item => !validStudentIds.has(item.studentId));
+      if (hasOrphaned) {
+        savedAll = savedAll.filter(item => validStudentIds.has(item.studentId));
+        this.examArrangements = savedAll;
+        if (selectedGrade !== 'ALL') {
+          this.reassignExamArrangementsForGrade(selectedGrade);
+          this.saveState(false);
+          savedAll = this.examArrangements || [];
+        }
+      }
+
+      list = selectedGrade === 'ALL'
+        ? savedAll
+        : savedAll.filter(item => this.studentMatchesGrade(item, selectedGrade));
+
+      // Auto-detect if saved arrangements have inconsistencies
+      // (e.g. students transferred from another class with old room numbers, non-sequential desk numbers, jumping rooms, or late entries in the middle)
+      if (selectedGrade !== 'ALL' && list.length > 0) {
+        let isCorrupted = false;
+
+        // 1. Desk numbers MUST be strictly sequential 1, 2, 3, ... N
+        for (let i = 0; i < list.length; i++) {
+          if (parseInt(list[i].deskNumber, 10) !== (i + 1)) {
+            isCorrupted = true;
+            break;
+          }
+        }
+
+        // 2. MoEYS Ordering Check:
+        // Group 1: Regular candidates (សិស្សធម្មតាដើម)
+        // Group 2: Transferred / Late join candidates (ទើបផ្លាស់ប្ដូរថ្នាក់ / សុំចូលក្រោយ)
+        // Group 3: Incomplete late backup candidates (សិស្សចូលក្រោយ END-xxxx)
+        // An incomplete late candidate must NOT appear before any completed candidate,
+        // and a regular candidate must NOT appear after a transferred or late-join candidate!
+        if (!isCorrupted) {
+          let seenTransferredOrLate = false;
+          let seenIncompleteLate = false;
+          for (const item of list) {
+            const isIncomplete = this.isIncompleteLateStudent(item);
+            const isTransOrLate = !isIncomplete && (
+              item.status === 'សិស្សប្ដូរថ្នាក់' ||
+              item.status === 'សុំចូលក្រោយ' ||
+              Boolean(item.isClassTransferred) ||
+              this.isTransferredStudent(item, selectedGrade) ||
+              this.isLateJoinStudent(item)
+            );
+
+            if (isIncomplete) {
+              seenIncompleteLate = true;
+            } else if (seenIncompleteLate) {
+              // Real student appeared after incomplete late student
+              isCorrupted = true;
+              break;
+            } else if (isTransOrLate) {
+              seenTransferredOrLate = true;
+            } else if (seenTransferredOrLate) {
+              // Regular candidate appeared after transferred/late candidate
+              isCorrupted = true;
+              break;
+            }
+          }
+        }
+
+        // 3. Room numbers must be continuous without non-contiguous gaps (e.g. room 2 -> 4 -> 8 -> 9)
+        if (!isCorrupted) {
+          const roomNums = [...new Set(list.map(i => parseInt(i.roomNumber, 10)).filter(n => !isNaN(n)))].sort((a, b) => a - b);
+          for (let i = 1; i < roomNums.length; i++) {
+            if (roomNums[i] !== roomNums[i - 1] + 1) {
+              isCorrupted = true;
+              break;
+            }
+          }
+        }
+
+        // 4. Check if live regular students in this.students match the count in list
+        if (!isCorrupted) {
+          const liveRegularCount = (this.students || []).filter(s => !this.isIncompleteLateStudent(s) && this.studentMatchesGrade(s, selectedGrade)).length;
+          const listRegularCount = list.filter(s => !this.isIncompleteLateStudent(s)).length;
+          if (liveRegularCount !== listRegularCount) {
+            isCorrupted = true;
+          }
+        }
+
+        // 5. Check if the saved list has the same student set, order, and statuses as expected
+        if (!isCorrupted) {
+          const freshList = this.buildExamArrangementListForGrade(selectedGrade);
+          if (freshList.length !== list.length) {
+            isCorrupted = true;
+          } else {
+            const listIds = new Set(list.map(i => i.studentId));
+            const freshIds = new Set(freshList.map(i => i.studentId));
+            if (freshList.some(f => !listIds.has(f.studentId)) || list.some(l => !freshIds.has(l.studentId))) {
+              isCorrupted = true;
+            } else {
+              // Ensure order and statuses match clean calculation (heals past erroneous transfers & sorts!)
+              for (let i = 0; i < freshList.length; i++) {
+                if (freshList[i].studentId !== list[i].studentId || freshList[i].status !== list[i].status) {
+                  isCorrupted = true;
+                  break;
+                }
+              }
+            }
+          }
+        }
+
+        if (isCorrupted) {
+          this.reassignExamArrangementsForGrade(selectedGrade);
+          this.saveState(false);
+          const freshAll = this.examArrangements || [];
+          list = freshAll.filter(item => this.studentMatchesGrade(item, selectedGrade));
+        }
+      }
+    }
+
+    if (list.length === 0) {
+      list = this.buildExamArrangementListForGrade(selectedGrade);
+    }
+
+    if (list.length === 0) {
+      if (this.examEmptyNotice) {
+        const presetEntry = GRADE_PRESETS[selectedGrade];
+        const gradeLabel = presetEntry ? presetEntry.label : selectedGrade;
+        this.examEmptyNotice.innerHTML = `
+          <div style="padding: 1.5rem; text-align: center; color: #64748b;">
+            <i class="ri-information-line" style="font-size: 2rem; color: #f59e0b; display: block; margin-bottom: 0.5rem;"></i>
+            <strong style="font-size: 1.05rem; color: #1e293b;">មិនមានសិស្សសម្រាប់ «${gradeLabel}» ក្នុងប្រព័ន្ធឡើយ</strong>
+            <p style="margin: 0.35rem 0 0; font-size: 0.9rem;">សូមបន្ថែមសិស្ស ឬនាំចូលទិន្នន័យសិស្សសម្រាប់កម្រិតថ្នាក់នេះជាមុនសិន។</p>
+          </div>
+        `;
+        this.examEmptyNotice.style.display = 'block';
+      }
+      return;
+    }
+
+    if (this.examEmptyNotice) this.examEmptyNotice.style.display = 'none';
+
+    list.forEach(item => {
+      const tr = document.createElement('tr');
+      const isIncompleteLate = this.isIncompleteLateStudent(item);
+      const genderBadgeClass = item.gender === 'ស្រី' ? 'gender-female' : 'gender-male';
+
+      // format DOB to DD/MM/YYYY
+      let dobStr = item.dob || '';
+      if (dobStr.includes('-')) {
+        const parts = dobStr.split('-');
+        if (parts.length === 3) dobStr = `${parts[2]}/${parts[1]}/${parts[0]}`;
+      }
+
+      const roomNumDisplay = parseInt(item.roomNumber, 10) || item.roomNumber;
+      const deskNumDisplay = parseInt(item.deskNumber, 10) || item.deskNumber;
+      const genderCellHtml = (!isIncompleteLate && item.gender)
+        ? `<span class="gender-badge ${genderBadgeClass}">${item.gender}</span>`
+        : '';
+
+      let statusHtml = '';
+      if (isIncompleteLate) {
+        statusHtml = `<span style="color: #d97706; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#d97706;"></span>${item.status || 'សិស្សចូលក្រោយ'}</span>`;
+      } else if (item.status === 'សិស្សប្ដូរថ្នាក់' || item.status === 'ប្ដូរថ្នាក់' || item.isClassTransferred) {
+        statusHtml = `<span style="color: #7c3aed; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#7c3aed;"></span>${item.status || 'សិស្សប្ដូរថ្នាក់'}</span>`;
+      } else if (item.status === 'សុំចូលក្រោយ' || item.isLateEntry) {
+        statusHtml = `<span style="color: #0284c7; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#0284c7;"></span>${item.status || 'សុំចូលក្រោយ'}</span>`;
+      } else {
+        statusHtml = `<span style="color: #16a34a; font-weight: 600; display: inline-flex; align-items: center; gap: 4px;"><span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:#16a34a;"></span>${item.status || 'ធម្មតា'}</span>`;
+      }
+
+      tr.innerHTML = `
+        <td style="font-weight: 700; color: var(--primary);">${item.studentId}</td>
+        <td style="font-weight: 600;">${isIncompleteLate ? '' : (item.khmerName || '')}</td>
+        <td>${genderCellHtml}</td>
+        <td>${isIncompleteLate ? '' : dobStr}</td>
+        <td>${isIncompleteLate ? '' : (item.grade || '')}</td>
+        <td>${statusHtml}</td>
+        <td><span class="badge-exam-room-circle">${roomNumDisplay}</span></td>
+        <td><span class="badge-exam-desk-circle">${deskNumDisplay}</span></td>
+        <td style="text-align: center; white-space: nowrap;">
+          <button class="btn-table-action" style="color: #475569; padding: 2px 4px;" title="រំកិលឡើងលើ" onclick="app.moveExamArrangement('${item.studentId}', 'up')">
+            <i class="ri-arrow-up-s-line" style="font-size: 1.15rem;"></i>
+          </button>
+          <button class="btn-table-action" style="color: #475569; padding: 2px 4px;" title="រំកិលចុះក្រោម" onclick="app.moveExamArrangement('${item.studentId}', 'down')">
+            <i class="ri-arrow-down-s-line" style="font-size: 1.15rem;"></i>
+          </button>
+          <button class="btn-table-action delete" style="padding: 2px 4px;" title="ជម្រើសរៀបចំ/លុបចេញពីតុ (តម្រៀបឡើងវិញ ឬ ទុកក្រោមគេ)" onclick="app.openExamStudentActionModal('${item.studentId}')">
+            <i class="ri-delete-bin-line"></i>
+          </button>
+        </td>
+      `;
+      this.examArrangementTableBody.appendChild(tr);
+    });
+  }
+
+  getMatrixSubjectsForGrade(gradeKey) {
+    if (!this.examSubjectOrders) {
+      this.examSubjectOrders = this.getDefaultExamSubjectOrders();
+    }
+    const defaultOrders = this.getDefaultExamSubjectOrders();
+
+    // Normalize section keys (e.g. grade_7a -> grade_7, grade_11a -> grade_11_sci)
+    let normGrade = gradeKey || 'grade_7';
+    if (!defaultOrders[normGrade]) {
+      if (/^grade_7/i.test(normGrade)) normGrade = 'grade_7';
+      else if (/^grade_8/i.test(normGrade)) normGrade = 'grade_8';
+      else if (/^grade_9/i.test(normGrade)) normGrade = 'grade_9';
+      else if (/^grade_10/i.test(normGrade)) normGrade = 'grade_10';
+      else if (/^grade_11.*b/i.test(normGrade) || normGrade.includes('11_soc')) normGrade = 'grade_11_soc';
+      else if (/^grade_11/i.test(normGrade)) normGrade = 'grade_11_sci';
+      else if (/^grade_12.*b/i.test(normGrade) || normGrade.includes('12_soc')) normGrade = 'grade_12_soc';
+      else if (/^grade_12/i.test(normGrade)) normGrade = 'grade_12_sci';
+      else normGrade = 'grade_7';
+    }
+
+    const orderedNames = (this.examSubjectOrders[normGrade] && this.examSubjectOrders[normGrade].length > 0)
+      ? this.examSubjectOrders[normGrade]
+      : (defaultOrders[normGrade] || defaultOrders.grade_7);
+
+    const gradeCatalog = EXAM_MATRIX_SUBJECTS[normGrade] || EXAM_MATRIX_SUBJECTS.grade_7 || [];
+    const fallbackCatalog = EXAM_MATRIX_SUBJECTS.grade_7 || [];
+    const presetSubjects = (GRADE_PRESETS[normGrade] && GRADE_PRESETS[normGrade].subjects) ? GRADE_PRESETS[normGrade].subjects : [];
+
+    // Alias lookup for Khmer subject names -> standard { code, fullKey, defaultMax }
+    const resolveSubjectMeta = (rawName, idx) => {
+      const clean = String(rawName || '').trim();
+      const norm = clean.replace(/\s+/g, '');
+
+      // 1. Direct match in grade's EXAM_MATRIX_SUBJECTS or fallback EXAM_MATRIX_SUBJECTS.grade_7
+      const direct = gradeCatalog.find(s => s.name.replace(/\s+/g, '') === norm)
+        || fallbackCatalog.find(s => s.name.replace(/\s+/g, '') === norm);
+
+      // Find grade-specific maxScore from gradeCatalog or GRADE_PRESETS if available
+      const findMax = (fullKey, fallbackMax) => {
+        const inGradeCat = gradeCatalog.find(s => s.fullKey === fullKey);
+        if (inGradeCat && inGradeCat.maxScore) return inGradeCat.maxScore;
+        const inPreset = presetSubjects.find(s => s.code === fullKey);
+        if (inPreset && inPreset.maxScore) return inPreset.maxScore;
+        return fallbackMax;
+      };
+
+      if (direct) {
+        return {
+          code: direct.code,
+          name: clean,
+          fullKey: direct.fullKey,
+          maxScore: findMax(direct.fullKey, direct.maxScore || 50)
+        };
+      }
+
+      // 2. Keyword/alias matching for common Khmer subject names
+      if (norm.includes('តែងសេចក្តី') || norm.includes('តែងសេចក្ដី')) {
+        return { code: 'LE', name: clean, fullKey: 'essay', maxScore: findMax('essay', 60) };
+      }
+      if (norm.includes('សរសេរតាមអាន')) {
+        return { code: 'DI', name: clean, fullKey: 'dictation', maxScore: findMax('dictation', 40) };
+      }
+      if (norm.includes('អំណាន')) {
+        return { code: 'RD', name: clean, fullKey: 'reading', maxScore: findMax('reading', 100) };
+      }
+      if (norm.includes('ភាសាខ្មែរ') || norm.includes('អក្សរសាស្ត្រខ្មែរ') || norm.includes('អក្សរសាស្រ្តខ្មែរ') || norm.includes('អក្សរសាស្ត្រ') || norm.includes('អក្សរសាស្រ្ត') || norm.includes('ខ្មែរ')) {
+        return { code: 'K', name: clean, fullKey: 'kh', maxScore: findMax('kh', 100) };
+      }
+      if (norm.includes('គណិត')) {
+        return { code: 'M', name: clean, fullKey: 'math', maxScore: findMax('math', 100) };
+      }
+      if (norm.includes('រូបវិទ្យា') || norm === 'រូប') {
+        return { code: 'P', name: clean, fullKey: 'phy', maxScore: findMax('phy', 50) };
+      }
+      if (norm.includes('គីមី')) {
+        return { code: 'C', name: clean, fullKey: 'chem', maxScore: findMax('chem', 50) };
+      }
+      if (norm.includes('ជីវវិទ្យា') || norm === 'ជីវៈ' || norm === 'ជីវ') {
+        return { code: 'B', name: clean, fullKey: 'bio', maxScore: findMax('bio', 50) };
+      }
+      if (norm.includes('ប្រវត្តិ')) {
+        return { code: 'H', name: clean, fullKey: 'his', maxScore: findMax('his', 50) };
+      }
+      if (norm.includes('ព័ត៌មានវិទ្យា') || norm.includes('កុំព្យូទ័រ')) {
+        return { code: 'IT', name: clean, fullKey: 'ict', maxScore: findMax('ict', 50) };
+      }
+      if (norm.includes('សីល') || norm.includes('ពលរដ្ឋ')) {
+        return { code: 'MO', name: clean, fullKey: 'moral', maxScore: findMax('moral', 50) };
+      }
+      if (norm.includes('ផែនដី') || norm.includes('បរិស្ថាន')) {
+        return { code: 'ES', name: clean, fullKey: 'geo_env', maxScore: findMax('geo_env', 50) };
+      }
+      if (norm.includes('ភូមិវិទ្យា') || norm === 'ភូមិ') {
+        return { code: 'G', name: clean, fullKey: 'geo', maxScore: findMax('geo', 50) };
+      }
+      if (norm.includes('គេហវិទ្យា')) {
+        return { code: 'HE', name: clean, fullKey: 'home_ec', maxScore: findMax('home_ec', 50) };
+      }
+      if (norm.includes('ភាសាបរទេស') || norm.includes('អង់គ្លេស') || norm.includes('បារាំង')) {
+        return { code: 'E', name: clean, fullKey: 'eng', maxScore: findMax('eng', 50) };
+      }
+      if (norm.includes('អប់រំកាយ') || norm.includes('កីឡា')) {
+        return { code: 'SP', name: clean, fullKey: 'sport', maxScore: findMax('sport', 50) };
+      }
+      if (norm.includes('បំណិនជីវិត')) {
+        return { code: 'SK', name: clean, fullKey: 'life_skill', maxScore: 50 };
+      }
+      if (norm.includes('សេដ្ឋកិច្ច')) {
+        return { code: 'EC', name: clean, fullKey: 'econ', maxScore: 50 };
+      }
+      if (norm.includes('សុខភាព')) {
+        return { code: 'HC', name: clean, fullKey: 'health', maxScore: 50 };
+      }
+      if (norm.includes('កសិកម្ម')) {
+        return { code: 'AG', name: clean, fullKey: 'agri', maxScore: 50 };
+      }
+      if (norm.includes('បណ្ណាល័យ')) {
+        return { code: 'LB', name: clean, fullKey: 'library', maxScore: 50 };
+      }
+
+      // 3. Custom user-defined subject fallback
+      return {
+        code: `S${idx + 1}`,
+        name: clean,
+        fullKey: `custom_${idx + 1}`,
+        maxScore: 50
+      };
+    };
+
+    return orderedNames.map((name, idx) => resolveSubjectMeta(name, idx));
+  }
+
+
+  /**
+   * Returns the single period key that should be used for score read/write.
+   * Priority: activeScorePeriod > examConfig.period > 'sem1_exam'
+   */
+
+  /**
+   * Returns lowercase room suffix:
+   * 0..25 -> a..z
+   * 26..51 -> a1..z1
+   * 52..77 -> a2..z2
+   */
+  getRoomCodeSuffix(index) {
+    const alphabet = 'abcdefghijklmnopqrstuvwxyz';
+    const letter = alphabet[index % 26];
+    const cycle = Math.floor(index / 26);
+    return cycle === 0 ? letter : `${letter}${cycle}`;
+  }
+
+  /**
+   * Returns grade secret suffix (e.g. 7, 8, 9, 10, 11SC, 11SS, 12SC, 12SS)
+   */
+  getGradeSecretSuffix(gradeKey) {
+    if (!gradeKey) return '7';
+    if (gradeKey === 'grade_11_sci' || gradeKey === '11_sci' || gradeKey === '11SC') return '11SC';
+    if (gradeKey === 'grade_11_soc' || gradeKey === '11_soc' || gradeKey === '11SS') return '11SS';
+    if (gradeKey === 'grade_12_sci' || gradeKey === '12_sci' || gradeKey === '12SC') return '12SC';
+    if (gradeKey === 'grade_12_soc' || gradeKey === '12_soc' || gradeKey === '12SS') return '12SS';
+    if (gradeKey.includes('11') && (gradeKey.includes('soc') || gradeKey.includes('សង្គម') || gradeKey.includes('SS') || gradeKey.includes('ss'))) return '11SS';
+    if (gradeKey.includes('11')) return '11SC';
+    if (gradeKey.includes('12') && (gradeKey.includes('soc') || gradeKey.includes('សង្គម') || gradeKey.includes('SS') || gradeKey.includes('ss'))) return '12SS';
+    if (gradeKey.includes('12')) return '12SC';
+    if (gradeKey.includes('10')) return '10';
+    if (gradeKey.includes('9')) return '9';
+    if (gradeKey.includes('8')) return '8';
+    return '7';
+  }
+
+  /**
+   * Automatically upgrades legacy secret codes (e.g. C11d -> C11SCd or C11SSd, C12d -> C12SCd or C12SSd)
+   * Also safely repairs any corrupted repeated suffixes like K11SCscd -> K11SCd.
+   */
+  upgradeSecretCodeToTrack(code, gradeKey) {
+    if (!code) return '';
+    const trimmed = String(code).trim();
+    const trackSuffix = this.getGradeSecretSuffix(gradeKey);
+
+    if (trackSuffix === '11SC' || trackSuffix === '11SS' || trackSuffix === '12SC' || trackSuffix === '12SS') {
+      const gradeNum = trackSuffix.slice(0, 2);
+      const m = trimmed.match(new RegExp(`^([a-zA-Z]+?)${gradeNum}(?:SC|SS|sc|ss)*([a-zA-Z]\\d*)$`, 'i'));
+      if (m) {
+        const sub = m[1].toUpperCase();
+        const roomSfx = m[2].toLowerCase();
+        return `${sub}${trackSuffix}${roomSfx}`;
+      }
+    }
+    return trimmed;
+  }
+
+  /**
+   * Formats a secret code so that the subject code is uppercase,
+   * grade number & track code are uppercase, and the room representation suffix is lowercase (e.g. M7a, M7a1, C11SCd, MO11SSb, DI7m).
+   * Also safely repairs duplicate tracks (e.g. K11SCscd -> K11SCd).
+   */
+  formatSecretCode(code) {
+    if (!code) return '';
+    const trimmed = String(code).trim();
+
+    // Check for track-based secret codes (Grades 11 & 12 with SC/SS, including repairing duplicate tags)
+    const mTrack = trimmed.match(/^([a-zA-Z]+?)(11|12)(?:SC|SS|sc|ss)+([a-zA-Z]\d*)$/i);
+    if (mTrack) {
+      const sub = mTrack[1].toUpperCase();
+      const grade = mTrack[2];
+      const isSocial = /ss/i.test(trimmed);
+      const track = isSocial ? 'SS' : 'SC';
+      const roomSfx = mTrack[3].toLowerCase();
+      return `${sub}${grade}${track}${roomSfx}`;
+    }
+
+    // Standard format for grades 7..10: e.g. K7e, M8a, DI10a, or with cycle e.g. M7a1
+    const m = trimmed.match(/^([a-zA-Z]+?)(\d+)([a-zA-Z]+\d*)$/);
+    if (m) {
+      return `${m[1].toUpperCase()}${m[2]}${m[3].toLowerCase()}`;
+    }
+    const m2 = trimmed.match(/^([a-zA-Z]+)(.*)$/);
+    if (m2) {
+      return `${m2[1].toUpperCase()}${m2[2].toLowerCase()}`;
+    }
+    return trimmed;
+  }
+
+  getActiveScoringPeriod(gradeKey) {
+    if (this.activeScorePeriod) return this.activeScorePeriod;
+    if (this.examScoreSubjectPeriodSelect && this.examScoreSubjectPeriodSelect.value) {
+      return this.examScoreSubjectPeriodSelect.value;
+    }
+    if (this.secretScorePeriodSelect && this.secretScorePeriodSelect.value) {
+      return this.secretScorePeriodSelect.value;
+    }
+    if (this.currentPeriod && (this.currentPeriod.startsWith('m') || this.currentPeriod.includes('sem') || this.currentPeriod === 'test_early')) {
+      return this.currentPeriod;
+    }
+    if (gradeKey) {
+      const cfg = this.getExamConfigForGrade(gradeKey);
+      if (cfg && cfg.period) return cfg.period;
+    }
+    return this.activeScorePeriod || 'test_early';
+  }
+
+  /**
+   * Auto-calculate ភាសាខ្មែរ score for grade 7/8/9 from essay + dictation.
+   * kh = essay (60) + dictation (40) = 100
+   */
+  autoCalcKhmerScore(stuId, periodKey, gradeKey) {
+    const isGrade789 = ['grade_7', 'grade_8', 'grade_9'].includes(gradeKey) ||
+      /^grade_[789][abc]?$/.test(gradeKey) ||
+      /^ថ្នាក់ទី[៧៨៩]/.test(gradeKey);
+    if (!isGrade789) return;
+    if (!this.scores[stuId] || !this.scores[stuId][periodKey]) return;
+    const pd = this.scores[stuId][periodKey];
+    const essay = this.getSubjectScore(pd, 'kh_essay');
+    const dictation = this.getSubjectScore(pd, 'kh_dict');
+    // Auto-sum only when at least one component is present
+    if (essay !== undefined || dictation !== undefined) {
+      const sum = (essay || 0) + (dictation || 0);
+      pd['kh'] = sum;
+      pd['K'] = sum;
+    }
+  }
+
+  /**
+   * After saving exam scores under an exam periodKey (e.g. 'sem1_exam', 'm01'),
+   * sync the exam subject scores (kh, math, phy…) into the corresponding
+   * grade-sheet period so the grade table shows them.
+   */
+  syncExamScoresToGradeSheet(stuId, examPeriodKey) {
+    if (!stuId || !examPeriodKey) return;
+
+    // Normalize period: test_early & year_start_test are the same
+    const normalizedPeriod = (examPeriodKey === 'year_start_test' || examPeriodKey === 'test_early')
+      ? 'test_early'
+      : examPeriodKey;
+
+    const examScores = (this.scores[stuId] && (this.scores[stuId][examPeriodKey] || this.scores[stuId][normalizedPeriod]))
+      ? (this.scores[stuId][examPeriodKey] || this.scores[stuId][normalizedPeriod])
+      : {};
+    if (!Object.keys(examScores).length) return;
+
+    if (!this.scores[stuId]) this.scores[stuId] = {};
+    if (!this.scores[stuId][normalizedPeriod]) this.scores[stuId][normalizedPeriod] = {};
+
+    Object.entries(examScores).forEach(([k, v]) => {
+      if (v === undefined || v === null || v === '') return;
+      this.setSubjectScore(stuId, normalizedPeriod, k, v);
+    });
+
+    const stu = this.students.find(s => s.id === stuId);
+    const stuGrade = stu ? this.getStandardGradeKey(stu.class) : 'grade_7';
+    this.autoCalcKhmerScore(stuId, normalizedPeriod, stuGrade);
+
+    // Mirror to year_start_test if test_early for compatibility
+    if (normalizedPeriod === 'test_early') {
+      if (!this.scores[stuId]['year_start_test']) this.scores[stuId]['year_start_test'] = {};
+      Object.assign(this.scores[stuId]['year_start_test'], this.scores[stuId][normalizedPeriod]);
+    }
+  }
+
+  renderExamSecretMatrixTable() {
+    if (!this.examSecretMatrixHead || !this.examSecretMatrixBody) return;
+    const gradeKey = this.examSecretGradeSelect ? this.examSecretGradeSelect.value : 'grade_7';
+    const allSubjects = this.getMatrixSubjectsForGrade(gradeKey);
+
+    // Setup selected subject codes set (defaults to all subjects)
+    if (!this.selectedSecretSubjectCodes || this.currentMatrixGrade !== gradeKey) {
+      this.currentMatrixGrade = gradeKey;
+      this.selectedSecretSubjectCodes = new Set(allSubjects.map(s => s.code));
+    }
+
+    // Populate Checkbox Dropdown Menu matching Image 5
+    if (this.secretSubjectCheckboxMenu) {
+      this.secretSubjectCheckboxMenu.innerHTML = '';
+
+      const allSelected = allSubjects.every(s => this.selectedSecretSubjectCodes.has(s.code));
+
+      // "Select All" item
+      const selectAllDiv = document.createElement('label');
+      selectAllDiv.className = 'secret-subject-checkbox-item select-all-item';
+      selectAllDiv.innerHTML = `
+        <input type="checkbox" id="chkSecretSelectAll" ${allSelected ? 'checked' : ''}>
+        <span style="font-weight: 700; color: #1e3a8a;">ជ្រើសរើសទាំងអស់</span>
+      `;
+      this.secretSubjectCheckboxMenu.appendChild(selectAllDiv);
+
+      const chkSelectAll = selectAllDiv.querySelector('#chkSecretSelectAll');
+      chkSelectAll.addEventListener('change', (e) => {
+        if (e.target.checked) {
+          this.selectedSecretSubjectCodes = new Set(allSubjects.map(s => s.code));
+        } else {
+          this.selectedSecretSubjectCodes = new Set();
+        }
+        this.renderExamSecretMatrixTable();
+      });
+
+      // Individual subject items
+      allSubjects.forEach(s => {
+        const itemLabel = document.createElement('label');
+        itemLabel.className = 'secret-subject-checkbox-item';
+        const isChecked = this.selectedSecretSubjectCodes.has(s.code);
+        itemLabel.innerHTML = `
+          <input type="checkbox" class="chk-secret-subject" value="${s.code}" ${isChecked ? 'checked' : ''}>
+          <span><strong>${s.code}</strong> - ${s.name}</span>
+        `;
+        const chk = itemLabel.querySelector('input');
+        chk.addEventListener('change', (e) => {
+          if (e.target.checked) {
+            this.selectedSecretSubjectCodes.add(s.code);
+          } else {
+            this.selectedSecretSubjectCodes.delete(s.code);
+          }
+          this.renderExamSecretMatrixTable();
+        });
+        this.secretSubjectCheckboxMenu.appendChild(itemLabel);
+      });
+
+      // Update dropdown button label
+      if (this.secretSubjectDropdownLabel) {
+        const count = this.selectedSecretSubjectCodes.size;
+        if (count === allSubjects.length) {
+          this.secretSubjectDropdownLabel.textContent = 'ជ្រើសរើសទាំងអស់';
+        } else if (count === 0) {
+          this.secretSubjectDropdownLabel.textContent = 'ជ្រើសរើសមុខវិជ្ជាបោះពុម្ព';
+        } else {
+          this.secretSubjectDropdownLabel.textContent = `ជ្រើសរើស (${count} មុខវិជ្ជា)`;
+        }
+      }
+    }
+
+    // Determine visible subjects based on checkboxes
+    const visibleSubjects = allSubjects.filter(s => this.selectedSecretSubjectCodes.has(s.code));
+
+    // Filter students by selected grade
+    let studentsInGrade = (this.examArrangements || []).filter(item => {
+      return this.studentMatchesGrade(item, gradeKey);
+    });
+
+    // Auto-organize if examArrangements is empty for this grade but students exist
+    if (studentsInGrade.length === 0) {
+      const candidateStudents = this.students.filter(s => this.studentMatchesGrade(s, gradeKey));
+      if (candidateStudents.length > 0) {
+        candidateStudents.sort((a, b) => a.khmerName.localeCompare(b.khmerName, 'km'));
+        const perRoom = 25;
+        const newArrangements = candidateStudents.map((stu, idx) => {
+          const roomNum = 1 + Math.floor(idx / perRoom);
+          const deskIndex = idx + 1;
+          return {
+            studentId: stu.id,
+            khmerName: stu.khmerName,
+            latinName: stu.latinName || '',
+            gender: stu.gender,
+            dob: stu.dob || '2008-01-01',
+            grade: stu.class || 'ថ្នាក់ទី៧',
+            class: stu.class || '',
+            classType: stu.classType || '',
+            status: 'ធម្មតា',
+            roomNumber: String(roomNum).padStart(2, '0'),
+            deskNumber: String(deskIndex).padStart(2, '0'),
+            secretCode: ''
+          };
+        });
+        if (!this.examArrangements) this.examArrangements = [];
+        this.examArrangements = this.examArrangements.filter(item => !this.studentMatchesGrade(item, gradeKey)).concat(newArrangements);
+        studentsInGrade = newArrangements;
+        this.saveState();
+      }
+    }
+
+    if (studentsInGrade.length === 0) {
+      if (this.examSecretEmptyNotice) this.examSecretEmptyNotice.style.display = 'block';
+      this.examSecretMatrixHead.innerHTML = '';
+      this.examSecretMatrixBody.innerHTML = '';
+      return;
+    }
+    if (this.examSecretEmptyNotice) this.examSecretEmptyNotice.style.display = 'none';
+
+    // Group students by room (normalize room number to clean integer string)
+    const roomsMap = {};
+    studentsInGrade.forEach(item => {
+      const rawRm = item.roomNumber || '1';
+      const rm = String(parseInt(rawRm, 10) || 1);
+      if (!roomsMap[rm]) roomsMap[rm] = [];
+      roomsMap[rm].push(item);
+    });
+    const roomKeys = Object.keys(roomsMap).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+
+    // Ensure state container
+    if (!this.roomSubjectSecrets) this.roomSubjectSecrets = {};
+    if (!this.roomSubjectSecrets[gradeKey]) this.roomSubjectSecrets[gradeKey] = {};
+
+    // Build Table Header (Yellow Background, Image 1 & 5)
+    let trHead1 = `<tr>
+      <th rowspan="2" style="width: 60px; text-align: center; vertical-align: middle;">លេខ<br>បន្ទប់</th>
+      <th rowspan="2" style="width: 60px; text-align: center; vertical-align: middle;">ចំនួន<br>សិស្ស</th>`;
+    let trHead2 = `<tr>`;
+
+    visibleSubjects.forEach(sub => {
+      trHead1 += `<th class="th-subcode" style="text-align: center;">${sub.code}</th>`;
+      trHead2 += `<th class="th-subname" style="text-align: center;">${sub.name}</th>`;
+    });
+    trHead1 += `</tr>`;
+    trHead2 += `</tr>`;
+    this.examSecretMatrixHead.innerHTML = trHead1 + trHead2;
+
+    // Build Table Body Rows (per Room)
+    this.examSecretMatrixBody.innerHTML = '';
+    roomKeys.forEach(rm => {
+      const stuCount = roomsMap[rm].length;
+      if (!this.roomSubjectSecrets[gradeKey][rm]) {
+        this.roomSubjectSecrets[gradeKey][rm] = {};
+      }
+      const roomSecrets = this.roomSubjectSecrets[gradeKey][rm];
+
+      const tr = document.createElement('tr');
+      let html = `
+        <td style="text-align: center; font-weight: 700; color: #0284c7;">${rm}</td>
+        <td style="text-align: center; font-weight: 700; color: #0284c7;">${stuCount}</td>
+      `;
+
+      visibleSubjects.forEach(sub => {
+        let val = roomSecrets[sub.code] || '';
+        val = this.upgradeSecretCodeToTrack(val, gradeKey);
+        roomSecrets[sub.code] = val;
+        val = this.formatSecretCode(val);
+        html += `
+          <td style="text-align: center;">
+            <input type="text" class="secret-matrix-cell-input" 
+                   data-grade="${gradeKey}" 
+                   data-room="${rm}" 
+                   data-subcode="${sub.code}" 
+                   value="${val}" 
+                   placeholder="${sub.code}">
+          </td>
+        `;
+      });
+      tr.innerHTML = html;
+      this.examSecretMatrixBody.appendChild(tr);
+    });
+
+    // Auto-sync input changes (formats with lowercase room suffix e.g. M7a or M7a1)
+    this.examSecretMatrixBody.querySelectorAll('.secret-matrix-cell-input').forEach(input => {
+      input.addEventListener('input', (e) => {
+        const g = e.target.getAttribute('data-grade');
+        const r = e.target.getAttribute('data-room');
+        const sc = e.target.getAttribute('data-subcode');
+        const formatted = this.formatSecretCode(e.target.value);
+        if (!this.roomSubjectSecrets[g]) this.roomSubjectSecrets[g] = {};
+        if (!this.roomSubjectSecrets[g][r]) this.roomSubjectSecrets[g][r] = {};
+        this.roomSubjectSecrets[g][r][sc] = formatted;
+        try {
+          localStorage.setItem('sms_exam_secret_matrix', JSON.stringify(this.roomSubjectSecrets));
+        } catch (_) { }
+
+        // Real-time duplicate validation: instantly highlights duplicates in red
+        this.validateSecretCodeDuplicates();
+      });
+
+      input.addEventListener('blur', (e) => {
+        e.target.value = this.formatSecretCode(e.target.value);
+        this.validateSecretCodeDuplicates();
+      });
+    });
+
+    // Validate duplicates on initial render
+    this.validateSecretCodeDuplicates();
+  }
+
+  /**
+   * Real-time duplicate detector for Secret Code Matrix.
+   * Scans inputs per subject column and highlights duplicate values with a red border & red background.
+   */
+  validateSecretCodeDuplicates() {
+    if (!this.examSecretMatrixBody) return { hasDuplicates: false, count: 0 };
+
+    const inputs = Array.from(this.examSecretMatrixBody.querySelectorAll('.secret-matrix-cell-input'));
+    if (inputs.length === 0) return { hasDuplicates: false, count: 0 };
+
+    // Reset all duplicate highlights first
+    inputs.forEach(inp => {
+      inp.classList.remove('is-duplicate');
+      if (inp.title && inp.title.includes('ស្ទួន')) {
+        inp.removeAttribute('title');
+      }
+    });
+
+    // 1. Group inputs by subject column (data-subcode)
+    const bySubject = {};
+    inputs.forEach(inp => {
+      const sub = inp.getAttribute('data-subcode') || 'ALL';
+      if (!bySubject[sub]) bySubject[sub] = [];
+      bySubject[sub].push(inp);
+    });
+
+    const duplicateInputs = new Set();
+
+    // Check duplicates within each subject column
+    Object.keys(bySubject).forEach(subCode => {
+      const subInputs = bySubject[subCode];
+      const codeMap = {};
+
+      subInputs.forEach(inp => {
+        const val = (inp.value || '').trim().toUpperCase();
+        if (val) {
+          if (!codeMap[val]) codeMap[val] = [];
+          codeMap[val].push(inp);
+        }
+      });
+
+      Object.keys(codeMap).forEach(code => {
+        if (codeMap[code].length > 1) {
+          codeMap[code].forEach(inp => {
+            inp.classList.add('is-duplicate');
+            inp.setAttribute('title', `⚠️ អក្សរសម្ងាត់ស្ទួន៖ "${code}" ក្នុងមុខវិជ្ជា ${subCode} (${codeMap[code].length} បន្ទប់ដូចគ្នា)!`);
+            duplicateInputs.add(inp);
+          });
+        }
+      });
+    });
+
+    // 2. Alert banner in the DOM
+    let alertBanner = document.getElementById('secretMatrixDuplicateAlert');
+    if (!alertBanner && this.examSecretMatrixTable) {
+      alertBanner = document.createElement('div');
+      alertBanner.id = 'secretMatrixDuplicateAlert';
+      alertBanner.style.cssText = 'display: none; color: #b91c1c; background: #fef2f2; border: 1.5px solid #ef4444; border-radius: 6px; padding: 0.6rem 1rem; margin-top: 0.75rem; font-weight: 700; font-size: 0.9rem; align-items: center; justify-content: space-between; gap: 0.75rem;';
+      const wrap = this.examSecretMatrixTable.closest('.secret-matrix-table-wrap') || this.examSecretMatrixTable.parentElement;
+      if (wrap && wrap.parentElement) {
+        wrap.parentElement.insertBefore(alertBanner, wrap);
+      }
+    }
+
+    if (alertBanner) {
+      if (duplicateInputs.size > 0) {
+        alertBanner.style.display = 'flex';
+        alertBanner.innerHTML = `
+          <div style="display: flex; align-items: center; gap: 0.5rem;">
+            <i class="ri-error-warning-fill" style="font-size: 1.25rem; color: #ef4444;"></i>
+            <span>រកឃើញអក្សរសម្ងាត់ស្ទួនចំនួន <strong>${duplicateInputs.size}</strong> កន្លែង (ប្រអប់ពណ៌ក្រហម)! សូមពិនិត្យកែប្រែដើម្បីកុំឱ្យច្រឡំពេលកែពិន្ទុ។</span>
+          </div>
+          <button type="button" class="btn btn-sm" style="border: 1px solid #ef4444; color: #b91c1c; padding: 2px 10px; font-size: 0.8rem; background: #ffffff; cursor: pointer; border-radius: 4px; font-weight: 600;" id="btnScrollToFirstDuplicate">
+            <i class="ri-focus-3-line"></i> មើលកន្លែងស្ទួន
+          </button>
+        `;
+        const scrollBtn = alertBanner.querySelector('#btnScrollToFirstDuplicate');
+        if (scrollBtn) {
+          scrollBtn.onclick = () => {
+            const firstDup = this.examSecretMatrixBody.querySelector('.secret-matrix-cell-input.is-duplicate');
+            if (firstDup) {
+              firstDup.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+              firstDup.focus();
+            }
+          };
+        }
+      } else {
+        alertBanner.style.display = 'none';
+      }
+    }
+
+    return { hasDuplicates: duplicateInputs.size > 0, count: duplicateInputs.size };
+  }
+
+  // Alias for backward compatibility
+  renderExamSecretTable() {
+    this.renderExamSecretMatrixTable();
+  }
+
+  handleGenerateSecretCodes() {
+    const gradeKey = this.examSecretGradeSelect ? this.examSecretGradeSelect.value : 'grade_7';
+    let studentsInGrade = (this.examArrangements || []).filter(item => {
+      return this.studentMatchesGrade(item, gradeKey);
+    });
+
+    // Auto-create arrangements from students if none arranged yet
+    if (studentsInGrade.length === 0) {
+      const candidateStudents = this.students.filter(s => this.studentMatchesGrade(s, gradeKey));
+      if (candidateStudents.length > 0) {
+        candidateStudents.sort((a, b) => a.khmerName.localeCompare(b.khmerName, 'km'));
+        const perRoom = 25;
+        const newArrangements = candidateStudents.map((stu, idx) => {
+          const roomNum = 1 + Math.floor(idx / perRoom);
+          const deskIndex = idx + 1;
+          return {
+            studentId: stu.id,
+            khmerName: stu.khmerName,
+            latinName: stu.latinName || '',
+            gender: stu.gender,
+            dob: stu.dob || '2008-01-01',
+            grade: stu.class || 'ថ្នាក់ទី៧',
+            class: stu.class || '',
+            classType: stu.classType || '',
+            status: 'ធម្មតា',
+            roomNumber: String(roomNum).padStart(2, '0'),
+            deskNumber: String(deskIndex).padStart(2, '0'),
+            secretCode: ''
+          };
+        });
+        if (!this.examArrangements) this.examArrangements = [];
+        this.examArrangements = this.examArrangements.filter(item => !this.studentMatchesGrade(item, gradeKey)).concat(newArrangements);
+        studentsInGrade = newArrangements;
+        this.saveState();
+        this.renderExamView();
+      }
+    }
+
+    if (studentsInGrade.length === 0) {
+      this.showToast('សូមបញ្ចូលសិស្សក្នុងប្រព័ន្ធប្រឡងក្នុងផ្ទាំងទី១ជាមុនសិន!', 'error');
+      return;
+    }
+
+    const roomsMap = {};
+    studentsInGrade.forEach(item => {
+      const rawRm = item.roomNumber || '1';
+      const rm = String(parseInt(rawRm, 10) || 1);
+      if (!roomsMap[rm]) roomsMap[rm] = [];
+      roomsMap[rm].push(item);
+    });
+    const roomKeys = Object.keys(roomsMap).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+    const allSubjects = this.getMatrixSubjectsForGrade(gradeKey);
+
+    // Extract grade digit / code (e.g. grade_7 -> 7, grade_8 -> 8, grade_10 -> 10, grade_11_sci -> 11SC, grade_11_soc -> 11SS, grade_12_sci -> 12SC, grade_12_soc -> 12SS)
+    let gradeSuffix = this.getGradeSecretSuffix(gradeKey);
+
+    if (!this.roomSubjectSecrets) this.roomSubjectSecrets = {};
+    if (!this.roomSubjectSecrets[gradeKey]) this.roomSubjectSecrets[gradeKey] = {};
+
+    // Generate unique room suffixes: a..z for rooms 1..26, and a1..z1, a2..z2 for rooms > 26
+    const suffixes = Array.from({ length: roomKeys.length }, (_, i) => this.getRoomCodeSuffix(i));
+
+    // True Fisher-Yates shuffle algorithm (unbiased, 100% duplicate-free)
+    const shuffleArray = (arr) => {
+      const copy = [...arr];
+      for (let i = copy.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const temp = copy[i];
+        copy[i] = copy[j];
+        copy[j] = temp;
+      }
+      return copy;
+    };
+
+    // For each subject, assign unique shuffled suffixes across rooms
+    allSubjects.forEach(sub => {
+      const shuffled = shuffleArray(suffixes);
+      const usedInSub = new Set();
+
+      roomKeys.forEach((rm, idx) => {
+        if (!this.roomSubjectSecrets[gradeKey][rm]) {
+          this.roomSubjectSecrets[gradeKey][rm] = {};
+        }
+
+        let sfx = shuffled[idx];
+        let code = `${sub.code}${gradeSuffix}${sfx}`;
+
+        // Absolute guarantee: if already used in this subject, find another unused suffix
+        if (usedInSub.has(code.toUpperCase())) {
+          for (let k = 0; k < suffixes.length; k++) {
+            const candidate = `${sub.code}${gradeSuffix}${suffixes[k]}`;
+            if (!usedInSub.has(candidate.toUpperCase())) {
+              code = candidate;
+              break;
+            }
+          }
+        }
+
+        usedInSub.add(code.toUpperCase());
+        this.roomSubjectSecrets[gradeKey][rm][sub.code] = code;
+      });
+    });
+
+    this.saveState();
+    try {
+      localStorage.setItem('sms_exam_secret_matrix', JSON.stringify(this.roomSubjectSecrets));
+    } catch (_) { }
+
+    this.renderExamSecretMatrixTable();
+    this.validateSecretCodeDuplicates();
+    this.showToast(`បានបង្កើតអក្សរសម្ងាត់ ${allSubjects.length} មុខវិជ្ជា ជូន ${roomKeys.length} បន្ទប់ ដោយជោគជ័យ (ធានាគ្មានស្ទួន ១០០%)!`, 'success');
+  }
+
+  handleSaveSecretMatrix() {
+    if (!this.examSecretMatrixBody) return;
+
+    // Validate duplicates before saving
+    const dupCheck = this.validateSecretCodeDuplicates();
+    if (dupCheck.hasDuplicates) {
+      this.showToast(`មិនអាចរក្សាទុកបានទេ! រកឃើញអក្សរសម្ងាត់ស្ទួនចំនួន ${dupCheck.count} កន្លែង (ប្រអប់ពណ៌ក្រហម)។ សូមកែតម្រូវជាមុនសិន!`, 'error');
+      const firstDup = this.examSecretMatrixBody.querySelector('.secret-matrix-cell-input.is-duplicate');
+      if (firstDup) {
+        firstDup.scrollIntoView({ behavior: 'smooth', block: 'center', inline: 'center' });
+        firstDup.focus();
+      }
+      return;
+    }
+
+    const inputs = this.examSecretMatrixBody.querySelectorAll('.secret-matrix-cell-input');
+    inputs.forEach(input => {
+      const g = input.getAttribute('data-grade');
+      const r = input.getAttribute('data-room');
+      const sc = input.getAttribute('data-subcode');
+      if (!this.roomSubjectSecrets) this.roomSubjectSecrets = {};
+      if (!this.roomSubjectSecrets[g]) this.roomSubjectSecrets[g] = {};
+      if (!this.roomSubjectSecrets[g][r]) this.roomSubjectSecrets[g][r] = {};
+      const formatted = this.formatSecretCode(input.value);
+      input.value = formatted;
+      this.roomSubjectSecrets[g][r][sc] = formatted;
+    });
+
+    this.saveState();
+    try {
+      localStorage.setItem('sms_exam_secret_matrix', JSON.stringify(this.roomSubjectSecrets));
+    } catch (_) { }
+    this.showToast('បានរក្សាទុកអក្សរសម្ងាត់តាមបន្ទប់និងមុខវិជ្ជាជោគជ័យ!', 'success');
+  }
+
+  // ==========================================================================
+  // TAB 4: Score Entry (Images 2 & 3: By Secret Code & By Subject Table)
+  // ==========================================================================
+  switchScoreSubTab(subTabName) {
+    this.activeScoreSubTab = subTabName;
+    if (this.subtabSecretCodeScoreBtn) this.subtabSecretCodeScoreBtn.classList.toggle('active', subTabName === 'bySecret');
+    if (this.subtabVoiceSecretCodeScoreBtn) this.subtabVoiceSecretCodeScoreBtn.classList.toggle('active', subTabName === 'byVoiceSecret');
+    if (this.subtabVoiceNameSecretScoreBtn) this.subtabVoiceNameSecretScoreBtn.classList.toggle('active', subTabName === 'byVoiceNameSecret');
+    if (this.subtabSubjectScoreBtn) this.subtabSubjectScoreBtn.classList.toggle('active', subTabName === 'bySubject');
+    if (this.subtabSemesterAvgBtn) this.subtabSemesterAvgBtn.classList.toggle('active', subTabName === 'byAvg');
+    if (this.subtabAuditSecretBtn) this.subtabAuditSecretBtn.classList.toggle('active', subTabName === 'byAudit');
+
+    if (this.scoreSubViewSecret) this.scoreSubViewSecret.style.display = subTabName === 'bySecret' ? 'block' : 'none';
+    if (this.scoreSubViewVoiceSecret) this.scoreSubViewVoiceSecret.style.display = subTabName === 'byVoiceSecret' ? 'block' : 'none';
+    if (this.scoreSubViewVoiceNameSecret) this.scoreSubViewVoiceNameSecret.style.display = subTabName === 'byVoiceNameSecret' ? 'block' : 'none';
+    if (this.scoreSubViewSubject) this.scoreSubViewSubject.style.display = subTabName === 'bySubject' ? 'block' : 'none';
+    if (this.scoreSubViewAvg) this.scoreSubViewAvg.style.display = subTabName === 'byAvg' ? 'block' : 'none';
+    if (this.scoreSubViewAudit) this.scoreSubViewAudit.style.display = subTabName === 'byAudit' ? 'block' : 'none';
+
+    // Stop voice recognition if moving away from voice secret tabs
+    if (subTabName !== 'byVoiceSecret') {
+      this.stopVoiceSecretScoreRecognition();
+    }
+    if (subTabName !== 'byVoiceNameSecret') {
+      this.stopVoiceNameSecretScoreRecognition();
+    }
+
+    if (subTabName === 'bySubject') {
+      this.renderExamSubjectScoresTable();
+    } else if (subTabName === 'bySecret') {
+      if (this.inputSearchSecretCode) {
+        if (!this.inputSearchSecretCode.value.trim() && this.examScoreSubjectGradeSelect) {
+          const gKey = this.examScoreSubjectGradeSelect.value || 'grade_7';
+          const subKey = this.examScoreSubjectFilterSelect ? this.examScoreSubjectFilterSelect.value : 'ALL';
+          const gradeSubs = this.getMatrixSubjectsForGrade(gKey);
+          const targetSub = (subKey !== 'ALL') ? gradeSubs.find(s => s.fullKey === subKey) : gradeSubs[0];
+          if (targetSub) {
+            const sc = targetSub.code;
+            const codeInSecrets = (this.roomSubjectSecrets && this.roomSubjectSecrets[gKey] && this.roomSubjectSecrets[gKey]['1'] && this.roomSubjectSecrets[gKey]['1'][sc]);
+            if (codeInSecrets) {
+              this.inputSearchSecretCode.value = codeInSecrets;
+            } else {
+              const sfx = this.getGradeSecretSuffix(gKey);
+              this.inputSearchSecretCode.value = `${sc}${sfx}a`;
+            }
+          }
+        }
+        if (this.inputSearchSecretCode.value.trim()) {
+          this.fetchSecretRoomScores();
+        }
+      }
+    } else if (subTabName === 'byVoiceSecret') {
+      if (this.inputSearchVoiceSecretCode) {
+        if (!this.inputSearchVoiceSecretCode.value.trim()) {
+          if (this.inputSearchSecretCode && this.inputSearchSecretCode.value.trim()) {
+            this.inputSearchVoiceSecretCode.value = this.inputSearchSecretCode.value.trim();
+          } else if (this.examScoreSubjectGradeSelect) {
+            const gKey = this.examScoreSubjectGradeSelect.value || 'grade_7';
+            const subKey = this.examScoreSubjectFilterSelect ? this.examScoreSubjectFilterSelect.value : 'ALL';
+            const gradeSubs = this.getMatrixSubjectsForGrade(gKey);
+            const targetSub = (subKey !== 'ALL') ? gradeSubs.find(s => s.fullKey === subKey) : gradeSubs[0];
+            if (targetSub) {
+              const sc = targetSub.code;
+              const codeInSecrets = (this.roomSubjectSecrets && this.roomSubjectSecrets[gKey] && this.roomSubjectSecrets[gKey]['1'] && this.roomSubjectSecrets[gKey]['1'][sc]);
+              if (codeInSecrets) {
+                this.inputSearchVoiceSecretCode.value = codeInSecrets;
+              } else {
+                const sfx = this.getGradeSecretSuffix(gKey);
+                this.inputSearchVoiceSecretCode.value = `${sc}${sfx}a`;
+              }
+            }
+          }
+        }
+        if (this.inputSearchVoiceSecretCode.value.trim()) {
+          this.fetchVoiceSecretRoomScores();
+        }
+      }
+    } else if (subTabName === 'byVoiceNameSecret') {
+      if (this.inputSearchVoiceNameSecretCode) {
+        if (!this.inputSearchVoiceNameSecretCode.value.trim()) {
+          if (this.inputSearchVoiceSecretCode && this.inputSearchVoiceSecretCode.value.trim()) {
+            this.inputSearchVoiceNameSecretCode.value = this.inputSearchVoiceSecretCode.value.trim();
+          } else if (this.inputSearchSecretCode && this.inputSearchSecretCode.value.trim()) {
+            this.inputSearchVoiceNameSecretCode.value = this.inputSearchSecretCode.value.trim();
+          } else if (this.examScoreSubjectGradeSelect) {
+            const gKey = this.examScoreSubjectGradeSelect.value || 'grade_7';
+            const subKey = this.examScoreSubjectFilterSelect ? this.examScoreSubjectFilterSelect.value : 'ALL';
+            const gradeSubs = this.getMatrixSubjectsForGrade(gKey);
+            const targetSub = (subKey !== 'ALL') ? gradeSubs.find(s => s.fullKey === subKey) : gradeSubs[0];
+            if (targetSub) {
+              const sc = targetSub.code;
+              const codeInSecrets = (this.roomSubjectSecrets && this.roomSubjectSecrets[gKey] && this.roomSubjectSecrets[gKey]['1'] && this.roomSubjectSecrets[gKey]['1'][sc]);
+              if (codeInSecrets) {
+                this.inputSearchVoiceNameSecretCode.value = codeInSecrets;
+              } else {
+                const sfx = this.getGradeSecretSuffix(gKey);
+                this.inputSearchVoiceNameSecretCode.value = `${sc}${sfx}a`;
+              }
+            }
+          }
+        }
+        if (this.inputSearchVoiceNameSecretCode.value.trim()) {
+          this.fetchVoiceNameSecretRoomScores();
+        }
+      }
+    } else if (subTabName === 'byAudit') {
+      this.renderExamAuditTable();
+    }
+  }
+
+  renderExamScoreEntryView() {
+    this.switchScoreSubTab(this.activeScoreSubTab || 'bySecret');
+  }
+
+  toggleShowStudentInfo(checked) {
+    if (this.chkShowStudentInfoSecret) this.chkShowStudentInfoSecret.checked = checked;
+    if (this.chkShowStudentInfoVoiceSecret) this.chkShowStudentInfoVoiceSecret.checked = checked;
+    const colElements = document.querySelectorAll('.col-student-info');
+    colElements.forEach(el => {
+      el.style.display = checked ? '' : 'none';
+    });
+  }
+
+  fetchSecretRoomScores() {
+    const rawCode = (this.inputSearchSecretCode ? this.inputSearchSecretCode.value : '').trim().toUpperCase();
+    if (!rawCode) {
+      this.showToast('សូមបញ្ចូលអក្សរសម្ងាត់ (ឧទាហរណ៍៖ K7e ឬ DI10a)!', 'warning');
+      return;
+    }
+
+    // Ensure roomSubjectSecrets is loaded from memory or localStorage
+    if (!this.roomSubjectSecrets || Object.keys(this.roomSubjectSecrets).length === 0) {
+      try {
+        const saved = localStorage.getItem('sms_exam_secret_matrix');
+        if (saved) this.roomSubjectSecrets = JSON.parse(saved);
+      } catch (_) { }
+    }
+
+    // 1. Direct Lookup across roomSubjectSecrets
+    let foundGrade = null;
+    let foundRoom = null;
+    let foundSubCode = null;
+
+    if (this.roomSubjectSecrets) {
+      Object.keys(this.roomSubjectSecrets).forEach(gKey => {
+        const rooms = this.roomSubjectSecrets[gKey] || {};
+        Object.keys(rooms).forEach(rKey => {
+          const subs = rooms[rKey] || {};
+          Object.keys(subs).forEach(sc => {
+            if (subs[sc] && subs[sc].trim().toUpperCase() === rawCode) {
+              foundGrade = gKey;
+              foundRoom = rKey;
+              foundSubCode = sc;
+            }
+          });
+        });
+      });
+    }
+
+    // 2. Smart Fallback pattern matching (e.g. K7e, DI10a, M7d, C10c, M7a1, C11SCd, MO11SSb, M12SCa)
+    if (!foundRoom) {
+      const match = rawCode.match(/^([A-Z]+)(\d+)(SC|SS)?([A-Z]+)(\d*)$/i);
+      if (match) {
+        const subAbbr = match[1].toUpperCase();
+        const gradeDigit = match[2];
+        const trackTag = (match[3] || '').toUpperCase();
+        const letter = match[4].toLowerCase();
+        const cycleNum = parseInt(match[5] || '0', 10);
+        let gKey = 'grade_' + gradeDigit;
+        if (trackTag === 'SC') gKey = 'grade_' + gradeDigit + '_sci';
+        else if (trackTag === 'SS') gKey = 'grade_' + gradeDigit + '_soc';
+
+        const letterIndex = (letter.charCodeAt(0) - 97) + (cycleNum * 26); // a=0, b=1 ... a1=26, b1=27 ...
+        const targetRoomNumber = String(letterIndex + 1);
+
+        const hasStudents = (this.examArrangements || []).some(item => {
+          return parseInt(item.roomNumber, 10) === parseInt(targetRoomNumber, 10) && this.studentMatchesGrade(item, gKey);
+        });
+
+        if (hasStudents) {
+          foundGrade = gKey;
+          foundRoom = targetRoomNumber;
+          foundSubCode = subAbbr;
+        } else {
+          // If no student in targetRoomNumber, check available rooms for this grade
+          const gradeRooms = [...new Set((this.examArrangements || []).filter(item => this.studentMatchesGrade(item, gKey)).map(item => String(parseInt(item.roomNumber, 10))))];
+          if (gradeRooms.length > 0) {
+            foundGrade = gKey;
+            foundRoom = gradeRooms[letterIndex % gradeRooms.length];
+            foundSubCode = subAbbr;
+          }
+        }
+      }
+    }
+
+    if (!foundRoom) {
+      this.showToast(`រកមិនឃើញបន្ទប់ ឬមុខវិជ្ជាសម្រាប់អក្សរសម្ងាត់ "${rawCode}" ឡើយ!`, 'error');
+      return;
+    }
+
+    // Find students for this room and grade (normalized integer room comparison)
+    let studentsInRoom = (this.examArrangements || []).filter(item => {
+      const matchRoom = parseInt(item.roomNumber, 10) === parseInt(foundRoom, 10);
+      const matchGrade = this.studentMatchesGrade(item, foundGrade);
+      return matchRoom && matchGrade;
+    }).sort((a, b) => parseInt(a.deskNumber || 0, 10) - parseInt(b.deskNumber || 0, 10));
+
+    // Fallback: match by room only if grade filter was overly strict
+    if (studentsInRoom.length === 0) {
+      studentsInRoom = (this.examArrangements || []).filter(item => {
+        return parseInt(item.roomNumber, 10) === parseInt(foundRoom, 10);
+      }).sort((a, b) => parseInt(a.deskNumber || 0, 10) - parseInt(b.deskNumber || 0, 10));
+    }
+
+    // Fallback: auto-partition from this.students if examArrangements was unpopulated
+    if (studentsInRoom.length === 0) {
+      const gradeStudents = this.students.filter(s => this.studentMatchesGrade(s, foundGrade));
+      if (gradeStudents.length > 0) {
+        gradeStudents.sort((a, b) => a.khmerName.localeCompare(b.khmerName, 'km'));
+        const perRoom = 25;
+        const targetRoomInt = parseInt(foundRoom, 10) || 1;
+        const startIdx = (targetRoomInt - 1) * perRoom;
+        const roomSlice = gradeStudents.slice(startIdx, startIdx + perRoom);
+        studentsInRoom = roomSlice.map((s, idx) => ({
+          studentId: s.id,
+          khmerName: s.khmerName,
+          gender: s.gender,
+          grade: s.class,
+          roomNumber: foundRoom,
+          deskNumber: String(startIdx + idx + 1)
+        }));
+      }
+    }
+
+    if (studentsInRoom.length === 0) {
+      this.showToast(`មិនមានសិស្សនៅក្នុងបន្ទប់ ${foundRoom} ឡើយ!`, 'warning');
+      return;
+    }
+
+    // Remember the discovered grade for saving
+    this.currentSecretRoomGrade = foundGrade;
+
+    // Find Subject Details
+    const gradeSubs = this.getMatrixSubjectsForGrade(foundGrade);
+    const subObj = gradeSubs.find(s => s.code === foundSubCode) || { name: foundSubCode, code: foundSubCode, fullKey: foundSubCode.toLowerCase(), maxScore: 100 };
+    const maxLimit = subObj.maxScore || 100;
+
+    const activePeriodKey = this.activeScorePeriod || this.getActiveScoringPeriod(foundGrade);
+    const examConfig = this.getExamConfigForGrade(foundGrade, activePeriodKey);
+    const periodTitle = this.getExamPeriodTitle(activePeriodKey);
+    const examDateKhmer = this.formatKhmerExamDate(examConfig.date);
+    const isLocked = !this.isPeriodActiveForScoring(activePeriodKey);
+    const gradeLabel = (typeof GRADE_PRESETS !== 'undefined' && GRADE_PRESETS[foundGrade] && GRADE_PRESETS[foundGrade].label) || (foundGrade === 'grade_7' ? 'ថ្នាក់ទី៧' : (foundGrade === 'grade_8' ? 'ថ្នាក់ទី៨' : (foundGrade === 'grade_9' ? 'ថ្នាក់ទី៩' : (foundGrade === 'grade_12_sc' ? 'ថ្នាក់ទី១២ វិទ្យាសាស្ត្រ' : (foundGrade === 'grade_12_ss' ? 'ថ្នាក់ទី១២ សង្គម' : foundGrade)))));
+
+    // Update banner (hide room number for anonymous/neutral secret scoring)
+    if (this.secretScoreActiveRoomInfo) {
+      this.secretScoreActiveRoomInfo.style.display = 'block';
+      this.secretScoreActiveRoomInfo.innerHTML = `
+        <div style="background: #e0f2fe; border: 1px solid #bae6fd; border-radius: 8px; padding: 0.6rem 1rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; font-size: 0.95rem;">
+          <div><i class="ri-graduation-cap-line" style="color: #0284c7;"></i> កម្រិតថ្នាក់: <strong style="color: #0369a1; font-size: 1.05rem;">${gradeLabel}</strong></div>
+          <div><i class="ri-calendar-event-line" style="color: #0284c7;"></i> សម័យប្រឡង: <strong style="color: #1e3a8a;">${examDateKhmer}</strong> (<span style="color: #15803d; font-weight: 700;">${periodTitle}</span>)</div>
+          <div><i class="ri-book-open-line" style="color: #15803d;"></i> មុខវិជ្ជា: <strong style="color: #15803d; font-size: 1.05rem;">${subObj.name} (${foundSubCode})</strong></div>
+          <div><i class="ri-award-line" style="color: #b91c1c;"></i> ពិន្ទុពេញ: <strong style="color: #b91c1c; font-size: 1.05rem;">${maxLimit}</strong></div>
+          <div><i class="ri-user-star-line" style="color: #0284c7;"></i> ចំនួនសិស្ស: <strong style="color: #0284c7;">${studentsInRoom.length} នាក់</strong></div>
+          ${isLocked ? `<div style="width: 100%; margin-top: 0.4rem; padding: 0.45rem 0.85rem; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 6px; color: #991b1b; font-weight: 700; font-size: 0.88rem;"><i class="ri-lock-2-fill"></i> 🔒 ខែ ${periodTitle} ត្រូវបានបិទការបញ្ចូលពិន្ទុ! ប្រព័ន្ធអនុញ្ញាតឱ្យបញ្ចូលពិន្ទុតែខែ «${this.getExamPeriodTitle(this.activeScorePeriod)}» ប៉ុណ្ណោះ។</div>` : ''}
+        </div>
+      `;
+    }
+
+    // Render Student Inputs for Fast Entry (neutral sequence 1..N in a circle, without desk/room number)
+    this.lockedInvalidScoreInput = null;
+    this.secretScoreInputTableBody.innerHTML = '';
+    const periodKey = activePeriodKey;
+    const isShowInfo = !!((this.chkShowStudentInfoSecret && this.chkShowStudentInfoSecret.checked) || (this.chkShowStudentInfoVoiceSecret && this.chkShowStudentInfoVoiceSecret.checked));
+
+    studentsInRoom.forEach((stu, idx) => {
+      const tr = document.createElement('tr');
+      const seqNum = idx + 1;
+      const sId = stu.studentId || stu.id;
+      const stuObj = (this.students && this.students.find(s => String(s.id) === String(sId))) || stu;
+      const stuName = stuObj.khmerName || stuObj.name || '-';
+      const stuGender = (stuObj.gender === 'F' || stuObj.gender === 'ស្រី') ? 'ស្រី' : ((stuObj.gender === 'M' || stuObj.gender === 'ប្រុស') ? 'ប្រុស' : (stuObj.gender || '-'));
+      const stuRoom = stu.roomNumber || foundRoom || '-';
+      const stuDesk = stu.deskNumber || seqNum;
+
+      const sData = (this.scores[sId] && (this.scores[sId][periodKey] || this.scores[sId]['test_early'] || this.scores[sId]['sem1_exam'])) || {};
+
+      let val = this.getSubjectScore(sData, subObj.fullKey);
+      if (val === undefined && subObj.code) val = this.getSubjectScore(sData, subObj.code);
+      if (val === undefined && (subObj.fullKey === 'kh' || subObj.code === 'K')) {
+        const eVal = this.getSubjectScore(sData, 'kh_essay');
+        const dVal = this.getSubjectScore(sData, 'kh_dict');
+        if (eVal !== undefined || dVal !== undefined) {
+          val = (eVal || 0) + (dVal || 0);
+        }
+      }
+
+      const existingScore = (val !== undefined && val !== null) ? val : '';
+
+      tr.innerHTML = `
+        <td class="col-student-info" style="text-align: center; vertical-align: middle; ${isShowInfo ? '' : 'display: none;'}">${stuRoom}</td>
+        <td class="col-student-info" style="text-align: center; vertical-align: middle; font-weight: 700; ${isShowInfo ? '' : 'display: none;'}">${stuDesk}</td>
+        <td class="col-student-info" style="text-align: left; vertical-align: middle; font-weight: 600; ${isShowInfo ? '' : 'display: none;'}">${stuName}</td>
+        <td class="col-student-info" style="text-align: center; vertical-align: middle; ${isShowInfo ? '' : 'display: none;'}">${stuGender}</td>
+        <td style="text-align: center; vertical-align: middle;">
+          <span class="secret-student-num-circle">${seqNum}</span>
+        </td>
+        <td style="text-align: center; vertical-align: middle;">
+          <input type="number" 
+                 min="0" max="${maxLimit}" step="0.25" 
+                 class="secret-score-input-fast ${isLocked ? 'score-input-locked' : ''}" 
+                 data-stuid="${sId}" 
+                 data-subkey="${subObj.fullKey}" 
+                 data-subcode="${subObj.code}"
+                 data-max="${maxLimit}"
+                 ${isLocked ? 'disabled readonly title="ខែនេះត្រូវបានបិទការបញ្ចូលពិន្ទុ"' : ''}
+                 value="${existingScore !== undefined ? existingScore : ''}">
+        </td>
+      `;
+      this.secretScoreInputTableBody.appendChild(tr);
+    });
+
+    const scoreInputs = Array.from(this.secretScoreInputTableBody.querySelectorAll('.secret-score-input-fast'));
+    if (scoreInputs[0]) {
+      scoreInputs[0].focus();
+      scoreInputs[0].select();
+    }
+
+    this.showToast(`បានទាញយកបញ្ជីសិស្ស (${studentsInRoom.length} នាក់) សម្រាប់ ${periodTitle} រួចរាល់!`, 'success');
+  }
+
+  handleSaveSecretRoomScores() {
+    if (!this.secretScoreInputTableBody) return;
+    // Determine grade from currently displayed room info
+    const _secretGradeForPeriod = this.currentSecretRoomGrade || (this.examSecretGradeSelect ? this.examSecretGradeSelect.value : 'grade_7');
+    const periodKey = this.getActiveScoringPeriod(_secretGradeForPeriod);
+    if (!this.isPeriodActiveForScoring(periodKey)) {
+      this.showToast(`មិនអាចរក្សាទុកបានទេ! ខែនេះត្រូវបានបិទការបញ្ចូលពិន្ទុ។ អនុញ្ញាតតែខែ «${this.getExamPeriodTitle(this.activeScorePeriod)}» ប៉ុណ្ណោះ។`, 'error');
+      return;
+    }
+
+    const inputs = this.secretScoreInputTableBody.querySelectorAll('.secret-score-input-fast');
+    if (inputs.length === 0) {
+      this.showToast('មិនទាន់មានទិន្នន័យដើម្បីរក្សាទុកឡើយ!', 'warning');
+      return;
+    }
+
+    // Validate all inputs before saving: if any is over maxLimit, highlight red and lock cursor on it
+    for (const inp of inputs) {
+      if (!this.validateScoreInputEl(inp, true)) {
+        inp.focus();
+        return;
+      }
+    }
+
+    let savedCount = 0;
+
+    inputs.forEach(inp => {
+      const sId = inp.getAttribute('data-stuid');
+      const subKey = inp.getAttribute('data-subkey');
+      const subCode = inp.getAttribute('data-subcode');
+      const val = inp.value.trim();
+
+      if (val !== '') {
+        let numVal = parseFloat(val) || 0;
+        this.setSubjectScore(sId, periodKey, subKey, numVal);
+        if (subCode) this.setSubjectScore(sId, periodKey, subCode, numVal);
+        savedCount++;
+      } else {
+        this.setSubjectScore(sId, periodKey, subKey, null);
+        if (subCode) this.setSubjectScore(sId, periodKey, subCode, null);
+      }
+    });
+
+    // Auto-calculate ភាសាខ្មែរ for grade 7/8/9 (essay + dictation)
+    const _gradeForAutoCalc = this.examSecretGradeSelect ? this.examSecretGradeSelect.value : 'grade_7';
+    const _stuIds = new Set([...inputs].map(i => i.getAttribute('data-stuid')));
+    _stuIds.forEach(sid => this.autoCalcKhmerScore(sid, periodKey, _gradeForAutoCalc));
+
+    // Sync exam scores to grade sheet period
+    _stuIds.forEach(sid => this.syncExamScoresToGradeSheet(sid, periodKey));
+
+    // Update currentPeriod and header dropdown so navigating to «បញ្ចូលពិន្ទុតាមខែ» directly displays these scores!
+    this.currentPeriod = periodKey;
+    if (this.periodHeaderSelect) this.periodHeaderSelect.value = periodKey;
+    if (!this.activeScorePeriod) this.applyActivePeriod(periodKey);
+
+    if (_secretGradeForPeriod) {
+      this.activeClass = _secretGradeForPeriod;
+      if (this.classFilterSelect) this.classFilterSelect.value = _secretGradeForPeriod;
+      if (this.sidebarClassSelect) this.sidebarClassSelect.value = _secretGradeForPeriod;
+      if (this.examGradeSelect) this.examGradeSelect.value = _secretGradeForPeriod;
+    }
+
+    // Also live-sync into subject table if rendered
+    if (this.examSubjectScoresBody) {
+      this.renderExamSubjectScoresTable();
+    }
+
+    this.saveState();
+    const periodTitle = this.getExamPeriodTitle(periodKey);
+    this.createAutoBackup(`រក្សាទុកពិន្ទុតាមអក្សរសម្ងាត់ (${periodTitle})`);
+    this.updateScoreAutoBackupBadge('saved');
+    this.updateKPIOverview();
+    this.showToast(`បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! ទិន្នន័យបាន Auto Backup និងភ្ជាប់ទៅកាន់ «បញ្ចូលពិន្ទុតាមខែ» រួចរាល់។`, 'success');
+
+    // សម្អាតតារាងបញ្ចូលពិន្ទុ និងត្រៀមសម្រាប់អក្សរសម្ងាត់បន្ទប់ថ្មី
+    this.secretScoreInputTableBody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 2.5rem 1rem; color: #15803d; background: #f0fdf4; border-radius: 8px;">
+          <i class="ri-checkbox-circle-fill" style="font-size: 2.2rem; display:block; margin-bottom: 0.5rem; color: #16a34a;"></i>
+          <div style="font-size: 1.1rem; font-weight: 700;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!</div>
+          <div style="font-size: 0.9rem; color: #475569; margin-top: 0.35rem;">ទិន្នន័យបាន Auto Backup និងតភ្ជាប់ទៅតារាងពិន្ទុរួចរាល់។ សូមបញ្ចូលអក្សរសម្ងាត់ថ្មី ដើម្បីបន្តបន្ទប់បន្ទាប់។</div>
+        </td>
+      </tr>
+    `;
+    if (this.inputSearchSecretCode) {
+      this.inputSearchSecretCode.value = '';
+      this.inputSearchSecretCode.focus();
+    }
+    if (this.secretScoreActiveRoomInfo) {
+      this.secretScoreActiveRoomInfo.style.display = 'none';
+    }
+    this.currentSecretRoomGrade = null;
+  }
+
+  // ==========================================================================
+  // TAB 4: Sub-view - By Secret Code with Voice (បញ្ចូលតាមអក្សរសម្ងាត់ ដោយប្រើសម្លេង)
+  // ==========================================================================
+  fetchVoiceSecretRoomScores() {
+    let rawCode = (this.inputSearchVoiceSecretCode ? this.inputSearchVoiceSecretCode.value : '').trim().toUpperCase();
+    if (!rawCode && this.inputSearchSecretCode) {
+      rawCode = this.inputSearchSecretCode.value.trim().toUpperCase();
+      if (this.inputSearchVoiceSecretCode) this.inputSearchVoiceSecretCode.value = rawCode;
+    }
+    if (!rawCode) {
+      this.showToast('សូមបញ្ចូលអក្សរសម្ងាត់ (ឧទាហរណ៍៖ LE7A ឬ K7e)!', 'warning');
+      return;
+    }
+
+    // Keep inputs synced
+    if (this.inputSearchSecretCode) this.inputSearchSecretCode.value = rawCode;
+    if (this.inputSearchVoiceSecretCode) this.inputSearchVoiceSecretCode.value = rawCode;
+
+    // Ensure roomSubjectSecrets is loaded
+    if (!this.roomSubjectSecrets || Object.keys(this.roomSubjectSecrets).length === 0) {
+      try {
+        const saved = localStorage.getItem('sms_exam_secret_matrix');
+        if (saved) this.roomSubjectSecrets = JSON.parse(saved);
+      } catch (_) { }
+    }
+
+    // 1. Direct Lookup
+    let foundGrade = null;
+    let foundRoom = null;
+    let foundSubCode = null;
+
+    if (this.roomSubjectSecrets) {
+      Object.keys(this.roomSubjectSecrets).forEach(gKey => {
+        const rooms = this.roomSubjectSecrets[gKey] || {};
+        Object.keys(rooms).forEach(rKey => {
+          const subs = rooms[rKey] || {};
+          Object.keys(subs).forEach(sc => {
+            if (subs[sc] && subs[sc].trim().toUpperCase() === rawCode) {
+              foundGrade = gKey;
+              foundRoom = rKey;
+              foundSubCode = sc;
+            }
+          });
+        });
+      });
+    }
+
+    // 2. Fallback pattern matching (e.g. LE7A, K7e, DI10a...)
+    if (!foundRoom) {
+      const match = rawCode.match(/^([A-Z]+)(\d+)(SC|SS)?([A-Z]+)(\d*)$/i);
+      if (match) {
+        const subAbbr = match[1].toUpperCase();
+        const gradeDigit = match[2];
+        const trackTag = (match[3] || '').toUpperCase();
+        const letter = match[4].toLowerCase();
+        const cycleNum = parseInt(match[5] || '0', 10);
+        let gKey = 'grade_' + gradeDigit;
+        if (trackTag === 'SC') gKey = 'grade_' + gradeDigit + '_sci';
+        else if (trackTag === 'SS') gKey = 'grade_' + gradeDigit + '_soc';
+
+        const letterIndex = (letter.charCodeAt(0) - 97) + (cycleNum * 26);
+        const targetRoomNumber = String(letterIndex + 1);
+
+        const hasStudents = (this.examArrangements || []).some(item => {
+          return parseInt(item.roomNumber, 10) === parseInt(targetRoomNumber, 10) && this.studentMatchesGrade(item, gKey);
+        });
+
+        if (hasStudents) {
+          foundGrade = gKey;
+          foundRoom = targetRoomNumber;
+          foundSubCode = subAbbr;
+        } else {
+          const gradeRooms = [...new Set((this.examArrangements || []).filter(item => this.studentMatchesGrade(item, gKey)).map(item => String(parseInt(item.roomNumber, 10))))];
+          if (gradeRooms.length > 0) {
+            foundGrade = gKey;
+            foundRoom = gradeRooms[letterIndex % gradeRooms.length];
+            foundSubCode = subAbbr;
+          }
+        }
+      }
+    }
+
+    if (!foundRoom) {
+      this.showToast(`រកមិនឃើញបន្ទប់ ឬមុខវិជ្ជាសម្រាប់អក្សរសម្ងាត់ "${rawCode}" ឡើយ!`, 'error');
+      return;
+    }
+
+    // Query students in room
+    let studentsInRoom = (this.examArrangements || []).filter(item => {
+      const matchRoom = parseInt(item.roomNumber, 10) === parseInt(foundRoom, 10);
+      const matchGrade = this.studentMatchesGrade(item, foundGrade);
+      return matchRoom && matchGrade;
+    }).sort((a, b) => parseInt(a.deskNumber || 0, 10) - parseInt(b.deskNumber || 0, 10));
+
+    if (studentsInRoom.length === 0) {
+      studentsInRoom = (this.examArrangements || []).filter(item => {
+        return parseInt(item.roomNumber, 10) === parseInt(foundRoom, 10);
+      }).sort((a, b) => parseInt(a.deskNumber || 0, 10) - parseInt(b.deskNumber || 0, 10));
+    }
+
+    if (studentsInRoom.length === 0) {
+      const gradeStudents = this.students.filter(s => this.studentMatchesGrade(s, foundGrade));
+      if (gradeStudents.length > 0) {
+        gradeStudents.sort((a, b) => a.khmerName.localeCompare(b.khmerName, 'km'));
+        const perRoom = 25;
+        const targetRoomInt = parseInt(foundRoom, 10) || 1;
+        const startIdx = (targetRoomInt - 1) * perRoom;
+        const roomSlice = gradeStudents.slice(startIdx, startIdx + perRoom);
+        studentsInRoom = roomSlice.map((s, idx) => ({
+          studentId: s.id,
+          khmerName: s.khmerName,
+          gender: s.gender,
+          grade: s.class,
+          roomNumber: foundRoom,
+          deskNumber: String(startIdx + idx + 1)
+        }));
+      }
+    }
+
+    if (studentsInRoom.length === 0) {
+      this.showToast(`មិនមានសិស្សនៅក្នុងបន្ទប់ ${foundRoom} ឡើយ!`, 'warning');
+      return;
+    }
+
+    this.currentVoiceSecretRoomGrade = foundGrade;
+
+    // Subject Details
+    const gradeSubs = this.getMatrixSubjectsForGrade(foundGrade);
+    const subObj = gradeSubs.find(s => s.code === foundSubCode) || { name: foundSubCode, code: foundSubCode, fullKey: foundSubCode.toLowerCase(), maxScore: 100 };
+    const maxLimit = subObj.maxScore || 100;
+    this.currentVoiceSecretSubObj = subObj;
+
+    const activePeriodKey = this.activeScorePeriod || this.getActiveScoringPeriod(foundGrade);
+    const examConfig = this.getExamConfigForGrade(foundGrade, activePeriodKey);
+    const periodTitle = this.getExamPeriodTitle(activePeriodKey);
+    const examDateKhmer = this.formatKhmerExamDate(examConfig.date);
+    const isLocked = !this.isPeriodActiveForScoring(activePeriodKey);
+    const gradeLabel = (typeof GRADE_PRESETS !== 'undefined' && GRADE_PRESETS[foundGrade] && GRADE_PRESETS[foundGrade].label) || (foundGrade === 'grade_7' ? 'ថ្នាក់ទី៧' : (foundGrade === 'grade_8' ? 'ថ្នាក់ទី៨' : (foundGrade === 'grade_9' ? 'ថ្នាក់ទី៩' : (foundGrade === 'grade_12_sc' ? 'ថ្នាក់ទី១២ វិទ្យាសាស្ត្រ' : (foundGrade === 'grade_12_ss' ? 'ថ្នាក់ទី១២ សង្គម' : foundGrade)))));
+
+    if (this.voiceSecretScorePeriodSelect) {
+      this.voiceSecretScorePeriodSelect.value = activePeriodKey;
+    }
+
+    // Room info banner
+    if (this.voiceSecretActiveRoomInfo) {
+      this.voiceSecretActiveRoomInfo.style.display = 'block';
+      this.voiceSecretActiveRoomInfo.innerHTML = `
+        <div style="background: #f5f3ff; border: 1.5px solid #ddd6fe; border-radius: 8px; padding: 0.65rem 1rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; font-size: 0.95rem;">
+          <div><i class="ri-graduation-cap-line" style="color: #7c3aed;"></i> កម្រិតថ្នាក់: <strong style="color: #6d28d9; font-size: 1.05rem;">${gradeLabel}</strong></div>
+          <div><i class="ri-calendar-event-line" style="color: #7c3aed;"></i> សម័យប្រឡង: <strong style="color: #5b21b6;">${examDateKhmer}</strong> (<span style="color: #15803d; font-weight: 700;">${periodTitle}</span>)</div>
+          <div><i class="ri-book-open-line" style="color: #15803d;"></i> មុខវិជ្ជា: <strong style="color: #15803d; font-size: 1.05rem;">${subObj.name} (${foundSubCode})</strong></div>
+          <div><i class="ri-award-line" style="color: #b91c1c;"></i> ពិន្ទុពេញ: <strong style="color: #b91c1c; font-size: 1.05rem;">${maxLimit}</strong></div>
+          <div><i class="ri-user-star-line" style="color: #7c3aed;"></i> ចំនួនសិស្ស: <strong style="color: #7c3aed;">${studentsInRoom.length} នាក់</strong></div>
+          ${isLocked ? `<div style="width: 100%; margin-top: 0.4rem; padding: 0.45rem 0.85rem; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 6px; color: #991b1b; font-weight: 700; font-size: 0.88rem;"><i class="ri-lock-2-fill"></i> 🔒 ខែ ${periodTitle} ត្រូវបានបិទការបញ្ចូលពិន្ទុ!</div>` : ''}
+        </div>
+      `;
+    }
+
+    // Render Rows
+    if (!this.voiceSecretScoreInputTableBody) return;
+    this.voiceSecretScoreInputTableBody.innerHTML = '';
+    const periodKey = activePeriodKey;
+    const isShowInfo = !!((this.chkShowStudentInfoSecret && this.chkShowStudentInfoSecret.checked) || (this.chkShowStudentInfoVoiceSecret && this.chkShowStudentInfoVoiceSecret.checked));
+
+    studentsInRoom.forEach((stu, idx) => {
+      const tr = document.createElement('tr');
+      const seqNum = idx + 1;
+      const sId = stu.studentId || stu.id;
+      const stuObj = (this.students && this.students.find(s => String(s.id) === String(sId))) || stu;
+      const stuName = stuObj.khmerName || stuObj.name || '-';
+      const stuGender = (stuObj.gender === 'F' || stuObj.gender === 'ស្រី') ? 'ស្រី' : ((stuObj.gender === 'M' || stuObj.gender === 'ប្រុស') ? 'ប្រុស' : (stuObj.gender || '-'));
+      const stuRoom = stu.roomNumber || foundRoom || '-';
+      const stuDesk = stu.deskNumber || seqNum;
+
+      const sData = (this.scores[sId] && (this.scores[sId][periodKey] || this.scores[sId]['test_early'] || this.scores[sId]['sem1_exam'])) || {};
+
+      let val = this.getSubjectScore(sData, subObj.fullKey);
+      if (val === undefined && subObj.code) val = this.getSubjectScore(sData, subObj.code);
+      if (val === undefined && (subObj.fullKey === 'kh' || subObj.code === 'K')) {
+        const eVal = this.getSubjectScore(sData, 'kh_essay');
+        const dVal = this.getSubjectScore(sData, 'kh_dict');
+        if (eVal !== undefined || dVal !== undefined) {
+          val = (eVal || 0) + (dVal || 0);
+        }
+      }
+
+      const existingScore = (val !== undefined && val !== null) ? val : '';
+
+      tr.innerHTML = `
+        <td class="col-student-info" style="text-align: center; vertical-align: middle; ${isShowInfo ? '' : 'display: none;'}">${stuRoom}</td>
+        <td class="col-student-info" style="text-align: center; vertical-align: middle; font-weight: 700; ${isShowInfo ? '' : 'display: none;'}">${stuDesk}</td>
+        <td class="col-student-info" style="text-align: left; vertical-align: middle; font-weight: 600; ${isShowInfo ? '' : 'display: none;'}">${stuName}</td>
+        <td class="col-student-info" style="text-align: center; vertical-align: middle; ${isShowInfo ? '' : 'display: none;'}">${stuGender}</td>
+        <td style="text-align: center; vertical-align: middle;">
+          <span class="secret-student-num-circle" style="background: #ede9fe; color: #6d28d9; border-color: #c4b5fd;">${seqNum}</span>
+        </td>
+        <td style="text-align: center; vertical-align: middle;">
+          <input type="number" 
+                 min="0" max="${maxLimit}" step="0.25" 
+                 class="voice-secret-score-input ${isLocked ? 'score-input-locked' : ''}" 
+                 data-stuid="${sId}" 
+                 data-seq="${seqNum}"
+                 data-subkey="${subObj.fullKey}" 
+                 data-subcode="${subObj.code}"
+                 data-max="${maxLimit}"
+                 ${isLocked ? 'disabled readonly title="ខែនេះត្រូវបានបិទការបញ្ចូលពិន្ទុ"' : ''}
+                 value="${existingScore !== undefined ? existingScore : ''}"
+                 placeholder="និយាយ ឬវាយពិន្ទុ">
+        </td>
+      `;
+      this.voiceSecretScoreInputTableBody.appendChild(tr);
+    });
+
+    // Attach listeners on inputs
+    const scoreInputs = Array.from(this.voiceSecretScoreInputTableBody.querySelectorAll('.voice-secret-score-input'));
+    scoreInputs.forEach(inp => {
+      inp.addEventListener('focus', () => {
+        this._currentVoiceSecretActiveInput = inp;
+        const seqNum = inp.getAttribute('data-seq');
+        if (this.voiceSecretActiveTargetBadge) {
+          this.voiceSecretActiveTargetBadge.textContent = `តុសកម្ម: តុទី ${seqNum}`;
+          this.voiceSecretActiveTargetBadge.style.background = '#ddd6fe';
+        }
+        if (this.voiceSecretStatusText) {
+          this.voiceSecretStatusText.innerHTML = `🎙️ កំពុងស្តាប់ពិន្ទុសម្រាប់តុទី <strong>${seqNum}</strong>... (និយាយពិន្ទុដើម្បីចុះបន្ទាត់ស្វ័យប្រវត្តិ)`;
+        }
+        if (this._voiceSecretListeningActive) {
+          this.startVoiceSecretScoreRecognition();
+        }
+        inp.select();
+      });
+
+      inp.addEventListener('blur', () => {
+        const v = parseFloat(inp.value);
+        if (!isNaN(v) && v > maxLimit) {
+          inp.classList.add('score-input-invalid');
+        } else {
+          inp.classList.remove('score-input-invalid');
+        }
+      });
+
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          this.navigateVoiceSecretInput(1);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          this.navigateVoiceSecretInput(-1);
+        }
+      });
+    });
+
+    if (scoreInputs[0]) {
+      scoreInputs[0].focus();
+      scoreInputs[0].select();
+    }
+
+    if (this._voiceSecretListeningActive) {
+      this.startVoiceSecretScoreRecognition();
+    }
+
+    this.showToast(`បានទាញយកបញ្ជីសិស្ស (${studentsInRoom.length} នាក់) រួចរាល់! ចុចក្នុងប្រអប់ដើម្បីនិយាយពិន្ទុ (លោតចុះស្វ័យប្រវត្តិ)`, 'success');
+  }
+
+  navigateVoiceSecretInput(direction = 1) {
+    if (!this.voiceSecretScoreInputTableBody) return;
+    const allInputs = Array.from(this.voiceSecretScoreInputTableBody.querySelectorAll('.voice-secret-score-input:not([disabled])'));
+    if (allInputs.length === 0) return;
+    let curIdx = allInputs.indexOf(this._currentVoiceSecretActiveInput);
+    if (curIdx === -1) curIdx = 0;
+    const targetIdx = curIdx + direction;
+    if (targetIdx >= 0 && targetIdx < allInputs.length) {
+      allInputs[targetIdx].focus();
+      allInputs[targetIdx].select();
+    } else if (targetIdx >= allInputs.length) {
+      // Reached the end! Auto-save all scores
+      this.handleSaveVoiceSecretRoomScores();
+    }
+  }
+
+  handleVoiceSecretScoreRecognitionResult(transcript, preParsedNum = null) {
+    if (!transcript && preParsedNum === null) return;
+    const raw = String(transcript || '').trim().toLowerCase();
+
+    // Check voice navigation commands
+    if (/(រក្សាទុក|save)/i.test(raw)) {
+      this.handleSaveVoiceSecretRoomScores();
+      return;
+    }
+    if (/(បន្ទាប់|next|ចុះ|រំលង)/i.test(raw)) {
+      this.navigateVoiceSecretInput(1);
+      return;
+    }
+    if (/(ថយក្រោយ|back|ឡើង)/i.test(raw)) {
+      this.navigateVoiceSecretInput(-1);
+      return;
+    }
+
+    let targetInput = this._currentVoiceSecretActiveInput;
+    if (!targetInput || !document.body.contains(targetInput)) {
+      targetInput = this.voiceSecretScoreInputTableBody ? this.voiceSecretScoreInputTableBody.querySelector('.voice-secret-score-input:not([disabled])') : null;
+    }
+    if (!targetInput) return;
+
+    if (/(លុប|delete|clear)/i.test(raw)) {
+      targetInput.value = '';
+      const sId = targetInput.getAttribute('data-stuid');
+      const subKey = targetInput.getAttribute('data-subkey');
+      const subCode = targetInput.getAttribute('data-subcode');
+      const pKey = (this.voiceSecretScorePeriodSelect && this.voiceSecretScorePeriodSelect.value) ? this.voiceSecretScorePeriodSelect.value : this.getActiveScoringPeriod(this.currentVoiceSecretRoomGrade || 'grade_7');
+      this.setSubjectScore(sId, pKey, subKey, null);
+      if (subCode) this.setSubjectScore(sId, pKey, subCode, null);
+      this.playAudioChime(440, 0.1);
+      this.navigateVoiceSecretInput(1);
+      return;
+    }
+
+    const parsedNum = preParsedNum !== null ? preParsedNum : this.parseKhmerSpokenNumber(raw);
+    if (parsedNum !== null && !isNaN(parsedNum)) {
+      const maxLimit = parseFloat(targetInput.getAttribute('data-max') || '100');
+      if (parsedNum > maxLimit) {
+        this.playAudioChime(320, 0.2);
+        targetInput.classList.add('score-input-invalid');
+        this.showToast(`⚠️ ពិន្ទុ ${parsedNum} លើសពីពិន្ទុពេញ (${maxLimit})! សូមនិយាយម្តងទៀត។`, 'warning');
+        return;
+      }
+
+      // Valid score! Fill + JUMP FIRST (zero latency), do heavy work afterwards.
+      targetInput.classList.remove('score-input-invalid');
+      targetInput.value = parsedNum;
+      this._lastVoiceFired = { input: targetInput, value: parsedNum };
+
+      this.navigateVoiceSecretInput(1);
+
+      // Defer chime / state save / banner so they never delay the cursor jump
+      setTimeout(() => {
+        const seq = targetInput.getAttribute('data-seq');
+        if (this.voiceSecretStatusText) {
+          this.voiceSecretStatusText.innerHTML = `✓ <strong>បញ្ចូលជោគជ័យ៖</strong> តុទី ${seq} = <strong style="color: #15803d; font-size: 1.15rem;">${parsedNum}</strong> ⚡ (ពីសម្លេង «${raw}»)`;
+        }
+        targetInput.style.backgroundColor = '#dcfce7';
+        targetInput.style.borderColor = '#16a34a';
+        setTimeout(() => {
+          targetInput.style.backgroundColor = '';
+          targetInput.style.borderColor = '';
+        }, 300);
+        this.playVoiceSecretFeedback(parsedNum);
+        this.saveVoiceSecretInputValue(targetInput, parsedNum);
+      }, 0);
+    }
+  }
+
+  // Confirmation sound after a voice score: spoken word (default), beep, or off.
+  // While a spoken word plays, mic results are ignored so the app never "hears itself".
+  playVoiceSecretFeedback(num) {
+    const mode = (this.voiceSecretFeedbackMode && this.voiceSecretFeedbackMode.value) || 'speak';
+    if (mode === 'off') return;
+    if (mode === 'beep') {
+      this.playAudioChime(760, 0.08);
+      return;
+    }
+    this.playKhmerSpeech(String(num));
+  }
+
+  // Persist one voice-entered score into app state (and mirror to the manual secret-code table)
+  saveVoiceSecretInputValue(input, num) {
+    if (!input) return;
+    const sId = input.getAttribute('data-stuid');
+    const subKey = input.getAttribute('data-subkey');
+    const subCode = input.getAttribute('data-subcode');
+    const pKey = (this.voiceSecretScorePeriodSelect && this.voiceSecretScorePeriodSelect.value) ? this.voiceSecretScorePeriodSelect.value : this.getActiveScoringPeriod(this.currentVoiceSecretRoomGrade || 'grade_7');
+    this.setSubjectScore(sId, pKey, subKey, num);
+    if (subCode) this.setSubjectScore(sId, pKey, subCode, num);
+    if (this.secretScoreInputTableBody) {
+      const matchingFirstInp = this.secretScoreInputTableBody.querySelector(`.secret-score-input-fast[data-stuid="${sId}"][data-subkey="${subKey}"]`);
+      if (matchingFirstInp) matchingFirstInp.value = num;
+    }
+  }
+
+  // Speech engine refined its guess (e.g. "៤" -> "៤០"): silently fix the box we already jumped away from
+  correctVoiceSecretScore(fired, newNum) {
+    const inp = fired && fired.input;
+    if (!inp || !document.body.contains(inp)) return;
+    const maxLimit = parseFloat(inp.getAttribute('data-max') || '100');
+    if (newNum > maxLimit || newNum < 0) return;
+    fired.value = newNum;
+    inp.value = newNum;
+    this.saveVoiceSecretInputValue(inp, newNum);
+    inp.style.backgroundColor = '#fef3c7';
+    inp.style.borderColor = '#f59e0b';
+    setTimeout(() => {
+      inp.style.backgroundColor = '';
+      inp.style.borderColor = '';
+    }, 500);
+    if (this.voiceSecretStatusText) {
+      this.voiceSecretStatusText.innerHTML = `✎ <strong>កែតម្រូវស្វ័យប្រវត្តិ៖</strong> តុទី ${inp.getAttribute('data-seq')} = <strong style="color: #b45309; font-size: 1.1rem;">${newNum}</strong>`;
+    }
+  }
+
+  toggleVoiceSecretListening() {
+    this._voiceSecretListeningActive = !this._voiceSecretListeningActive;
+    if (this._voiceSecretListeningActive) {
+      this.startVoiceSecretScoreRecognition();
+      this.showToast('🎙️ បានបើកការស្តាប់សម្លេង! គ្រាន់តែចុចក្នុងប្រអប់ណាមួយ រួចនិយាយពិន្ទុ។', 'info');
+    } else {
+      this.stopVoiceSecretScoreRecognition();
+      this.showToast('បិទការស្តាប់សម្លេងជាបណ្តោះអាសន្ន។', 'info');
+    }
+  }
+
+  recoverVoiceSecretRecognition(reason = 'watchdog') {
+    if (!this._voiceSecretListeningActive || this.activeScoreSubTab !== 'byVoiceSecret') return;
+    if (this._voiceWatchdogTimer) {
+      clearTimeout(this._voiceWatchdogTimer);
+      this._voiceWatchdogTimer = null;
+    }
+    if (this._voiceInterimScoreTimer) {
+      clearTimeout(this._voiceInterimScoreTimer);
+      this._voiceInterimScoreTimer = null;
+    }
+    if (this._voiceSecretRecognition) {
+      try { this._voiceSecretRecognition.abort(); } catch (_) { }
+      this._voiceSecretRecognition = null;
+    }
+    this._voiceSecretRecognitionRunning = false;
+    setTimeout(() => {
+      if (this._voiceSecretListeningActive && this.activeScoreSubTab === 'byVoiceSecret') {
+        this.startVoiceSecretScoreRecognition();
+      }
+    }, 60);
+  }
+
+  startVoiceSecretScoreRecognition() {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      if (this.btnToggleVoiceSecretListening) {
+        this.btnToggleVoiceSecretListening.style.background = '#64748b';
+        if (this.voiceSecretMicBtnText) this.voiceSecretMicBtnText.textContent = 'Browser មិនគាំទ្រ Web Speech';
+      }
+      return;
+    }
+
+    this._voiceSecretListeningActive = true;
+    if (this.btnToggleVoiceSecretListening) {
+      this.btnToggleVoiceSecretListening.style.background = '#16a34a';
+      if (this.voiceSecretMicBtnText) this.voiceSecretMicBtnText.innerHTML = '<i class="ri-flashlight-line"></i> ស្តាប់សម្លេង: បើក (ល្បឿនលឿន Real-time)';
+    }
+    if (this.voiceSecretListeningBanner) {
+      this.voiceSecretListeningBanner.style.borderColor = '#86efac';
+      this.voiceSecretListeningBanner.style.background = '#f0fdf4';
+    }
+
+    // Pre-warm AudioContext for instantaneous sound chime
+    try {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (AudioCtx && !this._voiceAudioCtx) this._voiceAudioCtx = new AudioCtx();
+      if (this._voiceAudioCtx && this._voiceAudioCtx.state === 'suspended') this._voiceAudioCtx.resume();
+    } catch (_) { }
+
+    if (this._voiceSecretRecognitionRunning && this._voiceSecretRecognition) return;
+
+    try {
+      if (!this._voiceSecretRecognition) {
+        this._voiceSecretRecognition = new SpeechRecognition();
+        this._voiceSecretRecognition.lang = 'km-KH';
+        this._voiceSecretRecognition.continuous = true;
+        this._voiceSecretRecognition.interimResults = true;
+        this._voiceSecretRecognition.maxAlternatives = 3;
+
+        this._processedResultIndices = new Set();
+        this._voiceFiredByIndex = new Map();
+        this._voiceInterimScoreTimer = null;
+
+        const resetWatchdog = () => {
+          if (this._voiceWatchdogTimer) clearTimeout(this._voiceWatchdogTimer);
+          // If connection hangs without result/end for > 5s, auto-recover!
+          this._voiceWatchdogTimer = setTimeout(() => {
+            if (this._voiceSecretListeningActive && this.activeScoreSubTab === 'byVoiceSecret') {
+              this.recoverVoiceSecretRecognition('watchdog_timeout');
+            }
+          }, 5000);
+        };
+
+        this._voiceSecretRecognition.onspeechstart = () => {
+          resetWatchdog();
+        };
+
+        this._voiceSecretRecognition.onsoundstart = () => {
+          resetWatchdog();
+        };
+
+        this._voiceSecretRecognition.onresult = (event) => {
+          resetWatchdog();
+          if (!event.results) return;
+          // Ignore the app's own spoken confirmation
+          if (this._voiceTtsSpeaking || Date.now() < (this._voiceMuteUntil || 0)) return;
+
+          for (let i = event.resultIndex; i < event.results.length; ++i) {
+            if (this._processedResultIndices.has(i)) continue;
+
+            const res = event.results[i];
+            if (!res || !res[0]) continue;
+            const liveTranscript = (res[0].transcript || '').trim();
+            if (!liveTranscript) continue;
+
+            // Live instant display in the visualizer banner while speaking:
+            if (this.voiceSecretStatusText) {
+              const curSeq = this._currentVoiceSecretActiveInput ? this._currentVoiceSecretActiveInput.getAttribute('data-seq') : '';
+              this.voiceSecretStatusText.innerHTML = `⚡ <strong>កំពុងស្តាប់ផ្ទាល់៖</strong> <span style="color: #6d28d9; font-size: 1.05rem; font-weight: 800; background: #ede9fe; padding: 2px 8px; border-radius: 4px;">«${liveTranscript}»</span> ${curSeq ? `(តុទី ${curSeq})` : ''}`;
+            }
+
+            const processResult = (resultObj) => {
+              if (this._processedResultIndices.has(i)) return;
+
+              // Check all alternatives for navigation commands or valid score numbers
+              let matchedCmd = null;
+              let matchedNum = null;
+              let matchedTranscript = '';
+
+              for (let a = 0; a < resultObj.length; ++a) {
+                const altText = (resultObj[a].transcript || '').trim();
+                if (!altText) continue;
+
+                if (/(រក្សាទុក|save)/i.test(altText)) { matchedCmd = 'save'; matchedTranscript = altText; break; }
+                if (/(បន្ទាប់|next|ចុះ|រំលង)/i.test(altText)) { matchedCmd = 'next'; matchedTranscript = altText; break; }
+                if (/(ថយក្រោយ|back|ឡើង)/i.test(altText)) { matchedCmd = 'back'; matchedTranscript = altText; break; }
+                if (/(លុប|delete|clear)/i.test(altText)) { matchedCmd = 'clear'; matchedTranscript = altText; break; }
+
+                const parsed = this.parseKhmerSpokenNumber(altText);
+                if (parsed !== null && !isNaN(parsed) && matchedNum === null) {
+                  matchedNum = parsed;
+                  matchedTranscript = altText;
+                  break;
+                }
+              }
+
+              if (matchedCmd) {
+                this._processedResultIndices.add(i);
+                if (this._voiceInterimScoreTimer) { clearTimeout(this._voiceInterimScoreTimer); this._voiceInterimScoreTimer = null; }
+                if (matchedCmd === 'save') this.handleSaveVoiceSecretRoomScores();
+                else if (matchedCmd === 'next') this.navigateVoiceSecretInput(1);
+                else if (matchedCmd === 'back') this.navigateVoiceSecretInput(-1);
+                else if (matchedCmd === 'clear') this.handleVoiceSecretScoreRecognitionResult(matchedTranscript);
+                return;
+              }
+
+              if (matchedNum !== null) {
+                this._processedResultIndices.add(i);
+                if (this._voiceInterimScoreTimer) { clearTimeout(this._voiceInterimScoreTimer); this._voiceInterimScoreTimer = null; }
+                this.handleVoiceSecretScoreRecognitionResult(matchedTranscript, matchedNum);
+                // Refresh recognition connection after a completed score so WebSocket never accumulates lag
+                setTimeout(() => {
+                  if (this._voiceSecretListeningActive && this.activeScoreSubTab === 'byVoiceSecret') {
+                    this.recoverVoiceSecretRecognition('score_entered');
+                  }
+                }, 80);
+              }
+            };
+
+            if (res.isFinal) {
+              if (this._voiceInterimScoreTimer) {
+                clearTimeout(this._voiceInterimScoreTimer);
+                this._voiceInterimScoreTimer = null;
+              }
+              processResult(res);
+            } else {
+              // Interim result: debounce with 450ms silence pause before processing
+              if (this._voiceInterimScoreTimer) clearTimeout(this._voiceInterimScoreTimer);
+              this._voiceInterimScoreTimer = setTimeout(() => {
+                processResult(res);
+              }, 450);
+            }
+          }
+        };
+
+        this._voiceSecretRecognition.onerror = (event) => {
+          if (event.error === 'no-speech') return; // Silence is normal, don't show warning
+          console.warn('Voice secret score recognition error:', event.error);
+          if (event.error === 'network') {
+            if (this.voiceSecretStatusText) {
+              this.voiceSecretStatusText.innerHTML = '⚠️ <strong>Internet កំពុងរអាក់រអួល៖</strong> កំពុងភ្ជាប់សម្លេងឡើងវិញ... (ឬលោកគ្រូអាចវាយលេខ រួចចុច Enter 100% Offline)';
+            }
+            // Self-heal: retry connection automatically in 1s without needing user to click!
+            setTimeout(() => {
+              if (this._voiceSecretListeningActive && this.activeScoreSubTab === 'byVoiceSecret') {
+                this.recoverVoiceSecretRecognition('network_error');
+              }
+            }, 1000);
+          } else if (event.error === 'not-allowed') {
+            this.showToast('សូម Allow មេក្រូហ្វូនក្នុង Browser ដើម្បីប្រើប្រាស់មុខងារសម្លេង!', 'warning');
+            this.stopVoiceSecretScoreRecognition();
+          }
+        };
+
+        this._voiceSecretRecognition.onend = () => {
+          this._voiceSecretRecognitionRunning = false;
+          if (this._processedResultIndices) this._processedResultIndices.clear();
+          if (this._voiceFiredByIndex) this._voiceFiredByIndex.clear();
+          if (this._voiceWatchdogTimer) clearTimeout(this._voiceWatchdogTimer);
+          // Continuously keep microphone alive while in byVoiceSecret tab and listening is active
+          if (this._voiceSecretListeningActive && this.activeScoreSubTab === 'byVoiceSecret') {
+            setTimeout(() => {
+              if (this._voiceSecretListeningActive && this.activeScoreSubTab === 'byVoiceSecret') {
+                try {
+                  this._voiceSecretRecognition.start();
+                  this._voiceSecretRecognitionRunning = true;
+                } catch (_) { }
+              }
+            }, 60);
+          }
+        };
+      }
+
+      this._voiceSecretRecognition.start();
+      this._voiceSecretRecognitionRunning = true;
+    } catch (err) {
+      this._voiceSecretRecognitionRunning = false;
+    }
+  }
+
+  stopVoiceSecretScoreRecognition() {
+    this._voiceSecretListeningActive = false;
+    this._voiceSecretRecognitionRunning = false;
+    if (this._voiceWatchdogTimer) {
+      clearTimeout(this._voiceWatchdogTimer);
+      this._voiceWatchdogTimer = null;
+    }
+    if (this._voiceInterimScoreTimer) {
+      clearTimeout(this._voiceInterimScoreTimer);
+      this._voiceInterimScoreTimer = null;
+    }
+    if (this._processedResultIndices) {
+      this._processedResultIndices.clear();
+    }
+    if (this._voiceFiredByIndex) {
+      this._voiceFiredByIndex.clear();
+    }
+    if (this._voiceSecretRecognition) {
+      try { this._voiceSecretRecognition.abort(); } catch (_) { }
+      this._voiceSecretRecognition = null;
+    }
+    if (this.btnToggleVoiceSecretListening) {
+      this.btnToggleVoiceSecretListening.style.background = '#6b7280';
+      if (this.voiceSecretMicBtnText) this.voiceSecretMicBtnText.innerHTML = '<i class="ri-mic-off-line"></i> ស្តាប់សម្លេង: បិទ (Off)';
+    }
+    if (this.voiceSecretListeningBanner) {
+      this.voiceSecretListeningBanner.style.borderColor = '#ddd6fe';
+      this.voiceSecretListeningBanner.style.background = '#f5f3ff';
+    }
+  }
+
+  handleSaveVoiceSecretRoomScores() {
+    if (!this.voiceSecretScoreInputTableBody) return;
+    const _secretGradeForPeriod = this.currentVoiceSecretRoomGrade || (this.examSecretGradeSelect ? this.examSecretGradeSelect.value : 'grade_7');
+    const periodKey = (this.voiceSecretScorePeriodSelect && this.voiceSecretScorePeriodSelect.value) ? this.voiceSecretScorePeriodSelect.value : this.getActiveScoringPeriod(_secretGradeForPeriod);
+    if (!this.isPeriodActiveForScoring(periodKey)) {
+      this.showToast(`មិនអាចរក្សាទុកបានទេ! ខែនេះត្រូវបានបិទការបញ្ចូលពិន្ទុ។ អនុញ្ញាតតែខែ «${this.getExamPeriodTitle(this.activeScorePeriod)}» ប៉ុណ្ណោះ។`, 'error');
+      return;
+    }
+
+    const inputs = this.voiceSecretScoreInputTableBody.querySelectorAll('.voice-secret-score-input');
+    if (inputs.length === 0) {
+      this.showToast('មិនទាន់មានទិន្នន័យដើម្បីរក្សាទុកឡើយ!', 'warning');
+      return;
+    }
+
+    // Validate inputs
+    for (const inp of inputs) {
+      const val = inp.value.trim();
+      if (val !== '') {
+        const numVal = parseFloat(val);
+        const maxLimit = parseFloat(inp.getAttribute('data-max') || '100');
+        if (isNaN(numVal) || numVal < 0 || numVal > maxLimit) {
+          inp.focus();
+          inp.classList.add('score-input-invalid');
+          this.showToast(`ពិន្ទុមិនត្រឹមត្រូវ (ត្រូវចន្លោះ 0 ដល់ ${maxLimit})!`, 'error');
+          return;
+        }
+      }
+    }
+
+    let savedCount = 0;
+    inputs.forEach(inp => {
+      const sId = inp.getAttribute('data-stuid');
+      const subKey = inp.getAttribute('data-subkey');
+      const subCode = inp.getAttribute('data-subcode');
+      const val = inp.value.trim();
+
+      if (val !== '') {
+        let numVal = parseFloat(val) || 0;
+        this.setSubjectScore(sId, periodKey, subKey, numVal);
+        if (subCode) this.setSubjectScore(sId, periodKey, subCode, numVal);
+        savedCount++;
+      } else {
+        this.setSubjectScore(sId, periodKey, subKey, null);
+        if (subCode) this.setSubjectScore(sId, periodKey, subCode, null);
+      }
+
+      // Sync into first secret table if present
+      if (this.secretScoreInputTableBody) {
+        const matchingFirstInp = this.secretScoreInputTableBody.querySelector(`.secret-score-input-fast[data-stuid="${sId}"][data-subkey="${subKey}"]`);
+        if (matchingFirstInp) matchingFirstInp.value = val;
+      }
+    });
+
+    // Auto-calculate ភាសាខ្មែរ for grade 7/8/9
+    const _gradeForAutoCalc = _secretGradeForPeriod;
+    const _stuIds = new Set([...inputs].map(i => i.getAttribute('data-stuid')));
+    _stuIds.forEach(sid => this.autoCalcKhmerScore(sid, periodKey, _gradeForAutoCalc));
+
+    // Sync exam scores to grade sheet period
+    _stuIds.forEach(sid => this.syncExamScoresToGradeSheet(sid, periodKey));
+
+    this.currentPeriod = periodKey;
+    if (this.periodHeaderSelect) this.periodHeaderSelect.value = periodKey;
+    if (!this.activeScorePeriod) this.applyActivePeriod(periodKey);
+
+    if (_secretGradeForPeriod) {
+      this.activeClass = _secretGradeForPeriod;
+      if (this.classFilterSelect) this.classFilterSelect.value = _secretGradeForPeriod;
+      if (this.sidebarClassSelect) this.sidebarClassSelect.value = _secretGradeForPeriod;
+      if (this.examGradeSelect) this.examGradeSelect.value = _secretGradeForPeriod;
+    }
+
+    if (this.examSubjectScoresBody) {
+      this.renderExamSubjectScoresTable();
+    }
+
+    this.saveState();
+    const periodTitle = this.getExamPeriodTitle(periodKey);
+    this.createAutoBackup(`រក្សាទុកពិន្ទុតាមអក្សរសម្ងាត់ (សម្លេង) (${periodTitle})`);
+    this.updateScoreAutoBackupBadge('saved');
+    this.updateKPIOverview();
+    this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! ទិន្នន័យបាន Auto Backup និងភ្ជាប់ទៅកាន់ «បញ្ចូលពិន្ទុតាមខែ» រួចរាល់។`, 'success');
+
+    // សម្អាតតារាងបញ្ចូលពិន្ទុ និងត្រៀមសម្រាប់អក្សរសម្ងាត់បន្ទប់ថ្មី
+    this.voiceSecretScoreInputTableBody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 2.5rem 1rem; color: #15803d; background: #f0fdf4; border-radius: 8px;">
+          <i class="ri-checkbox-circle-fill" style="font-size: 2.2rem; display:block; margin-bottom: 0.5rem; color: #16a34a;"></i>
+          <div style="font-size: 1.1rem; font-weight: 700;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!</div>
+          <div style="font-size: 0.9rem; color: #475569; margin-top: 0.35rem;">ទិន្នន័យបាន Auto Backup និងតភ្ជាប់ទៅតារាងពិន្ទុរួចរាល់។ សូមបញ្ចូលអក្សរសម្ងាត់ថ្មី ដើម្បីបន្តបន្ទប់បន្ទាប់។</div>
+        </td>
+      </tr>
+    `;
+    if (this.inputSearchVoiceSecretCode) {
+      this.inputSearchVoiceSecretCode.value = '';
+      this.inputSearchVoiceSecretCode.focus();
+    }
+    if (this.voiceSecretScoreActiveRoomInfo) {
+      this.voiceSecretScoreActiveRoomInfo.style.display = 'none';
+    }
+    this._currentVoiceSecretActiveInput = null;
+    this.currentVoiceSecretRoomGrade = null;
+    if (this.voiceSecretActiveTargetBadge) {
+      this.voiceSecretActiveTargetBadge.textContent = 'តុសកម្ម: --';
+      this.voiceSecretActiveTargetBadge.style.background = '#e2e8f0';
+    }
+    if (this.voiceSecretStatusText) {
+      this.voiceSecretStatusText.innerHTML = '✨ <strong>បានរក្សាទុក និងសម្អាតតារាងរួចរាល់!</strong> សូមបញ្ចូលអក្សរសម្ងាត់ថ្មី (ឧ. LE7B ឬ K7e) រួចចុច Enter ដើម្បីបន្ត។';
+    }
+  }
+
+  // ==========================================================================
+  // SUB-VIEW: Voice Score by Student Name & Secret Code (អានឈ្មោះសិស្ស & សម្លេង)
+  // Solves the problem where students write wrong desk / room numbers on test papers
+  // ==========================================================================
+  fetchVoiceNameSecretRoomScores() {
+    const rawCode = (this.inputSearchVoiceNameSecretCode ? this.inputSearchVoiceNameSecretCode.value : '').trim().toUpperCase();
+    if (!rawCode) {
+      this.showToast('សូមបញ្ចូលអក្សរសម្ងាត់ (ឧទាហរណ៍៖ LE7A, C9E ឬ K7e)!', 'warning');
+      return;
+    }
+
+    if (!this.roomSubjectSecrets || Object.keys(this.roomSubjectSecrets).length === 0) {
+      try {
+        const saved = localStorage.getItem('sms_exam_secret_matrix');
+        if (saved) this.roomSubjectSecrets = JSON.parse(saved);
+      } catch (_) { }
+    }
+
+    let foundGrade = null;
+    let foundRoom = null;
+    let foundSubCode = null;
+
+    if (this.roomSubjectSecrets) {
+      Object.keys(this.roomSubjectSecrets).forEach(gKey => {
+        const rooms = this.roomSubjectSecrets[gKey] || {};
+        Object.keys(rooms).forEach(rKey => {
+          const subs = rooms[rKey] || {};
+          Object.keys(subs).forEach(sc => {
+            if (subs[sc] && subs[sc].trim().toUpperCase() === rawCode) {
+              foundGrade = gKey;
+              foundRoom = rKey;
+              foundSubCode = sc;
+            }
+          });
+        });
+      });
+    }
+
+    if (!foundRoom) {
+      const match = rawCode.match(/^([A-Z]+)(\d+)(SC|SS)?([A-Z]+)(\d*)$/i);
+      if (match) {
+        const subAbbr = match[1].toUpperCase();
+        const gradeDigit = match[2];
+        const trackTag = (match[3] || '').toUpperCase();
+        const letter = match[4].toLowerCase();
+        const cycleNum = parseInt(match[5] || '0', 10);
+        let gKey = 'grade_' + gradeDigit;
+        if (trackTag === 'SC') gKey = 'grade_' + gradeDigit + '_sci';
+        else if (trackTag === 'SS') gKey = 'grade_' + gradeDigit + '_soc';
+
+        const letterIndex = (letter.charCodeAt(0) - 97) + (cycleNum * 26);
+        const targetRoomNumber = String(letterIndex + 1);
+
+        const hasStudents = (this.examArrangements || []).some(item => {
+          return parseInt(item.roomNumber, 10) === parseInt(targetRoomNumber, 10) && this.studentMatchesGrade(item, gKey);
+        });
+
+        if (hasStudents) {
+          foundGrade = gKey;
+          foundRoom = targetRoomNumber;
+          foundSubCode = subAbbr;
+        } else {
+          const gradeRooms = [...new Set((this.examArrangements || []).filter(item => this.studentMatchesGrade(item, gKey)).map(item => String(parseInt(item.roomNumber, 10))))];
+          if (gradeRooms.length > 0) {
+            foundGrade = gKey;
+            foundRoom = gradeRooms[letterIndex % gradeRooms.length];
+            foundSubCode = subAbbr;
+          }
+        }
+      }
+    }
+
+    if (!foundRoom) {
+      this.showToast(`រកមិនឃើញបន្ទប់ ឬមុខវិជ្ជាសម្រាប់អក្សរសម្ងាត់ "${rawCode}" ឡើយ!`, 'error');
+      return;
+    }
+
+    let studentsInRoom = (this.examArrangements || []).filter(item => {
+      const matchRoom = parseInt(item.roomNumber, 10) === parseInt(foundRoom, 10);
+      const matchGrade = this.studentMatchesGrade(item, foundGrade);
+      return matchRoom && matchGrade;
+    });
+
+    if (studentsInRoom.length === 0) {
+      const gradeStudents = this.students.filter(s => this.studentMatchesGrade(s, foundGrade));
+      if (gradeStudents.length > 0) {
+        gradeStudents.sort((a, b) => a.khmerName.localeCompare(b.khmerName, 'km'));
+        const perRoom = 25;
+        const targetRoomInt = parseInt(foundRoom, 10) || 1;
+        const startIdx = (targetRoomInt - 1) * perRoom;
+        const roomSlice = gradeStudents.slice(startIdx, startIdx + perRoom);
+        studentsInRoom = roomSlice.map((s, idx) => ({
+          studentId: s.id,
+          khmerName: s.khmerName,
+          gender: s.gender,
+          grade: s.class,
+          roomNumber: foundRoom,
+          deskNumber: String(startIdx + idx + 1)
+        }));
+      }
+    }
+
+    if (studentsInRoom.length === 0) {
+      this.showToast(`មិនមានសិស្សនៅក្នុងបន្ទប់ ${foundRoom} ឡើយ!`, 'warning');
+      return;
+    }
+
+    this.currentVoiceNameSecretRoomGrade = foundGrade;
+    this._voiceNameStudentsInRoom = studentsInRoom;
+    this._currentVoiceNameSecretStudentIndex = 0;
+
+    const gradeSubs = this.getMatrixSubjectsForGrade(foundGrade);
+    const subObj = gradeSubs.find(s => s.code === foundSubCode) || { name: foundSubCode, code: foundSubCode, fullKey: foundSubCode.toLowerCase(), maxScore: 100 };
+    const maxLimit = subObj.maxScore || 100;
+    this.currentVoiceNameSecretSubObj = subObj;
+
+    const activePeriodKey = this.activeScorePeriod || this.getActiveScoringPeriod(foundGrade);
+    const examConfig = this.getExamConfigForGrade(foundGrade, activePeriodKey);
+    const periodTitle = this.getExamPeriodTitle(activePeriodKey);
+    const examDateKhmer = this.formatKhmerExamDate(examConfig.date);
+    const isLocked = !this.isPeriodActiveForScoring(activePeriodKey);
+    const gradeLabel = (typeof GRADE_PRESETS !== 'undefined' && GRADE_PRESETS[foundGrade] && GRADE_PRESETS[foundGrade].label) || (foundGrade === 'grade_7' ? 'ថ្នាក់ទី៧' : (foundGrade === 'grade_8' ? 'ថ្នាក់ទី៨' : (foundGrade === 'grade_9' ? 'ថ្នាក់ទី៩' : (foundGrade === 'grade_12_sc' ? 'ថ្នាក់ទី១២ វិទ្យាសាស្ត្រ' : (foundGrade === 'grade_12_ss' ? 'ថ្នាក់ទី១២ សង្គម' : foundGrade)))));
+
+    // Room info banner
+    if (this.voiceNameSecretActiveRoomInfo) {
+      this.voiceNameSecretActiveRoomInfo.style.display = 'block';
+      this.voiceNameSecretActiveRoomInfo.innerHTML = `
+        <div style="background: #f0f9ff; border: 1.5px solid #bae6fd; border-radius: 8px; padding: 0.65rem 1rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; font-size: 0.95rem;">
+          <div><i class="ri-graduation-cap-line" style="color: #0284c7;"></i> កម្រិតថ្នាក់: <strong style="color: #0369a1; font-size: 1.05rem;">${gradeLabel}</strong></div>
+          <div><i class="ri-calendar-event-line" style="color: #0284c7;"></i> សម័យប្រឡង: <strong style="color: #0369a1;">${examDateKhmer}</strong> (<span style="color: #15803d; font-weight: 700;">${periodTitle}</span>)</div>
+          <div><i class="ri-book-open-line" style="color: #15803d;"></i> មុខវិជ្ជា: <strong style="color: #15803d; font-size: 1.05rem;">${subObj.name} (${foundSubCode})</strong></div>
+          <div><i class="ri-award-line" style="color: #b91c1c;"></i> ពិន្ទុពេញ: <strong style="color: #b91c1c; font-size: 1.05rem;">${maxLimit}</strong></div>
+          <div><i class="ri-user-star-line" style="color: #0284c7;"></i> ចំនួនសិស្ស: <strong style="color: #0284c7;">${studentsInRoom.length} នាក់</strong></div>
+          ${isLocked ? `<div style="width: 100%; margin-top: 0.4rem; padding: 0.45rem 0.85rem; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 6px; color: #991b1b; font-weight: 700; font-size: 0.88rem;"><i class="ri-lock-2-fill"></i> 🔒 ខែ ${periodTitle} ត្រូវបានបិទការបញ្ចូលពិន្ទុ!</div>` : ''}
+        </div>
+      `;
+    }
+
+    // Render Rows (All student details visible so teacher can cross-check regardless of desk number errors)
+    if (!this.voiceNameSecretScoreInputTableBody) return;
+    this.voiceNameSecretScoreInputTableBody.innerHTML = '';
+    const periodKey = activePeriodKey;
+
+    studentsInRoom.forEach((stu, idx) => {
+      const tr = document.createElement('tr');
+      const seqNum = idx + 1;
+      const sId = stu.studentId || stu.id;
+      const stuObj = (this.students && this.students.find(s => String(s.id) === String(sId))) || stu;
+      const stuName = stuObj.khmerName || stuObj.name || '-';
+      const stuGender = (stuObj.gender === 'F' || stuObj.gender === 'ស្រី') ? 'ស្រី' : ((stuObj.gender === 'M' || stuObj.gender === 'ប្រុស') ? 'ប្រុស' : (stuObj.gender || '-'));
+      const stuRoom = stu.roomNumber || foundRoom || '-';
+      const stuDesk = stu.deskNumber || seqNum;
+
+      const sData = (this.scores[sId] && (this.scores[sId][periodKey] || this.scores[sId]['test_early'] || this.scores[sId]['sem1_exam'])) || {};
+
+      let val = this.getSubjectScore(sData, subObj.fullKey);
+      if (val === undefined && subObj.code) val = this.getSubjectScore(sData, subObj.code);
+      if (val === undefined && (subObj.fullKey === 'kh' || subObj.code === 'K')) {
+        const eVal = this.getSubjectScore(sData, 'kh_essay');
+        const dVal = this.getSubjectScore(sData, 'kh_dict');
+        if (eVal !== undefined || dVal !== undefined) {
+          val = (eVal || 0) + (dVal || 0);
+        }
+      }
+
+      const existingScore = (val !== undefined && val !== null) ? val : '';
+
+      tr.innerHTML = `
+        <td style="text-align: center; vertical-align: middle;">${stuRoom}</td>
+        <td style="text-align: center; vertical-align: middle; font-weight: 700;">${stuDesk}</td>
+        <td style="text-align: left; vertical-align: middle; font-weight: 600; color: #1e3a8a;">
+          <span class="voice-student-name-label">${stuName}</span>
+        </td>
+        <td style="text-align: center; vertical-align: middle;">${stuGender}</td>
+        <td style="text-align: center; vertical-align: middle;">
+          <span class="secret-student-num-circle" style="background: #e0f2fe; color: #0284c7; border-color: #7dd3fc;">${seqNum}</span>
+        </td>
+        <td style="text-align: center; vertical-align: middle;">
+          <input type="number" 
+                 min="0" max="${maxLimit}" step="0.25" 
+                 class="voice-name-secret-score-input ${isLocked ? 'score-input-locked' : ''}" 
+                 data-stuid="${sId}" 
+                 data-seq="${seqNum}"
+                 data-name="${stuName}"
+                 data-desk="${stuDesk}"
+                 data-room="${stuRoom}"
+                 data-subkey="${subObj.fullKey}" 
+                 data-subcode="${subObj.code}"
+                 data-max="${maxLimit}"
+                 ${isLocked ? 'disabled readonly title="ខែនេះត្រូវបានបិទការបញ្ចូលពិន្ទុ"' : ''}
+                 value="${existingScore !== undefined ? existingScore : ''}"
+                 placeholder="និយាយឈ្មោះ+ពិន្ទុ ឬវាយលេខ">
+        </td>
+      `;
+      this.voiceNameSecretScoreInputTableBody.appendChild(tr);
+    });
+
+    // Attach listeners on inputs
+    const scoreInputs = Array.from(this.voiceNameSecretScoreInputTableBody.querySelectorAll('.voice-name-secret-score-input'));
+    scoreInputs.forEach((inp, idx) => {
+      inp.addEventListener('focus', () => {
+        this._currentVoiceNameSecretActiveInput = inp;
+        this._currentVoiceNameSecretStudentIndex = idx;
+        const sName = inp.getAttribute('data-name');
+        const sDesk = inp.getAttribute('data-desk');
+        if (this.voiceNameSecretActiveTargetBadge) {
+          this.voiceNameSecretActiveTargetBadge.textContent = `សិស្ស: ${sName} (តុ ${sDesk})`;
+          this.voiceNameSecretActiveTargetBadge.style.background = '#e0f2fe';
+          this.voiceNameSecretActiveTargetBadge.style.color = '#0284c7';
+        }
+        if (this.voiceNameSecretStatusText) {
+          this.voiceNameSecretStatusText.innerHTML = `🎙️ កំពុងស្តាប់ពិន្ទុសម្រាប់ <strong>${sName}</strong> (តុ ${sDesk})...`;
+        }
+        const wf = (this.voiceNameSecretWorkflowMode && this.voiceNameSecretWorkflowMode.value) || 'system_prompt';
+        if (wf === 'system_prompt' && !this._voiceTtsSpeaking && !this._suppressFocusSpeech) {
+          this.speakCurrentVoiceNameStudentPrompt(false, inp);
+        }
+      });
+      inp.addEventListener('input', () => {
+        inp.classList.remove('score-input-invalid');
+        const numVal = parseFloat(inp.value);
+        if (!isNaN(numVal)) {
+          this.saveVoiceNameSecretInputValue(inp, numVal);
+        }
+      });
+    });
+
+    if (this._voiceNameSecretListeningActive) {
+      this.startVoiceNameSecretScoreRecognition();
+    }
+
+    const workflowMode = (this.voiceNameSecretWorkflowMode && this.voiceNameSecretWorkflowMode.value) || 'system_prompt';
+    if (workflowMode === 'system_prompt') {
+      setTimeout(() => this.speakCurrentVoiceNameStudentPrompt(), 400);
+    } else if (scoreInputs[0]) {
+      scoreInputs[0].focus();
+      scoreInputs[0].select();
+    }
+
+    this.showToast(`បានទាញយកបញ្ជីសិស្ស (${studentsInRoom.length} នាក់) រួចរាល់!`, 'success');
+  }
+
+  matchStudentByNameInRoom(speechText) {
+    if (!speechText) return null;
+    const cleanText = String(speechText).replace(/[\u200B\u200C\u200D\uFEFF]/g, '').trim().toLowerCase();
+    const noSpacesText = cleanText.replace(/\s+/g, '');
+
+    // 1. Direct or substring match of full Khmer name in current room
+    if (this._voiceNameStudentsInRoom && this._voiceNameStudentsInRoom.length > 0) {
+      for (const stu of this._voiceNameStudentsInRoom) {
+        const sId = stu.studentId || stu.id;
+        const stuObj = (this.students && this.students.find(s => String(s.id) === String(sId))) || stu;
+        const name = (stuObj.khmerName || stuObj.name || '').replace(/[\u200B\u200C\u200D\uFEFF]/g, '').trim().toLowerCase();
+        if (!name) continue;
+        const noSpacesName = name.replace(/\s+/g, '');
+
+        if (noSpacesText.includes(noSpacesName)) {
+          return { stu, stuName: stuObj.khmerName || stuObj.name, matchType: 'exact' };
+        }
+      }
+
+      // 2. Token match: check if both first name and last name appear in speech text
+      for (const stu of this._voiceNameStudentsInRoom) {
+        const sId = stu.studentId || stu.id;
+        const stuObj = (this.students && this.students.find(s => String(s.id) === String(sId))) || stu;
+        const name = (stuObj.khmerName || stuObj.name || '').replace(/[\u200B\u200C\u200D\uFEFF]/g, '').trim().toLowerCase();
+        const parts = name.split(/\s+/).filter(Boolean);
+        if (parts.length >= 2) {
+          if (cleanText.includes(parts[0]) && cleanText.includes(parts[parts.length - 1])) {
+            return { stu, stuName: stuObj.khmerName || stuObj.name, matchType: 'tokens' };
+          }
+        }
+      }
+
+      // 3. Given name (last token) unique match if 3+ characters
+      for (const stu of this._voiceNameStudentsInRoom) {
+        const sId = stu.studentId || stu.id;
+        const stuObj = (this.students && this.students.find(s => String(s.id) === String(sId))) || stu;
+        const name = (stuObj.khmerName || stuObj.name || '').replace(/[\u200B\u200C\u200D\uFEFF]/g, '').trim().toLowerCase();
+        const parts = name.split(/\s+/).filter(Boolean);
+        const given = parts[parts.length - 1];
+        if (given && given.length >= 3) {
+          const sameGiven = this._voiceNameStudentsInRoom.filter(s => {
+            const o = (this.students && this.students.find(st => String(st.id) === String(s.studentId || s.id))) || s;
+            return (o.khmerName || o.name || '').trim().endsWith(given);
+          });
+          if (sameGiven.length === 1 && cleanText.includes(given)) {
+            return { stu, stuName: stuObj.khmerName || stuObj.name, matchType: 'given' };
+          }
+        }
+      }
+
+      // 4. Desk match fallback: e.g. "តុ ២" or "លេខតុ ២"
+      const deskMatch = cleanText.match(/(?:តុ|លេខតុ|កៅអី)\s*(\d+|[០-៩]+)/);
+      if (deskMatch) {
+        const dNum = deskMatch[1].replace(/[០-៩]/g, d => ({'០':'0','១':'1','២':'2','៣':'3','៤':'4','៥':'5','៦':'6','៧':'7','៨':'8','៩':'9'}[d]));
+        const stu = this._voiceNameStudentsInRoom.find(s => parseInt(s.deskNumber, 10) === parseInt(dNum, 10));
+        if (stu) {
+          const sId = stu.studentId || stu.id;
+          const stuObj = (this.students && this.students.find(s => String(s.id) === String(sId))) || stu;
+          return { stu, stuName: stuObj.khmerName || stuObj.name, matchType: 'desk' };
+        }
+      }
+    }
+
+    // 5. Misplaced student fallback: Search across all students in current grade or school!
+    if (this.students && this.students.length > 0) {
+      const targetGrade = this.currentVoiceNameSecretRoomGrade;
+      const candidateStudents = this.students.filter(s => {
+        if (this._voiceNameStudentsInRoom && this._voiceNameStudentsInRoom.some(r => String(r.studentId || r.id) === String(s.id))) return false;
+        if (targetGrade) return this.studentMatchesGrade(s, targetGrade);
+        return true;
+      });
+
+      for (const stu of candidateStudents) {
+        const name = (stu.khmerName || stu.name || '').replace(/[\u200B\u200C\u200D\uFEFF]/g, '').trim().toLowerCase();
+        if (!name) continue;
+        const noSpacesName = name.replace(/\s+/g, '');
+
+        let isMatch = false;
+        if (noSpacesText.includes(noSpacesName)) {
+          isMatch = true;
+        } else {
+          const parts = name.split(/\s+/).filter(Boolean);
+          if (parts.length >= 2 && cleanText.includes(parts[0]) && cleanText.includes(parts[parts.length - 1])) {
+            isMatch = true;
+          }
+        }
+
+        if (isMatch) {
+          let origRoom = '-';
+          let origDesk = '-';
+          if (this.examArrangements && this.examArrangements.length > 0) {
+            const arr = this.examArrangements.find(a => String(a.studentId) === String(stu.id));
+            if (arr) {
+              origRoom = arr.roomNumber || '-';
+              origDesk = arr.deskNumber || '-';
+            }
+          }
+          return {
+            stu: {
+              ...stu,
+              studentId: stu.id,
+              id: stu.id,
+              khmerName: stu.khmerName || stu.name,
+              name: stu.khmerName || stu.name,
+              roomNumber: origRoom,
+              deskNumber: origDesk,
+              isMisplaced: true
+            },
+            stuName: stu.khmerName || stu.name,
+            matchType: 'misplaced',
+            originalRoom: origRoom,
+            originalDesk: origDesk
+          };
+        }
+      }
+    }
+
+    return null;
+  }
+
+  processVoiceNameSecretTranscript(transcript, isFinal = false) {
+    if (!transcript) return;
+    const raw = String(transcript || '').trim();
+    if (!raw) return;
+
+    // Voice navigation commands: Skip / Repeat (auto-save removed from voice to prevent accidents)
+    if (/(?:បន្ទាប់|រំលង|next|ចុះ)/i.test(raw)) {
+      this._voiceProcessingLock = true;
+      this.advanceToNextStudentVoiceName();
+      setTimeout(() => { this._voiceProcessingLock = false; }, 800);
+      return;
+    }
+    if (/(?:អានឡើងវិញ|ឡើងវិញ|repeat)/i.test(raw)) {
+      this._voiceProcessingLock = true;
+      this.speakCurrentVoiceNameStudentPrompt(true);
+      setTimeout(() => { this._voiceProcessingLock = false; }, 800);
+      return;
+    }
+
+    // Check if transcript contains a student name
+    const match = this.matchStudentByNameInRoom(raw);
+    let targetStudent = null;
+    let targetInput = null;
+    let scoreText = raw;
+
+    if (match) {
+      targetStudent = match.stu;
+      const sId = targetStudent.studentId || targetStudent.id;
+      if (match.matchType === 'misplaced') {
+        // Auto-append misplaced student to current table!
+        targetInput = this.appendMisplacedStudentToVoiceNameTable(targetStudent, match.originalRoom, match.originalDesk);
+      } else if (this.voiceNameSecretScoreInputTableBody) {
+        targetInput = this.voiceNameSecretScoreInputTableBody.querySelector(`.voice-name-secret-score-input[data-stuid="${sId}"]`);
+      }
+      // Remove student name from transcript to parse the remaining score
+      scoreText = raw.replace(new RegExp(match.stuName.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&'), 'gi'), '');
+    } else {
+      // No student name recognized in speech: check if an input is already focused or active
+      targetInput = this._currentVoiceNameSecretActiveInput;
+      if (!targetInput || !document.body.contains(targetInput)) {
+        if (this.voiceNameSecretScoreInputTableBody) {
+          targetInput = this.voiceNameSecretScoreInputTableBody.querySelector('.voice-name-secret-score-input:not([disabled])');
+        }
+      }
+      if (targetInput) {
+        const sId = targetInput.getAttribute('data-stuid');
+        targetStudent = (this._voiceNameStudentsInRoom || []).find(s => String(s.studentId || s.id) === String(sId));
+      }
+    }
+
+    if (!targetInput) return;
+
+    // Check delete command
+    if (/(?:លុប|delete|clear)/i.test(raw)) {
+      targetInput.value = '';
+      this.saveVoiceNameSecretInputValue(targetInput, null);
+      this.playAudioChime(440, 0.1);
+      return;
+    }
+
+    // Try parsing score from scoreText
+    const parsedNum = this.parseKhmerSpokenNumber(scoreText);
+
+    if (parsedNum !== null && !isNaN(parsedNum)) {
+      this._voiceProcessingLock = true;
+      this.commitStudentScoreAndAdvance(parsedNum, raw, targetInput, match);
+    } else if (match && targetInput) {
+      // Only student name was recognized (no score yet):
+      targetInput.focus();
+      targetInput.select();
+      this._currentVoiceNameSecretActiveInput = targetInput;
+      const allInputs = Array.from(this.voiceNameSecretScoreInputTableBody.querySelectorAll('.voice-name-secret-score-input'));
+      this._currentVoiceNameSecretStudentIndex = allInputs.indexOf(targetInput);
+
+      const tr = targetInput.closest('tr');
+      if (tr) {
+        tr.style.backgroundColor = match.matchType === 'misplaced' ? '#fef3c7' : '#eff6ff';
+        setTimeout(() => { tr.style.backgroundColor = match.matchType === 'misplaced' ? '#fffbeb' : ''; }, 1000);
+      }
+      if (match.matchType === 'misplaced') {
+        if (this.voiceNameSecretStatusText) {
+          this.voiceNameSecretStatusText.innerHTML = `🎯 <strong>រកឃើញសិស្សច្រឡំបន្ទប់៖</strong> ${match.stuName} (បន្ទប់ដើម ${match.originalRoom}, តុ ${match.originalDesk}) — សូមនិយាយពិន្ទុ!`;
+        }
+        if (this.voiceNameSecretActiveTargetBadge) {
+          this.voiceNameSecretActiveTargetBadge.textContent = `[⚠️ ច្រឡំបន្ទប់] ${match.stuName}`;
+          this.voiceNameSecretActiveTargetBadge.style.background = '#fef3c7';
+          this.voiceNameSecretActiveTargetBadge.style.color = '#b45309';
+        }
+      } else {
+        if (this.voiceNameSecretStatusText) {
+          this.voiceNameSecretStatusText.innerHTML = `🎯 <strong>រកឃើញសិស្ស៖</strong> ${match.stuName} (តុ ${targetInput.getAttribute('data-desk')}) — សូមនិយាយពិន្ទុ!`;
+        }
+        if (this.voiceNameSecretActiveTargetBadge) {
+          this.voiceNameSecretActiveTargetBadge.textContent = `សិស្ស: ${match.stuName}`;
+          this.voiceNameSecretActiveTargetBadge.style.background = '#e0f2fe';
+          this.voiceNameSecretActiveTargetBadge.style.color = '#0369a1';
+        }
+      }
+      this.playVoiceNameSecretFeedback(match.stuName, null);
+    }
+  }
+
+  commitStudentScoreAndAdvance(parsedNum, rawTranscript = '', explicitTarget = null, match = null) {
+    const targetInput = explicitTarget || this._currentVoiceNameSecretActiveInput;
+    if (!targetInput) {
+      this._voiceProcessingLock = false;
+      return;
+    }
+
+    const maxLimit = parseFloat(targetInput.getAttribute('data-max') || '100');
+    if (parsedNum < 0 || parsedNum > maxLimit) {
+      this.playAudioChime(320, 0.2);
+      targetInput.classList.add('score-input-invalid');
+      this.showToast(`⚠️ ពិន្ទុ ${parsedNum} លើសពីពិន្ទុពេញ (${maxLimit})!`, 'warning');
+      this._voiceProcessingLock = false;
+      return;
+    }
+
+    targetInput.classList.remove('score-input-invalid');
+    targetInput.value = parsedNum;
+    this._currentVoiceNameSecretActiveInput = targetInput;
+
+    const tr = targetInput.closest('tr');
+    if (tr) {
+      tr.style.backgroundColor = (match && match.matchType === 'misplaced') ? '#fef3c7' : '#ecfdf5';
+      setTimeout(() => { tr.style.backgroundColor = (match && match.matchType === 'misplaced') ? '#fffbeb' : ''; }, 800);
+    }
+
+    const stuName = targetInput.getAttribute('data-name') || '';
+    const deskNum = targetInput.getAttribute('data-desk') || '';
+
+    if (match && match.matchType === 'misplaced') {
+      if (this.voiceNameSecretStatusText) {
+        this.voiceNameSecretStatusText.innerHTML = `✓ <strong>រកឃើញសិស្សច្រឡំបន្ទប់៖</strong> ${stuName} = <strong style="color: #b45309; font-size: 1.15rem;">${parsedNum}</strong> ⚡`;
+      }
+    } else {
+      if (this.voiceNameSecretStatusText) {
+        this.voiceNameSecretStatusText.innerHTML = `✓ <strong>បញ្ចូលជោគជ័យ៖</strong> ${stuName} (តុ ${deskNum}) = <strong style="color: #0284c7; font-size: 1.15rem;">${parsedNum}</strong> ⚡`;
+      }
+    }
+
+    if (this.voiceNameSecretActiveTargetBadge) {
+      this.voiceNameSecretActiveTargetBadge.textContent = `សិស្ស: ${stuName} = ${parsedNum}`;
+      this.voiceNameSecretActiveTargetBadge.style.background = '#dcfce7';
+      this.voiceNameSecretActiveTargetBadge.style.color = '#15803d';
+    }
+
+    this.saveVoiceNameSecretInputValue(targetInput, parsedNum);
+
+    const mode = (this.voiceNameSecretWorkflowMode && this.voiceNameSecretWorkflowMode.value) || 'system_prompt';
+    if (mode === 'system_prompt') {
+      // Instant soft beep confirmation (50ms)
+      this.playAudioChime(780, 0.05);
+      // Advance to next student smoothly after 350ms pause
+      setTimeout(() => {
+        this.advanceToNextStudentVoiceName();
+      }, 350);
+    } else {
+      this.playVoiceNameSecretFeedback(stuName, parsedNum);
+      setTimeout(() => {
+        this._voiceProcessingLock = false;
+      }, 1200);
+    }
+  }
+
+  // Robust Khmer Speech Synthesizer:
+  // Uses Google Translate Native Khmer TTS Audio stream first (crystal clear native Khmer voice),
+  // with fallback to Web Speech API and Web Audio API tone chimes so sound is 100% guaranteed.
+  playKhmerSpeech(text, callback) {
+    if (!text) {
+      if (callback) callback();
+      return;
+    }
+
+    const cleanStr = String(text).replace(/[\u200B\u200C\u200D\uFEFF]/g, '').trim();
+    if (!cleanStr) {
+      if (callback) callback();
+      return;
+    }
+
+    // Mute mic recognition temporarily so it does not hear its own audio
+    this._voiceTtsSpeaking = true;
+    const onFinished = () => {
+      this._voiceTtsSpeaking = false;
+      this._voiceMuteUntil = Date.now() + 60;
+      if (callback) callback();
+    };
+
+    const encoded = encodeURIComponent(cleanStr);
+
+    // Candidates in order of reliability:
+    // 1. Same-origin local server proxy (/api/tts)
+    // 2. Direct Google Translate TTS with client=gtx
+    // 3. Google Translate TTS with client=tw-ob
+    const candidateUrls = [
+      `/api/tts?text=${encoded}`,
+      `https://translate.google.com/translate_tts?ie=UTF-8&tl=km&client=gtx&q=${encoded}`,
+      `https://translate.google.com/translate_tts?ie=UTF-8&tl=km&client=tw-ob&q=${encoded}`
+    ];
+
+    let candidateIndex = 0;
+
+    const tryNextUrl = () => {
+      if (candidateIndex >= candidateUrls.length) {
+        // All audio stream URLs failed: fallback to Web Speech API
+        this.playSpeechSynthesisFallback(cleanStr, onFinished);
+        return;
+      }
+
+      const currentUrl = candidateUrls[candidateIndex++];
+      if (this._currentKhmerAudio) {
+        try {
+          this._currentKhmerAudio.pause();
+          this._currentKhmerAudio.src = '';
+        } catch (_) {}
+        this._currentKhmerAudio = null;
+      }
+
+      const audio = new Audio();
+      audio.referrerPolicy = 'no-referrer';
+      audio.src = currentUrl;
+      this._currentKhmerAudio = audio;
+      audio.playbackRate = 1.25;
+
+      let done = false;
+      const handleDone = () => {
+        if (done) return;
+        done = true;
+        onFinished();
+      };
+
+      audio.onended = handleDone;
+      audio.onerror = () => {
+        tryNextUrl();
+      };
+
+      const playPromise = audio.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(() => {
+          tryNextUrl();
+        });
+      }
+
+      // Safety timeout: 4 seconds per phrase
+      setTimeout(() => {
+        if (!done && candidateIndex >= candidateUrls.length) {
+          handleDone();
+        }
+      }, 4000);
+    };
+
+    tryNextUrl();
+  }
+
+  playSpeechSynthesisFallback(text, callback) {
+    if (!window.speechSynthesis || typeof SpeechSynthesisUtterance === 'undefined') {
+      this.playAudioChime(760, 0.08);
+      if (callback) callback();
+      return;
+    }
+
+    try {
+      const synth = window.speechSynthesis;
+      synth.cancel();
+      if (synth.paused) synth.resume();
+
+      const utter = new SpeechSynthesisUtterance(String(text));
+      const voices = synth.getVoices ? synth.getVoices() : [];
+      const kmVoice = voices.find(v => /^km/i.test(v.lang) || /khmer/i.test(v.name));
+
+      if (kmVoice) {
+        utter.voice = kmVoice;
+        utter.lang = kmVoice.lang;
+      } else {
+        const preferred = voices.find(v => /google/i.test(v.name)) || voices[0];
+        if (preferred) utter.voice = preferred;
+      }
+
+      utter.rate = 1.25;
+      utter.volume = 1.0;
+
+      let done = false;
+      const handleEnd = () => {
+        if (done) return;
+        done = true;
+        if (callback) callback();
+      };
+
+      utter.onend = handleEnd;
+      utter.onerror = () => {
+        this.playAudioChime(760, 0.08);
+        handleEnd();
+      };
+
+      synth.speak(utter);
+      setTimeout(() => handleEnd(), 2500);
+    } catch (_) {
+      this.playAudioChime(760, 0.08);
+      if (callback) callback();
+    }
+  }
+
+  playVoiceNameSecretFeedback(stuName, num) {
+    const mode = (this.voiceNameSecretFeedbackMode && this.voiceNameSecretFeedbackMode.value) || 'speak';
+    if (mode === 'off') return;
+    if (mode === 'beep') {
+      this.playAudioChime(760, 0.08);
+      return;
+    }
+    const phrase = (num !== null && num !== undefined) ? `${stuName} ${num}` : String(stuName);
+    this.playKhmerSpeech(phrase);
+  }
+
+  speakCurrentVoiceNameStudentPrompt(forceRepeat = false, targetInput = null) {
+    if (!this._voiceNameStudentsInRoom || this._voiceNameStudentsInRoom.length === 0) return;
+    if (!this.voiceNameSecretScoreInputTableBody) return;
+    const inputs = Array.from(this.voiceNameSecretScoreInputTableBody.querySelectorAll('.voice-name-secret-score-input'));
+    if (inputs.length === 0) return;
+
+    let inp = targetInput;
+    if (!inp) {
+      let idx = this._currentVoiceNameSecretStudentIndex;
+      if (typeof idx !== 'number' || isNaN(idx) || idx < 0) idx = 0;
+      if (idx >= inputs.length) idx = inputs.length - 1;
+      inp = inputs[idx];
+    }
+
+    if (!inp) return;
+    const resolvedIndex = inputs.indexOf(inp);
+    this._currentVoiceNameSecretStudentIndex = resolvedIndex >= 0 ? resolvedIndex : 0;
+    this._currentVoiceNameSecretActiveInput = inp;
+
+    this._suppressFocusSpeech = true;
+    try {
+      inp.focus();
+      inp.select();
+    } catch (_) {}
+    setTimeout(() => { this._suppressFocusSpeech = false; }, 300);
+
+    const stuName = inp.getAttribute('data-name') || '';
+    const deskNum = inp.getAttribute('data-desk') || '';
+    const seqNum = inp.getAttribute('data-seq') || (this._currentVoiceNameSecretStudentIndex + 1);
+
+    if (this.voiceNameSecretStatusText) {
+      this.voiceNameSecretStatusText.innerHTML = `🗣️ <strong>ប្រព័ន្ធកំពុងអាន៖</strong> <strong>«${stuName}»</strong> (តុ ${deskNum}) — <em>«សូមបញ្ចូលពិន្ទុ»...</em>`;
+    }
+    if (this.voiceNameSecretActiveTargetBadge) {
+      this.voiceNameSecretActiveTargetBadge.textContent = `តុ ${deskNum}: ${stuName}`;
+      this.voiceNameSecretActiveTargetBadge.style.background = '#e0f2fe';
+      this.voiceNameSecretActiveTargetBadge.style.color = '#0369a1';
+    }
+
+    // Speak student name in native Khmer, then "សូមបញ្ចូលពិន្ទុ"
+    // Release locks only after speech finishes!
+    const promptText = `${stuName} សូមបញ្ចូលពិន្ទុ`;
+    this.playKhmerSpeech(promptText, () => {
+      this._advancing = false;
+      this._voiceProcessingLock = false;
+    });
+  }
+
+  advanceToNextStudentVoiceName() {
+    if (this._advancing) return;
+    this._advancing = true;
+
+    if (!this.voiceNameSecretScoreInputTableBody) {
+      this._advancing = false;
+      this._voiceProcessingLock = false;
+      return;
+    }
+
+    const inputs = Array.from(this.voiceNameSecretScoreInputTableBody.querySelectorAll('.voice-name-secret-score-input'));
+    if (inputs.length === 0) {
+      this._advancing = false;
+      this._voiceProcessingLock = false;
+      return;
+    }
+
+    let currentIdx = -1;
+    if (this._currentVoiceNameSecretActiveInput) {
+      currentIdx = inputs.indexOf(this._currentVoiceNameSecretActiveInput);
+    }
+    if (currentIdx === -1 && typeof this._currentVoiceNameSecretStudentIndex === 'number') {
+      currentIdx = this._currentVoiceNameSecretStudentIndex;
+    }
+    if (currentIdx === -1) currentIdx = 0;
+
+    const nextIdx = currentIdx + 1;
+    if (nextIdx >= inputs.length) {
+      this.showToast('🎉 បានបញ្ចូលពិន្ទុគ្រប់សិស្សទាំងអស់ក្នុងបន្ទប់នេះរួចរាល់!', 'success');
+      if (this.voiceNameSecretStatusText) {
+        this.voiceNameSecretStatusText.innerHTML = '🎉 <strong>រួចរាល់!</strong> បានបញ្ចូលគ្រប់សិស្សទាំងអស់ក្នុងបន្ទប់នេះហើយ។ សូមចុច <strong>រក្សាទុក</strong>។';
+      }
+      this.playKhmerSpeech('បានបញ្ចូលពិន្ទុគ្រប់សិស្សទាំងអស់រួចរាល់', () => {
+        this._advancing = false;
+        this._voiceProcessingLock = false;
+      });
+      return;
+    }
+
+    const nextInp = inputs[nextIdx];
+    this._currentVoiceNameSecretStudentIndex = nextIdx;
+    this._currentVoiceNameSecretActiveInput = nextInp;
+
+    this.speakCurrentVoiceNameStudentPrompt(false, nextInp);
+  }
+
+  skipToNextStudentVoiceName() {
+    this.advanceToNextStudentVoiceName();
+  }
+
+  saveVoiceNameSecretInputValue(input, num) {
+    if (!input) return;
+    const sId = input.getAttribute('data-stuid');
+    const subKey = input.getAttribute('data-subkey');
+    const subCode = input.getAttribute('data-subcode');
+    const pKey = this.activeScorePeriod || this.getActiveScoringPeriod(this.currentVoiceNameSecretRoomGrade || 'grade_7');
+    this.setSubjectScore(sId, pKey, subKey, num);
+    if (subCode) this.setSubjectScore(sId, pKey, subCode, num);
+
+    // Live-sync to manual secret table if loaded
+    if (this.secretScoreInputTableBody) {
+      const matchingFirstInp = this.secretScoreInputTableBody.querySelector(`.secret-score-input-fast[data-stuid="${sId}"][data-subkey="${subKey}"]`);
+      if (matchingFirstInp) matchingFirstInp.value = (num !== null && num !== undefined) ? num : '';
+    }
+    // Live-sync to voice secret table if loaded
+    if (this.voiceSecretScoreInputTableBody) {
+      const matchingVoiceInp = this.voiceSecretScoreInputTableBody.querySelector(`.voice-secret-score-input[data-stuid="${sId}"][data-subkey="${subKey}"]`);
+      if (matchingVoiceInp) matchingVoiceInp.value = (num !== null && num !== undefined) ? num : '';
+    }
+  }
+
+  toggleVoiceNameSecretListening() {
+    if (this._voiceNameSecretListeningActive) {
+      this.stopVoiceNameSecretScoreRecognition();
+      this.showToast('បានបិទការស្តាប់សម្លេង។', 'info');
+    } else {
+      this._voiceNameSecretListeningActive = true;
+      this.startVoiceNameSecretScoreRecognition();
+      this.showToast('បានបើកការស្តាប់សម្លេង (Real-time Fast)!', 'success');
+    }
+  }
+
+  startVoiceNameSecretScoreRecognition() {
+    if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+      this.showToast('Browser នេះមិនគាំទ្រ Web Speech API ឡើយ។ សូមប្រើ Google Chrome!', 'error');
+      return;
+    }
+    if (this._voiceNameSecretRecognitionRunning) return;
+
+    try {
+      const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+      this._voiceNameSecretRecognition = new SpeechRec();
+      this._voiceNameSecretRecognition.lang = 'km-KH';
+      this._voiceNameSecretRecognition.continuous = true;
+      this._voiceNameSecretRecognition.interimResults = true;
+      this._voiceNameSecretRecognition.maxAlternatives = 3;
+
+      this._voiceNameSecretRecognition.onstart = () => {
+        this._voiceNameSecretRecognitionRunning = true;
+        this._voiceNameSecretListeningActive = true;
+        if (this.btnToggleVoiceNameSecretListening) {
+          this.btnToggleVoiceNameSecretListening.style.background = '#0284c7';
+          if (this.voiceNameSecretMicBtnText) this.voiceNameSecretMicBtnText.innerHTML = '<i class="ri-mic-line"></i> ស្តាប់សម្លេង: បើក (Real-time)';
+        }
+        if (this.voiceNameSecretListeningBanner) {
+          this.voiceNameSecretListeningBanner.style.borderColor = '#0284c7';
+          this.voiceNameSecretListeningBanner.style.background = '#f0f9ff';
+        }
+      };
+
+      this._voiceNameSecretRecognition.onresult = (event) => {
+        // Drop mic results if AI is speaking or currently muted
+        if (this._voiceTtsSpeaking || (this._voiceMuteUntil && Date.now() < this._voiceMuteUntil)) {
+          return;
+        }
+
+        // Drop mic results if we are currently locking or advancing to prevent skipping/jumping
+        if (this._voiceProcessingLock || this._advancing) {
+          return;
+        }
+
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          const res = event.results[i];
+          const transcript = res[0].transcript.trim();
+          if (!transcript) continue;
+
+          // 1. Navigation commands: "បន្ទាប់" or "រំលង"
+          if (/(?:បន្ទាប់|រំលង|next)/i.test(transcript)) {
+            this._voiceProcessingLock = true;
+            this.advanceToNextStudentVoiceName();
+            return;
+          }
+          if (/(?:ឡើងវិញ|repeat|អានឡើងវិញ)/i.test(transcript)) {
+            this._voiceProcessingLock = true;
+            this.speakCurrentVoiceNameStudentPrompt(true);
+            return;
+          }
+
+          // 2. In System-Prompt Mode: teacher speaks ONLY the score (e.g. "១០", "៤៥", "ដប់")
+          const wf = (this.voiceNameSecretWorkflowMode && this.voiceNameSecretWorkflowMode.value) || 'system_prompt';
+          if (wf === 'system_prompt' && this._currentVoiceNameSecretActiveInput) {
+            const num = this.parseKhmerSpokenNumber(transcript);
+            if (num !== null && !isNaN(num)) {
+              this._voiceProcessingLock = true;
+              this.commitStudentScoreAndAdvance(num, transcript);
+              return;
+            }
+          }
+
+          // 3. Teacher Call Mode: teacher speaks Student Name + Score
+          if (res.isFinal) {
+            this.processVoiceNameSecretTranscript(transcript, true);
+          }
+        }
+      };
+
+      this._voiceNameSecretRecognition.onerror = (e) => {
+        if (e.error === 'no-speech') return;
+        this._voiceNameSecretRecognitionRunning = false;
+        if (this._voiceNameSecretListeningActive) {
+          setTimeout(() => {
+            if (this._voiceNameSecretListeningActive && !this._voiceNameSecretRecognitionRunning) {
+              this.startVoiceNameSecretScoreRecognition();
+            }
+          }, 350);
+        }
+      };
+
+      this._voiceNameSecretRecognition.onend = () => {
+        this._voiceNameSecretRecognitionRunning = false;
+        if (this._voiceNameSecretListeningActive && this.activeScoreSubTab === 'byVoiceNameSecret') {
+          setTimeout(() => {
+            if (this._voiceNameSecretListeningActive && !this._voiceNameSecretRecognitionRunning) {
+              this.startVoiceNameSecretScoreRecognition();
+            }
+          }, 200);
+        }
+      };
+
+      this._voiceNameSecretRecognition.start();
+      this._voiceNameSecretRecognitionRunning = true;
+    } catch (_) {
+      this._voiceNameSecretRecognitionRunning = false;
+    }
+  }
+
+  stopVoiceNameSecretScoreRecognition() {
+    this._voiceNameSecretListeningActive = false;
+    this._voiceNameSecretRecognitionRunning = false;
+    if (this._voiceNameSecretRecognition) {
+      try { this._voiceNameSecretRecognition.abort(); } catch (_) { }
+      this._voiceNameSecretRecognition = null;
+    }
+    if (this.btnToggleVoiceNameSecretListening) {
+      this.btnToggleVoiceNameSecretListening.style.background = '#6b7280';
+      if (this.voiceNameSecretMicBtnText) this.voiceNameSecretMicBtnText.innerHTML = '<i class="ri-mic-off-line"></i> ស្តាប់សម្លេង: បិទ (Off)';
+    }
+    if (this.voiceNameSecretListeningBanner) {
+      this.voiceNameSecretListeningBanner.style.borderColor = '#bae6fd';
+      this.voiceNameSecretListeningBanner.style.background = '#f0f9ff';
+    }
+  }
+
+  handleSaveVoiceNameSecretRoomScores() {
+    if (!this.voiceNameSecretScoreInputTableBody) return;
+    const _secretGradeForPeriod = this.currentVoiceNameSecretRoomGrade || (this.examSecretGradeSelect ? this.examSecretGradeSelect.value : 'grade_7');
+    const periodKey = this.activeScorePeriod || this.getActiveScoringPeriod(_secretGradeForPeriod);
+    if (!this.isPeriodActiveForScoring(periodKey)) {
+      this.showToast(`មិនអាចរក្សាទុកបានទេ! ខែនេះត្រូវបានបិទការបញ្ចូលពិន្ទុ។ អនុញ្ញាតតែខែ «${this.getExamPeriodTitle(this.activeScorePeriod)}» ប៉ុណ្ណោះ។`, 'error');
+      return;
+    }
+
+    const inputs = this.voiceNameSecretScoreInputTableBody.querySelectorAll('.voice-name-secret-score-input');
+    if (inputs.length === 0) {
+      this.showToast('មិនទាន់មានទិន្នន័យដើម្បីរក្សាទុកឡើយ!', 'warning');
+      return;
+    }
+
+    for (const inp of inputs) {
+      const val = inp.value.trim();
+      if (val !== '') {
+        const numVal = parseFloat(val);
+        const maxLimit = parseFloat(inp.getAttribute('data-max') || '100');
+        if (isNaN(numVal) || numVal < 0 || numVal > maxLimit) {
+          inp.focus();
+          inp.classList.add('score-input-invalid');
+          this.showToast(`ពិន្ទុមិនត្រឹមត្រូវ (ត្រូវចន្លោះ 0 ដល់ ${maxLimit})!`, 'error');
+          return;
+        }
+      }
+    }
+
+    let savedCount = 0;
+    inputs.forEach(inp => {
+      const sId = inp.getAttribute('data-stuid');
+      const subKey = inp.getAttribute('data-subkey');
+      const subCode = inp.getAttribute('data-subcode');
+      const val = inp.value.trim();
+
+      if (val !== '') {
+        let numVal = parseFloat(val) || 0;
+        this.setSubjectScore(sId, periodKey, subKey, numVal);
+        if (subCode) this.setSubjectScore(sId, periodKey, subCode, numVal);
+        savedCount++;
+      }
+    });
+
+    const _stuIds = Array.from(inputs).map(inp => inp.getAttribute('data-stuid')).filter(Boolean);
+    _stuIds.forEach(sid => this.syncExamScoresToGradeSheet(sid, periodKey));
+
+    this.currentPeriod = periodKey;
+    if (this.periodHeaderSelect) this.periodHeaderSelect.value = periodKey;
+    if (!this.activeScorePeriod) this.applyActivePeriod(periodKey);
+
+    if (_secretGradeForPeriod) {
+      this.activeClass = _secretGradeForPeriod;
+      if (this.classFilterSelect) this.classFilterSelect.value = _secretGradeForPeriod;
+      if (this.sidebarClassSelect) this.sidebarClassSelect.value = _secretGradeForPeriod;
+      if (this.examGradeSelect) this.examGradeSelect.value = _secretGradeForPeriod;
+    }
+
+    if (this.examSubjectScoresBody) {
+      this.renderExamSubjectScoresTable();
+    }
+
+    this.saveState();
+    const periodTitle = this.getExamPeriodTitle(periodKey);
+    this.createAutoBackup(`រក្សាទុកពិន្ទុតាមអក្សរសម្ងាត់ (អានឈ្មោះសិស្ស) (${periodTitle})`);
+    this.updateScoreAutoBackupBadge('saved');
+    this.updateKPIOverview();
+    this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! ទិន្នន័យបាន Auto Backup រួចរាល់។`, 'success');
+
+    this.voiceNameSecretScoreInputTableBody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 2.5rem 1rem; color: #0284c7; background: #f0f9ff; border-radius: 8px;">
+          <i class="ri-checkbox-circle-fill" style="font-size: 2.2rem; display:block; margin-bottom: 0.5rem; color: #0284c7;"></i>
+          <div style="font-size: 1.1rem; font-weight: 700;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!</div>
+          <div style="font-size: 0.9rem; color: #475569; margin-top: 0.35rem;">ទិន្នន័យបាន Auto Backup និងតភ្ជាប់ទៅតារាងពិន្ទុរួចរាល់។ សូមបញ្ចូលអក្សរសម្ងាត់ថ្មី ដើម្បីបន្តបន្ទប់បន្ទាប់។</div>
+        </td>
+      </tr>
+    `;
+    if (this.inputSearchVoiceNameSecretCode) {
+      this.inputSearchVoiceNameSecretCode.value = '';
+      this.inputSearchVoiceNameSecretCode.focus();
+    }
+    if (this.voiceNameSecretActiveRoomInfo) {
+      this.voiceNameSecretActiveRoomInfo.style.display = 'none';
+    }
+    this._currentVoiceNameSecretActiveInput = null;
+    this.currentVoiceNameSecretRoomGrade = null;
+    if (this.voiceNameSecretActiveTargetBadge) {
+      this.voiceNameSecretActiveTargetBadge.textContent = 'សិស្សសកម្ម: --';
+      this.voiceNameSecretActiveTargetBadge.style.background = '#e2e8f0';
+    }
+    if (this.voiceNameSecretStatusText) {
+      this.voiceNameSecretStatusText.innerHTML = '✨ <strong>បានរក្សាទុក និងសម្អាតតារាងរួចរាល់!</strong> សូមបញ្ចូលអក្សរសម្ងាត់ថ្មី (ឧ. LE7B ឬ C9E) ដើម្បីបន្ត។';
+    }
+  }
+
+  // ==========================================================================
+  // MISPLACED STUDENTS HANDLER (សិស្សច្រឡំបន្ទប់ ឬអង្គុយខុសលេខតុ)
+  // Allows scoring a student whose exam paper was collected in another room bundle
+  // ==========================================================================
+  openMisplacedStudentModal() {
+    if (!this.misplacedStudentModal) return;
+    this.misplacedStudentModal.style.display = 'flex';
+    if (this.inputSearchMisplacedStudent) {
+      this.inputSearchMisplacedStudent.value = '';
+      setTimeout(() => this.inputSearchMisplacedStudent.focus(), 100);
+    }
+    this.renderMisplacedStudentSearchResults();
+  }
+
+  closeMisplacedStudentModal() {
+    if (!this.misplacedStudentModal) return;
+    this.misplacedStudentModal.style.display = 'none';
+  }
+
+  renderMisplacedStudentSearchResults() {
+    if (!this.misplacedStudentResultsTableBody) return;
+    const query = (this.inputSearchMisplacedStudent ? this.inputSearchMisplacedStudent.value : '').trim().toLowerCase();
+    const noSpacesQuery = query.replace(/\s+/g, '');
+
+    const currentGrade = this.currentVoiceNameSecretRoomGrade || this.currentSecretRoomGrade || (this.examGradeSelect ? this.examGradeSelect.value : 'grade_7');
+
+    // Students currently already in the active room table
+    const currentRoomStuIds = new Set();
+    if (this._voiceNameStudentsInRoom) {
+      this._voiceNameStudentsInRoom.forEach(s => currentRoomStuIds.add(String(s.studentId || s.id)));
+    }
+    if (this.secretScoreInputTableBody) {
+      this.secretScoreInputTableBody.querySelectorAll('.secret-score-input-fast').forEach(inp => {
+        const id = inp.getAttribute('data-stuid');
+        if (id) currentRoomStuIds.add(String(id));
+      });
+    }
+
+    // Filter candidates from this.students
+    let candidates = (this.students || []).filter(s => {
+      // Exclude students already present in current table
+      if (currentRoomStuIds.has(String(s.id))) return false;
+      // Prefer students in same grade
+      if (currentGrade && !this.studentMatchesGrade(s, currentGrade)) return false;
+      return true;
+    });
+
+    // If query is typed, search by name, id, or phone
+    if (query) {
+      candidates = candidates.filter(s => {
+        const name = (s.khmerName || s.name || '').toLowerCase();
+        const noSpacesName = name.replace(/\s+/g, '');
+        const id = (s.id || '').toLowerCase();
+        return name.includes(query) || noSpacesName.includes(noSpacesQuery) || id.includes(query);
+      });
+    }
+
+    if (candidates.length === 0) {
+      this.misplacedStudentResultsTableBody.innerHTML = `
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">
+            ${query ? `មិនមានសិស្សត្រូវនឹង «${query}» ឡើយ!` : 'មិនមានសិស្សផ្សេងទៀតក្នុងកម្រិតថ្នាក់នេះឡើយ'}
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    // Limit to top 50 results for speed
+    const listToRender = candidates.slice(0, 50);
+    this.misplacedStudentResultsTableBody.innerHTML = '';
+
+    listToRender.forEach((stu, idx) => {
+      let origRoom = '-';
+      let origDesk = '-';
+      if (this.examArrangements && this.examArrangements.length > 0) {
+        const arr = this.examArrangements.find(a => String(a.studentId) === String(stu.id));
+        if (arr) {
+          origRoom = arr.roomNumber || '-';
+          origDesk = arr.deskNumber || '-';
+        }
+      }
+
+      const tr = document.createElement('tr');
+      const genderText = (stu.gender === 'F' || stu.gender === 'ស្រី') ? 'ស្រី' : ((stu.gender === 'M' || stu.gender === 'ប្រុស') ? 'ប្រុស' : (stu.gender || '-'));
+
+      tr.innerHTML = `
+        <td style="text-align: center; padding: 0.5rem;">${idx + 1}</td>
+        <td style="text-align: left; padding: 0.5rem; font-weight: 700; color: #1e3a8a;">
+          ${stu.khmerName || stu.name || '-'}
+        </td>
+        <td style="text-align: center; padding: 0.5rem;">${genderText}</td>
+        <td style="text-align: center; padding: 0.5rem;"><span class="badge" style="background: #e0e7ff; color: #3730a3;">${stu.class || '-'}</span></td>
+        <td style="text-align: center; padding: 0.5rem; font-weight: 700; color: #b45309;">${origRoom}</td>
+        <td style="text-align: center; padding: 0.5rem; font-weight: 700; color: #b45309;">${origDesk}</td>
+        <td style="text-align: center; padding: 0.5rem;">
+          <button type="button" class="btn btn-sm btn-primary btn-add-misplaced-row" 
+            style="background: #d97706; border-color: #d97706; font-size: 0.8rem; padding: 0.3rem 0.65rem;"
+            data-stuid="${stu.id}">
+            <i class="ri-user-add-line"></i> បញ្ចូល
+          </button>
+        </td>
+      `;
+
+      const btnAdd = tr.querySelector('.btn-add-misplaced-row');
+      btnAdd.addEventListener('click', () => {
+        if (this.activeScoreSubTab === 'byVoiceNameSecret' || (this.scoreSubViewVoiceNameSecret && this.scoreSubViewVoiceNameSecret.style.display !== 'none')) {
+          this.appendMisplacedStudentToVoiceNameTable(stu, origRoom, origDesk);
+        }
+        if (this.activeScoreSubTab === 'bySecret' || (this.scoreSubViewSecret && this.scoreSubViewSecret.style.display !== 'none')) {
+          this.appendMisplacedStudentToSecretTable(stu, origRoom, origDesk);
+        }
+        this.closeMisplacedStudentModal();
+        this.showToast(`បានបញ្ចូលសិស្ស «${stu.khmerName || stu.name}» (ច្រឡំបន្ទប់) ទៅក្នុងបញ្ជីរួចរាល់!`, 'success');
+      });
+
+      this.misplacedStudentResultsTableBody.appendChild(tr);
+    });
+  }
+
+  appendMisplacedStudentToVoiceNameTable(student, origRoom, origDesk) {
+    if (!student || !this.voiceNameSecretScoreInputTableBody) return null;
+    const sId = student.studentId || student.id;
+
+    // Check if already in table
+    const existingInp = this.voiceNameSecretScoreInputTableBody.querySelector(`.voice-name-secret-score-input[data-stuid="${sId}"]`);
+    if (existingInp) {
+      existingInp.focus();
+      existingInp.select();
+      this._currentVoiceNameSecretActiveInput = existingInp;
+      return existingInp;
+    }
+
+    const stuObj = (this.students && this.students.find(s => String(s.id) === String(sId))) || student;
+    const stuName = stuObj.khmerName || stuObj.name || '-';
+    const stuGender = (stuObj.gender === 'F' || stuObj.gender === 'ស្រី') ? 'ស្រី' : ((stuObj.gender === 'M' || stuObj.gender === 'ប្រុស') ? 'ប្រុស' : (stuObj.gender || '-'));
+    const currentRoom = this.currentVoiceNameSecretRoom || 'បច្ចុប្បន្ន';
+    const subObj = this.currentVoiceNameSecretSubObj || { name: 'ពិន្ទុ', fullKey: 'score', maxScore: 100 };
+    const maxLimit = subObj.maxScore || 100;
+    const periodKey = this.activeScorePeriod || this.getActiveScoringPeriod(this.currentVoiceNameSecretRoomGrade || 'grade_7');
+    const isLocked = !this.isPeriodActiveForScoring(periodKey);
+
+    const sData = (this.scores[sId] && (this.scores[sId][periodKey] || this.scores[sId]['test_early'] || this.scores[sId]['sem1_exam'])) || {};
+    let val = this.getSubjectScore(sData, subObj.fullKey);
+    if (val === undefined && subObj.code) val = this.getSubjectScore(sData, subObj.code);
+    const existingScore = (val !== undefined && val !== null) ? val : '';
+
+    const seqNum = this.voiceNameSecretScoreInputTableBody.querySelectorAll('tr').length + 1;
+
+    const tr = document.createElement('tr');
+    tr.style.backgroundColor = '#fffbeb';
+    tr.className = 'row-misplaced-student';
+
+    tr.innerHTML = `
+      <td style="text-align: center; vertical-align: middle;">
+        <span style="font-weight: 700; color: #b45309;" title="បន្ទប់ដើម: ${origRoom || '-'}">${origRoom || '-'} ➜ ${currentRoom}</span>
+      </td>
+      <td style="text-align: center; vertical-align: middle; font-weight: 700; color: #b45309;">
+        <span title="តុដើម: ${origDesk || '-'}">${origDesk || '-'}</span>
+      </td>
+      <td style="text-align: left; vertical-align: middle;">
+        <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+          <span class="voice-student-name-label" style="font-weight: 700; color: #b45309;">${stuName}</span>
+          <span class="badge" style="background: #fef3c7; color: #92400e; border: 1px solid #fde68a; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px;">
+            ⚠️ ច្រឡំបន្ទប់ (ដើម: ប.${origRoom || '?'}, តុ.${origDesk || '?'})
+          </span>
+        </div>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">${stuGender}</td>
+      <td style="text-align: center; vertical-align: middle;">
+        <span class="secret-student-num-circle" style="background: #fef3c7; color: #b45309; border-color: #fde68a;">${seqNum}</span>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+        <input type="number" 
+               min="0" max="${maxLimit}" step="0.25" 
+               class="voice-name-secret-score-input ${isLocked ? 'score-input-locked' : ''}" 
+               data-stuid="${sId}" 
+               data-seq="${seqNum}"
+               data-name="${stuName}"
+               data-desk="${origDesk || seqNum}"
+               data-room="${origRoom || currentRoom}"
+               data-subkey="${subObj.fullKey}" 
+               data-subcode="${subObj.code}"
+               data-max="${maxLimit}"
+               ${isLocked ? 'disabled readonly title="ខែនេះត្រូវបានបិទការបញ្ចូលពិន្ទុ"' : ''}
+               value="${existingScore !== undefined ? existingScore : ''}"
+               placeholder="និយាយឈ្មោះ+ពិន្ទុ ឬវាយលេខ"
+               style="border-color: #f59e0b; background: #fffdf5;">
+      </td>
+    `;
+
+    this.voiceNameSecretScoreInputTableBody.appendChild(tr);
+
+    if (!this._voiceNameStudentsInRoom) this._voiceNameStudentsInRoom = [];
+    this._voiceNameStudentsInRoom.push({
+      studentId: sId,
+      id: sId,
+      khmerName: stuName,
+      name: stuName,
+      gender: stuGender,
+      roomNumber: currentRoom,
+      originalRoom: origRoom,
+      deskNumber: origDesk || seqNum,
+      originalDesk: origDesk,
+      isMisplaced: true
+    });
+
+    const inp = tr.querySelector('.voice-name-secret-score-input');
+    inp.addEventListener('focus', () => {
+      this._currentVoiceNameSecretActiveInput = inp;
+      const inputs = Array.from(this.voiceNameSecretScoreInputTableBody.querySelectorAll('.voice-name-secret-score-input'));
+      this._currentVoiceNameSecretStudentIndex = inputs.indexOf(inp);
+      if (this.voiceNameSecretActiveTargetBadge) {
+        this.voiceNameSecretActiveTargetBadge.textContent = `[⚠️ ច្រឡំបន្ទប់] ${stuName} (តុ ${origDesk || '-'})`;
+        this.voiceNameSecretActiveTargetBadge.style.background = '#fef3c7';
+        this.voiceNameSecretActiveTargetBadge.style.color = '#b45309';
+      }
+      if (this.voiceNameSecretStatusText) {
+        this.voiceNameSecretStatusText.innerHTML = `🎙️ កំពុងស្តាប់ពិន្ទុសម្រាប់សិស្សច្រឡំបន្ទប់ <strong>${stuName}</strong>...`;
+      }
+    });
+
+    inp.addEventListener('input', () => {
+      inp.classList.remove('score-input-invalid');
+      const numVal = parseFloat(inp.value);
+      if (!isNaN(numVal)) {
+        this.saveVoiceNameSecretInputValue(inp, numVal);
+      }
+    });
+
+    inp.focus();
+    inp.select();
+    this._currentVoiceNameSecretActiveInput = inp;
+    return inp;
+  }
+
+  appendMisplacedStudentToSecretTable(student, origRoom, origDesk) {
+    if (!student || !this.secretScoreInputTableBody) return null;
+    const sId = student.studentId || student.id;
+
+    const existingInp = this.secretScoreInputTableBody.querySelector(`.secret-score-input-fast[data-stuid="${sId}"]`);
+    if (existingInp) {
+      existingInp.focus();
+      existingInp.select();
+      return existingInp;
+    }
+
+    const stuObj = (this.students && this.students.find(s => String(s.id) === String(sId))) || student;
+    const stuName = stuObj.khmerName || stuObj.name || '-';
+    const stuGender = (stuObj.gender === 'F' || stuObj.gender === 'ស្រី') ? 'ស្រី' : ((stuObj.gender === 'M' || stuObj.gender === 'ប្រុស') ? 'ប្រុស' : (stuObj.gender || '-'));
+    const currentRoom = this.currentSecretRoom || 'បច្ចុប្បន្ន';
+    const subObj = this.currentSecretSubObj || { name: 'ពិន្ទុ', fullKey: 'score', maxScore: 100 };
+    const maxLimit = subObj.maxScore || 100;
+    const periodKey = this.activeScorePeriod || this.getActiveScoringPeriod(this.currentSecretRoomGrade || 'grade_7');
+    const isLocked = !this.isPeriodActiveForScoring(periodKey);
+    const isShowInfo = !!(this.chkShowStudentInfoSecret && this.chkShowStudentInfoSecret.checked);
+
+    const sData = (this.scores[sId] && (this.scores[sId][periodKey] || this.scores[sId]['test_early'] || this.scores[sId]['sem1_exam'])) || {};
+    let val = this.getSubjectScore(sData, subObj.fullKey);
+    if (val === undefined && subObj.code) val = this.getSubjectScore(sData, subObj.code);
+    const existingScore = (val !== undefined && val !== null) ? val : '';
+
+    const seqNum = this.secretScoreInputTableBody.querySelectorAll('tr').length + 1;
+
+    const tr = document.createElement('tr');
+    tr.style.backgroundColor = '#fffbeb';
+    tr.className = 'row-misplaced-student';
+
+    tr.innerHTML = `
+      <td class="col-student-info" style="text-align: center; vertical-align: middle; ${isShowInfo ? '' : 'display: none;'}">
+        <span style="font-weight: 700; color: #b45309;">${origRoom || '-'} ➜ ${currentRoom}</span>
+      </td>
+      <td class="col-student-info" style="text-align: center; vertical-align: middle; font-weight: 700; color: #b45309; ${isShowInfo ? '' : 'display: none;'}">
+        ${origDesk || '-'}
+      </td>
+      <td class="col-student-info" style="text-align: left; vertical-align: middle; ${isShowInfo ? '' : 'display: none;'}">
+        <span style="font-weight: 700; color: #b45309;">${stuName}</span>
+        <span class="badge" style="background: #fef3c7; color: #92400e; font-size: 0.72rem; padding: 2px 5px; border-radius: 4px; margin-left: 4px;">
+          ⚠️ ច្រឡំបន្ទប់
+        </span>
+      </td>
+      <td class="col-student-info" style="text-align: center; vertical-align: middle; ${isShowInfo ? '' : 'display: none;'}">${stuGender}</td>
+      <td style="text-align: center; vertical-align: middle;">
+        <span class="secret-student-num-circle" style="background: #fef3c7; color: #b45309; border-color: #fde68a;">${seqNum}</span>
+      </td>
+      <td style="text-align: center; vertical-align: middle;">
+        <input type="number" 
+               min="0" max="${maxLimit}" step="0.25" 
+               class="secret-score-input-fast ${isLocked ? 'score-input-locked' : ''}" 
+               data-stuid="${sId}" 
+               data-seq="${seqNum}"
+               data-subkey="${subObj.fullKey}" 
+               data-subcode="${subObj.code}"
+               data-max="${maxLimit}"
+               ${isLocked ? 'disabled readonly title="ខែនេះត្រូវបានបិទការបញ្ចូលពិន្ទុ"' : ''}
+               value="${existingScore !== undefined ? existingScore : ''}"
+               placeholder="វាយពិន្ទុ..."
+               style="border-color: #f59e0b; background: #fffdf5;">
+      </td>
+    `;
+
+    this.secretScoreInputTableBody.appendChild(tr);
+
+    const inp = tr.querySelector('.secret-score-input-fast');
+    inp.addEventListener('input', () => {
+      inp.classList.remove('score-input-invalid');
+      const numVal = parseFloat(inp.value);
+      if (!isNaN(numVal)) {
+        this.saveSecretInputValue(inp, numVal);
+      }
+    });
+
+    inp.focus();
+    inp.select();
+    return inp;
+  }
+
+  renderExamSubjectScoresTable() {
+    if (!this.examSubjectScoresHead || !this.examSubjectScoresBody) return;
+    const gradeKey = this.examScoreSubjectGradeSelect ? this.examScoreSubjectGradeSelect.value : 'grade_7';
+    const filterClass = this.examScoreSubjectClassSelect ? this.examScoreSubjectClassSelect.value : 'ALL';
+    const filterSub = this.examScoreSubjectFilterSelect ? this.examScoreSubjectFilterSelect.value : 'ALL';
+
+    const config = this.getExamConfigForGrade(gradeKey);
+    const periodKey = this.getActiveScoringPeriod(gradeKey);
+    const isLocked = !this.isPeriodActiveForScoring(periodKey);
+
+    // Sync Period dropdown to currently selected/active period
+    if (this.examScoreSubjectPeriodSelect && periodKey) {
+      this.examScoreSubjectPeriodSelect.value = periodKey;
+    }
+    if (this.secretScorePeriodSelect && periodKey) {
+      this.secretScorePeriodSelect.value = periodKey;
+    }
+
+    const gradeSubs = this.getMatrixSubjectsForGrade(gradeKey);
+
+    // Update Class dropdown to ONLY show classes in this grade level (e.g. 7A, 7B, 7C, ...)
+    if (this.examScoreSubjectClassSelect) {
+      const curClass = this.examScoreSubjectClassSelect.value;
+      const gradeStudents = this.students.filter(s => this.studentMatchesGrade(s, gradeKey));
+      const classList = [...new Set(gradeStudents.map(s => s.class))].filter(Boolean).sort((a, b) => a.localeCompare(b, 'km', { numeric: true }));
+      this.examScoreSubjectClassSelect.innerHTML = '<option value="ALL">-- គ្រប់ថ្នាក់ --</option>';
+      classList.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        if (c === curClass) opt.selected = true;
+        this.examScoreSubjectClassSelect.appendChild(opt);
+      });
+      if (curClass !== 'ALL' && !classList.includes(curClass)) {
+        this.examScoreSubjectClassSelect.value = 'ALL';
+      }
+    }
+
+    // Update Subject dropdown
+    if (this.examScoreSubjectFilterSelect) {
+      const curSub = this.examScoreSubjectFilterSelect.value;
+      this.examScoreSubjectFilterSelect.innerHTML = '<option value="ALL">-- គ្រប់មុខវិជ្ជា --</option>';
+      gradeSubs.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.fullKey;
+        opt.textContent = s.name;
+        if (s.fullKey === curSub) opt.selected = true;
+        this.examScoreSubjectFilterSelect.appendChild(opt);
+      });
+    }
+
+    const visibleSubs = filterSub === 'ALL' ? gradeSubs : gradeSubs.filter(s => s.fullKey === filterSub);
+
+    // Filter Students
+    const filteredStudents = this.students.filter(s => {
+      const matchesGrade = this.studentMatchesGrade(s, gradeKey);
+      const matchesClass = filterClass === 'ALL' || s.class === filterClass;
+      return matchesGrade && matchesClass;
+    });
+
+    // Build Table Header (Image 3)
+    let trHead = `<tr style="background-color: #214080; color: white;">
+      <th style="width: 100px;">អត្តលេខ</th>
+      <th>គោត្តនាម និងនាមខ្លួន</th>
+      <th style="width: 60px; text-align: center;">ភេទ</th>
+      <th style="width: 70px; text-align: center;">ថ្នាក់</th>`;
+    visibleSubs.forEach(sub => {
+      const maxText = sub.maxScore ? ` (${sub.maxScore})` : '';
+      trHead += `<th style="text-align: center; min-width: 65px;" title="ពិន្ទុពេញ: ${sub.maxScore || 100}">
+        ${sub.name}<br><span style="font-size:0.75rem; font-weight:normal; opacity:0.85;">${maxText}</span>
+      </th>`;
+    });
+    trHead += `</tr>`;
+    this.examSubjectScoresHead.innerHTML = trHead;
+
+    // Build Table Body
+    this.examSubjectScoresBody.innerHTML = '';
+
+    if (filteredStudents.length === 0) {
+      this.examSubjectScoresBody.innerHTML = `<tr><td colspan="${4 + visibleSubs.length}" style="text-align: center; padding: 2rem; color: var(--text-muted);">មិនមានទិន្នន័យសិស្សសម្រាប់ថ្នាក់ដែលបានជ្រើសរើសឡើយ</td></tr>`;
+      return;
+    }
+
+    filteredStudents.forEach(stu => {
+      const tr = document.createElement('tr');
+      let html = `
+        <td style="font-weight: 700; color: var(--primary);">${stu.id}</td>
+        <td style="font-weight: 600;">${stu.khmerName}</td>
+        <td style="text-align: center;">${stu.gender}</td>
+        <td style="text-align: center;"><span class="badge-room-tag">${stu.class}</span></td>
+      `;
+
+      const isGrade789 = ['grade_7', 'grade_8', 'grade_9'].includes(gradeKey) || /^grade_[789][abc]?$/.test(gradeKey);
+      visibleSubs.forEach(sub => {
+        const pd = (this.scores[stu.id] && this.scores[stu.id][periodKey]) ? this.scores[stu.id][periodKey] : {};
+        let existingVal = this.getSubjectScore(pd, sub.fullKey);
+        if (existingVal === undefined) existingVal = this.getSubjectScore(pd, sub.code);
+        if (existingVal === undefined) existingVal = '';
+        const maxLimit = sub.maxScore || 100;
+
+        // For ភាសាខ្មែរ in grade 7/8/9: show read-only total (= តែងសេចក្តី + សរសេរតាមអាន)
+        if (isGrade789 && (sub.fullKey === 'kh' || sub.code === 'K')) {
+          const eVal = this.getSubjectScore(pd, 'kh_essay');
+          const dVal = this.getSubjectScore(pd, 'kh_dict');
+          let khTotal = '';
+          if (eVal !== undefined || dVal !== undefined) {
+            khTotal = (eVal || 0) + (dVal || 0);
+          } else if (existingVal !== '') {
+            khTotal = existingVal;
+          }
+          html += `
+            <td style="text-align: center; padding: 0.25rem;">
+              <input type="number" min="0" max="${maxLimit}" step="0.25"
+                     class="subject-table-score-input kh-total-display ${isLocked ? 'score-input-locked' : ''}"
+                     data-stuid="${stu.id}" data-subkey="kh" data-subcode="K" data-max="${maxLimit}"
+                     value="${khTotal}" readonly disabled
+                     title="ពិន្ទុភាសាខ្មែរ = តែងសេចក្ដី (${eVal !== undefined ? eVal : 0}) + សរសេរតាមអាន (${dVal !== undefined ? dVal : 0})"
+                     style="width: 58px; height: 30px; text-align: center; border: 1.5px solid #10b981; border-radius: 4px; font-weight: 700; font-size: 0.88rem; background: #dcfce7; color: #166534; cursor: not-allowed;">
+            </td>
+          `;
+        } else {
+          html += `
+            <td style="text-align: center; padding: 0.25rem;">
+              <input type="number" 
+                     min="0" max="${maxLimit}" step="0.25" 
+                     class="subject-table-score-input ${isLocked ? 'score-input-locked' : ''}" 
+                     data-stuid="${stu.id}" 
+                     data-subkey="${sub.fullKey}" 
+                     data-subcode="${sub.code}"
+                     data-max="${maxLimit}"
+                     ${isLocked ? 'disabled readonly title="ខែនេះត្រូវបានបិទការបញ្ចូលពិន្ទុ"' : ''}
+                     value="${existingVal}" 
+                     title="ពិន្ទុពេញ: ${maxLimit}"
+                     style="width: 58px; height: 30px; text-align: center; border: 1px solid #cbd5e1; border-radius: 4px; font-weight: 600;">
+            </td>
+          `;
+        }
+      });
+      tr.innerHTML = html;
+      this.examSubjectScoresBody.appendChild(tr);
+    });
+  }
+
+  handleSaveSubjectTableScores() {
+    if (!this.examSubjectScoresBody) return;
+    const gradeKeyForPeriod = this.examScoreSubjectGradeSelect ? this.examScoreSubjectGradeSelect.value : 'grade_7';
+    const periodKey = this.getActiveScoringPeriod(gradeKeyForPeriod);
+    if (!this.isPeriodActiveForScoring(periodKey)) {
+      this.showToast(`មិនអាចរក្សាទុកបានទេ! ខែនេះត្រូវបានបិទការបញ្ចូលពិន្ទុ។ អនុញ្ញាតតែខែ «${this.getExamPeriodTitle(this.activeScorePeriod)}» ប៉ុណ្ណោះ។`, 'error');
+      return;
+    }
+
+    // Collect all scorable inputs: regular + kh sub-components
+    const inputs = this.examSubjectScoresBody.querySelectorAll('.subject-table-score-input:not(.kh-total-display)');
+    for (const inp of inputs) {
+      if (!this.validateScoreInputEl(inp, true)) {
+        inp.focus();
+        return;
+      }
+    }
+
+    let savedCount = 0;
+
+    inputs.forEach(inp => {
+      const sId = inp.getAttribute('data-stuid');
+      const subKey = inp.getAttribute('data-subkey');
+      const subCode = inp.getAttribute('data-subcode');
+      const val = inp.value.trim();
+
+      if (val !== '') {
+        let numVal = parseFloat(val) || 0;
+        this.setSubjectScore(sId, periodKey, subKey, numVal);
+        if (subCode) this.setSubjectScore(sId, periodKey, subCode, numVal);
+        savedCount++;
+      } else {
+        this.setSubjectScore(sId, periodKey, subKey, null);
+        if (subCode) this.setSubjectScore(sId, periodKey, subCode, null);
+      }
+    });
+
+    // Auto-calculate ភាសាខ្មែរ for grade 7/8/9 (essay + dictation → kh)
+    const _subGradeKey = this.examScoreSubjectGradeSelect ? this.examScoreSubjectGradeSelect.value : 'grade_7';
+    const _subStuIds = new Set([...this.examSubjectScoresBody.querySelectorAll('[data-stuid]')].map(el => el.getAttribute('data-stuid')));
+    _subStuIds.forEach(sid => this.autoCalcKhmerScore(sid, periodKey, _subGradeKey));
+
+    // Sync exam scores to grade sheet period
+    _subStuIds.forEach(sid => this.syncExamScoresToGradeSheet(sid, periodKey));
+
+    // Update currentPeriod and header dropdown so navigating to «បញ្ចូលពិន្ទុតាមខែ» directly displays these scores!
+    this.currentPeriod = periodKey;
+    if (this.periodHeaderSelect) this.periodHeaderSelect.value = periodKey;
+    if (!this.activeScorePeriod) this.applyActivePeriod(periodKey);
+
+    if (_subGradeKey) {
+      this.activeClass = _subGradeKey;
+      if (this.classFilterSelect) this.classFilterSelect.value = _subGradeKey;
+      if (this.sidebarClassSelect) this.sidebarClassSelect.value = _subGradeKey;
+      if (this.examGradeSelect) this.examGradeSelect.value = _subGradeKey;
+    }
+    if (this.secretScoreInputTableBody) {
+      const secretInputs = this.secretScoreInputTableBody.querySelectorAll('.secret-score-input-fast');
+      secretInputs.forEach(sInp => {
+        const sid = sInp.getAttribute('data-stuid');
+        const skey = sInp.getAttribute('data-subkey');
+        const scode = sInp.getAttribute('data-subcode');
+        if (this.scores[sid] && this.scores[sid][periodKey]) {
+          const sRec = this.scores[sid][periodKey];
+          let updatedVal = this.getSubjectScore(sRec, skey);
+          if (updatedVal === undefined && scode) updatedVal = this.getSubjectScore(sRec, scode);
+          if (updatedVal !== undefined && updatedVal !== null) {
+            sInp.value = updatedVal;
+          }
+        }
+      });
+    }
+
+    this.saveState();
+    const periodTitle = this.getExamPeriodTitle(periodKey);
+    this.createAutoBackup(`រក្សាទុកពិន្ទុតារាងមុខវិជ្ជា (${periodTitle})`);
+    this.updateScoreAutoBackupBadge('saved');
+    this.updateKPIOverview();
+    this.renderExamSubjectScoresTable();
+    this.showToast(`បានរក្សាទុកពិន្ទុតារាងមុខវិជ្ជា (${savedCount} កន្លែង - ${periodTitle}) ជោគជ័យ! ទិន្នន័យបាន Auto Backup និងភ្ជាប់ទៅកាន់ «បញ្ចូលពិន្ទុតាមខែ» រួចរាល់។`, 'success');
+  }
+
+  apply20PercentExamScore() {
+    if (!this.examSubjectScoresBody) return;
+    const gradeKeyForApply = this.examScoreSubjectGradeSelect ? this.examScoreSubjectGradeSelect.value : 'grade_7';
+    const periodKey = this.getActiveScoringPeriod(gradeKeyForApply);
+    if (!this.isPeriodActiveForScoring(periodKey)) {
+      this.showToast(`មិនអាចគណនាបានទេ! ខែនេះត្រូវបានបិទការបញ្ចូលពិន្ទុ។ អនុញ្ញាតតែខែ «${this.getExamPeriodTitle(this.activeScorePeriod)}» ប៉ុណ្ណោះ។`, 'error');
+      return;
+    }
+
+    const inputs = this.examSubjectScoresBody.querySelectorAll('.subject-table-score-input');
+    if (inputs.length === 0) {
+      this.showToast('មិនមានទិន្នន័យក្នុងតារាងឡើយ!', 'warning');
+      return;
+    }
+
+    const periodTitle = this.getExamPeriodTitle(periodKey);
+    const semMonths = (periodKey === 'sem2_exam' || periodKey.startsWith('m07') || periodKey.startsWith('m08') || periodKey.startsWith('m09') || periodKey.startsWith('m10') || periodKey.startsWith('m11') || periodKey.startsWith('m12'))
+      ? ['m07', 'm08', 'm09', 'm10', 'm11']
+      : ['m01', 'm02', 'm03', 'm04', 'm05'];
+
+    if (confirm(`តើអ្នកចង់គណនាបញ្ចូលពិន្ទុ ២០% សម្រាប់គ្រប់សិស្សក្នុងតារាងនេះ (${periodTitle}) មែនទេ?`)) {
+      let applied = 0;
+      inputs.forEach(inp => {
+        const sId = inp.getAttribute('data-stuid');
+        const subKey = inp.getAttribute('data-subkey');
+        const stuScores = this.scores[sId] || {};
+        let sum = 0, count = 0;
+        semMonths.forEach(m => {
+          if (stuScores[m] && stuScores[m][subKey] !== undefined) {
+            sum += parseFloat(stuScores[m][subKey]) || 0;
+            count++;
+          }
+        });
+        if (count > 0) {
+          const avg = sum / count;
+          const score20 = Math.round((avg * 0.2) * 10) / 10;
+          inp.value = score20;
+          applied++;
+        }
+      });
+      this.showToast(`បានគណនាពិន្ទុ ២០% ជូនសិស្ស ${applied} នាក់! សូមចុច "រក្សាទុក"។`, 'success');
+    }
+  }
+
+  toggleExamScoreLock() {
+    this.isExamScoreLocked = !this.isExamScoreLocked;
+    const inputs = document.querySelectorAll('.subject-table-score-input, .secret-score-input-fast');
+    inputs.forEach(inp => {
+      inp.disabled = this.isExamScoreLocked;
+      inp.style.backgroundColor = this.isExamScoreLocked ? '#f1f5f9' : '#ffffff';
+    });
+    const btn = document.getElementById('btnLockUnlockSystem');
+    if (btn) {
+      btn.innerHTML = this.isExamScoreLocked
+        ? '<i class="ri-lock-fill"></i> ប្រព័ន្ធបានចាក់សោរ'
+        : '<i class="ri-lock-unlock-line"></i> ចាក់សោរបើកប្រព័ន្ធ';
+      btn.style.backgroundColor = this.isExamScoreLocked ? '#dc2626' : '#7c3aed';
+    }
+    this.showToast(this.isExamScoreLocked
+      ? 'ប្រព័ន្ធត្រូវបានចាក់សោរការពារមិនឱ្យកែប្រែពិន្ទុ!'
+      : 'បានដោះសោរប្រព័ន្ធឱ្យកែប្រែពិន្ទុបានធម្មតា!',
+      this.isExamScoreLocked ? 'warning' : 'info');
+  }
+
+  renderExamAuditTable() {
+    if (!this.examAuditMatrixHead || !this.examAuditMatrixBody) return;
+    this.examAuditMatrixHead.innerHTML = '';
+    this.examAuditMatrixBody.innerHTML = '';
+
+    const gradeKey = this.examAuditGradeSelect ? this.examAuditGradeSelect.value : 'grade_7';
+    const periodKey = this.getActiveScoringPeriod(gradeKey);
+    const visibleSubs = this.getMatrixSubjectsForGrade(gradeKey);
+
+    // Group students by room
+    let studentsInGrade = (this.examArrangements || []).filter(item => {
+      return this.studentMatchesGrade(item, gradeKey);
+    });
+
+    // Auto-organize if none arranged yet
+    if (studentsInGrade.length === 0) {
+      const candidateStudents = this.students.filter(s => this.studentMatchesGrade(s, gradeKey));
+      if (candidateStudents.length > 0) {
+        candidateStudents.sort((a, b) => a.khmerName.localeCompare(b.khmerName, 'km'));
+        const perRoom = 25;
+        studentsInGrade = candidateStudents.map((stu, idx) => ({
+          studentId: stu.id,
+          khmerName: stu.khmerName,
+          grade: stu.class || 'ថ្នាក់ទី៧',
+          class: stu.class || '',
+          roomNumber: String(1 + Math.floor(idx / perRoom))
+        }));
+      }
+    }
+
+    const roomsMap = {};
+    if (studentsInGrade.length > 0) {
+      studentsInGrade.forEach(item => {
+        const rawRm = item.roomNumber || '1';
+        const rm = String(parseInt(rawRm, 10) || 1);
+        if (!roomsMap[rm]) roomsMap[rm] = [];
+        roomsMap[rm].push(item);
+      });
+    }
+
+    let roomKeys = Object.keys(roomsMap).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+    if (roomKeys.length === 0) {
+      // Default to Room 1 & Room 2 if no arrangements so layout matches Image 2
+      roomKeys = ['1', '2'];
+      roomsMap['1'] = [];
+      roomsMap['2'] = [];
+    }
+
+    // Ensure room secrets exist for this grade
+    if (!this.roomSubjectSecrets) this.roomSubjectSecrets = {};
+    if (!this.roomSubjectSecrets[gradeKey]) this.roomSubjectSecrets[gradeKey] = {};
+    const gradeSecrets = this.roomSubjectSecrets[gradeKey];
+
+    // Auto-populate default letters if not yet generated (using lowercase room suffixes)
+    let gradeSuffix = this.getGradeSecretSuffix(gradeKey);
+
+    roomKeys.forEach((rm, rIdx) => {
+      if (!gradeSecrets[rm]) gradeSecrets[rm] = {};
+      visibleSubs.forEach((sub, sIdx) => {
+        if (!gradeSecrets[rm][sub.code]) {
+          const sfx = this.getRoomCodeSuffix((sIdx + rIdx * 3) % (roomKeys.length || 26));
+          gradeSecrets[rm][sub.code] = `${sub.code}${gradeSuffix}${sfx}`;
+        } else {
+          gradeSecrets[rm][sub.code] = this.upgradeSecretCodeToTrack(gradeSecrets[rm][sub.code], gradeKey);
+        }
+      });
+    });
+
+    // 1. Build Header: Row 1 = Subject Codes, Row 2 = Subject Names (matching Image 2)
+    let trHead1 = `<tr style="background-color: #035388; color: #ffffff;">
+      <th rowspan="2" style="width: 48px; text-align: center; vertical-align: middle; border: 1px solid #1e3a8a; font-weight: 800; font-size: 0.95rem;">ល.រ</th>`;
+    let trHead2 = `<tr style="background-color: #035388; color: #ffffff;">`;
+
+    visibleSubs.forEach(sub => {
+      trHead1 += `<th style="text-align: center; border: 1px solid #1e3a8a; padding: 0.5rem 0.2rem; font-weight: 800; font-size: 0.88rem; min-width: 45px;">${sub.code}</th>`;
+      trHead2 += `<th style="text-align: center; border: 1px solid #1e3a8a; padding: 0.4rem 0.15rem; font-weight: 600; font-size: 0.72rem; line-height: 1.2; min-width: 45px;">${sub.name}</th>`;
+    });
+    trHead1 += `</tr>`;
+    trHead2 += `</tr>`;
+    this.examAuditMatrixHead.innerHTML = trHead1 + trHead2;
+
+    // 2. Build Body Rows per Room with Circular Badges (matching Image 2)
+    roomKeys.forEach(rm => {
+      const roomStudents = roomsMap[rm] || [];
+      const stuCount = roomStudents.length;
+      const roomSecrets = gradeSecrets[rm] || {};
+
+      const tr = document.createElement('tr');
+      let html = `<td style="text-align: center; font-weight: 700; color: #1e293b; border: 1px solid #cbd5e1; padding: 0.6rem 0.25rem;">${rm}</td>`;
+
+      visibleSubs.forEach(sub => {
+        const rawCode = this.formatSecretCode(roomSecrets[sub.code] || '');
+        let letter = '';
+        if (rawCode) {
+          const match = rawCode.match(/^[A-Za-z]+\d+(?:SC|SS)?([a-zA-Z]+\d*)$/i);
+          letter = match ? match[1].toLowerCase() : rawCode.slice(-2).toLowerCase();
+        }
+
+        // Count entered scores for this room and subject
+        let enteredCount = 0;
+        roomStudents.forEach(stu => {
+          const sId = stu.studentId || stu.id;
+          const sData = (this.scores[sId] && (this.scores[sId][periodKey] || this.scores[sId]['test_early'])) || {};
+          const val = sData[sub.fullKey] !== undefined ? sData[sub.fullKey] : (sData[sub.code] !== undefined ? sData[sub.code] : (sub.fullKey === 'kh' ? sData['kh'] : undefined));
+          if (val !== undefined && val !== null && val !== '') {
+            enteredCount++;
+          }
+        });
+
+        const isEntered = stuCount > 0 && enteredCount >= stuCount;
+        const badgeColor = isEntered ? '#2563eb' : '#dc2626'; // Blue when entered, Red when missing/incomplete
+
+        html += `
+          <td style="text-align: center; border: 1px solid #cbd5e1; padding: 0.45rem 0.2rem; vertical-align: middle;">
+            <span style="width: 26px; height: 26px; border-radius: 50%; background: ${badgeColor}; color: #ffffff; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.82rem; box-shadow: 0 1px 3px rgba(0,0,0,0.18); cursor: pointer;"
+                  title="បន្ទប់ ${rm} - ${sub.name} (${sub.code})
+អក្សរសម្ងាត់: ${rawCode}
+ស្ថានភាព: ${isEntered ? 'បានបញ្ចូលគ្រប់' : 'នៅខ្វះ'} (${enteredCount}/${stuCount || 25})">
+              ${letter}
+            </span>
+          </td>
+        `;
+      });
+
+      tr.innerHTML = html;
+      this.examAuditMatrixBody.appendChild(tr);
+    });
+  }
+
+  renderExamAttendanceDoc() {
+    if (!this.examDocPrintableArea) return;
+    this.examDocPrintableArea.innerHTML = '';
+
+    const list = this.examArrangements || [];
+    if (list.length === 0) {
+      this.examDocPrintableArea.innerHTML = `
+        <div class="exam-empty-notice">
+          សូមធ្វើការរៀបចំបញ្ជីឈ្មោះក្នុងផ្ទាំងទី១ "រៀបចំបញ្ជីឈ្មោះ" ជាមុនសិន!
+        </div>
+      `;
+      return;
+    }
+
+    const selectedGrade = this.examAttendanceGradeSelect ? this.examAttendanceGradeSelect.value : 'ALL';
+    const selectedRoom = this.examAttendanceRoomSelect ? this.examAttendanceRoomSelect.value : 'ALL';
+    const docType = this.examDocTypeSelect ? this.examDocTypeSelect.value : 'door_list';
+    const showSignature = this.examShowSignatureSelect ? this.examShowSignatureSelect.value : 'yes';
+
+    const sigImgSrc = this.sigConfig?.customImage || 'assets/Sinature Director.jpg';
+    const roleTitle = this.sigConfig?.roleTitle || 'ប្រធានមណ្ឌល';
+    const directorName = (this.sigConfig?.directorName || this.examDirectorNameInput?.value || '').trim();
+    const textColor = this.sigConfig?.textColor || '#111827';
+    const imgScale = (this.sigConfig?.imgScale ?? 100) / 100;
+    const imgX = this.sigConfig?.imgX ?? 0;
+    const imgY = this.sigConfig?.imgY ?? 0;
+    const textSize = this.sigConfig?.textSize ?? 16;
+    const textX = this.sigConfig?.textX ?? 0;
+    const textY = this.sigConfig?.textY ?? 0;
+
+    // Dynamically set @page orientation for print preview (Portrait for door_list, Landscape for attendance_sheet)
+    let pageStyleEl = document.getElementById('dynamicExamPrintPageStyle');
+    if (!pageStyleEl) {
+      pageStyleEl = document.createElement('style');
+      pageStyleEl.id = 'dynamicExamPrintPageStyle';
+      document.head.appendChild(pageStyleEl);
+    }
+    if (docType === 'attendance_sheet') {
+      pageStyleEl.textContent = '@media print { @page { size: A4 landscape; margin: 4mm 8mm 4mm 8mm; } }';
+    } else {
+      pageStyleEl.textContent = '@media print { @page { size: A4 portrait; margin: 5mm 10mm 5mm 10mm; } }';
+    }
+
+    // Filter students by selectedGrade if specified
+    let filteredList = list;
+    if (selectedGrade !== 'ALL') {
+      filteredList = list.filter(item => this.studentMatchesGrade(item, selectedGrade));
+    }
+
+    if (filteredList.length === 0) {
+      this.examDocPrintableArea.innerHTML = `
+        <div class="exam-empty-notice">
+          មិនមានទិន្នន័យសិស្សសម្រាប់កម្រិតថ្នាក់ដែលបានជ្រើសរើសឡើយ!
+        </div>
+      `;
+      return;
+    }
+
+    // Group students by room
+    const roomsMap = {};
+    filteredList.forEach(item => {
+      const rm = item.roomNumber || '01';
+      if (!roomsMap[rm]) roomsMap[rm] = [];
+      roomsMap[rm].push(item);
+    });
+
+    const roomKeys = Object.keys(roomsMap).sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
+    const roomsToRender = selectedRoom === 'ALL' ? roomKeys : [selectedRoom];
+
+    const khmerMonths = [
+      '', 'មករា', 'កុម្ភៈ', 'មីនា', 'មេសា', 'ឧសភា', 'មិថុនា',
+      'កក្កដា', 'សីហា', 'កញ្ញា', 'តុលា', 'វិច្ឆិកា', 'ធ្នូ'
+    ];
+
+    roomsToRender.forEach(rm => {
+      const roomStudents = roomsMap[rm] || [];
+      if (roomStudents.length === 0) return;
+
+      const femaleCount = roomStudents.filter(s => s.gender === 'ស្រី').length;
+      const stuWithGrade = roomStudents.find(s => s.grade || s.class) || roomStudents[0];
+      const firstGrade = (stuWithGrade && (stuWithGrade.grade || stuWithGrade.class)) || '';
+
+      let studentGradeKey = (roomStudents[0] && roomStudents[0].gradeLevel) || 'grade_7';
+      ['grade_7', 'grade_8', 'grade_9', 'grade_10', 'grade_11_sci', 'grade_11_soc', 'grade_12_sci', 'grade_12_soc'].forEach(g => {
+        if (this.studentMatchesGrade(stuWithGrade || roomStudents[0], g)) studentGradeKey = g;
+      });
+      const targetGradeKey = selectedGrade !== 'ALL' ? selectedGrade : studentGradeKey;
+      const activePeriodKey = this.getActiveScoringPeriod(targetGradeKey);
+      const config = this.getExamConfigForGrade(targetGradeKey, activePeriodKey);
+      const periodTitle = this.getExamPeriodTitle(activePeriodKey || config.period);
+
+      // Date parsing & Khmer representation
+      let examDateKhmerShort = '០៤ សីហា ២០២៦';
+      if (config && config.date) {
+        const parts = config.date.split('-');
+        if (parts.length === 3) {
+          const y = parts[0];
+          const m = parseInt(parts[1], 10);
+          const d = parseInt(parts[2], 10);
+          const dPad = this.toKhmerNum(String(d).padStart(2, '0'));
+          const mName = khmerMonths[m] || '';
+          const yKh = this.toKhmerNum(y);
+          examDateKhmerShort = `${dPad} ${mName} ${yKh}`;
+        }
+      }
+
+      // Current date for footer signature block (Lunar & Solar)
+      const now = new Date();
+      const curY = now.getFullYear();
+      const curM = now.getMonth() + 1;
+      const curD = now.getDate();
+      const curIsoDate = `${curY}-${String(curM).padStart(2, '0')}-${String(curD).padStart(2, '0')}`;
+      const lunarDateStr = this.getKhmerLunarDate(curIsoDate);
+      const curDPad = this.toKhmerNum(String(curD).padStart(2, '0'));
+      const curMName = khmerMonths[curM] || '';
+      const curYKh = this.toKhmerNum(String(curY));
+      const examDateKhmerFull = `ស្រីស្នំ ថ្ងៃទី ${curDPad} ខែ ${curMName} ឆ្នាំ ${curYKh}`;
+
+      // Format Room in Khmer e.g. ០១, ០២
+      const rmNum = parseInt(rm, 10);
+      const rmKhmer = !isNaN(rmNum) ? this.toKhmerNum(String(rmNum).padStart(2, '0')) : this.toKhmerNum(rm);
+
+      // Format Grade Title in Khmer e.g. ថ្នាក់ទី៧
+      let gradeTitleKhmer = 'ថ្នាក់ទី៧';
+      if (targetGradeKey === 'grade_7') {
+        gradeTitleKhmer = 'ថ្នាក់ទី៧';
+      } else if (targetGradeKey === 'grade_8') {
+        gradeTitleKhmer = 'ថ្នាក់ទី៨';
+      } else if (targetGradeKey === 'grade_9') {
+        gradeTitleKhmer = 'ថ្នាក់ទី៩';
+      } else if (targetGradeKey === 'grade_10') {
+        gradeTitleKhmer = 'ថ្នាក់ទី១០';
+      } else if (targetGradeKey === 'grade_11_sci') {
+        gradeTitleKhmer = 'ថ្នាក់ទី១១ វិទ្យាសាស្ត្រ';
+      } else if (targetGradeKey === 'grade_11_soc') {
+        gradeTitleKhmer = 'ថ្នាក់ទី១១ សង្គម';
+      } else if (targetGradeKey.includes('11')) {
+        gradeTitleKhmer = 'ថ្នាក់ទី១១';
+      } else if (targetGradeKey === 'grade_12_sci') {
+        gradeTitleKhmer = 'ថ្នាក់ទី១២ វិទ្យាសាស្ត្រ';
+      } else if (targetGradeKey === 'grade_12_soc') {
+        gradeTitleKhmer = 'ថ្នាក់ទី១២ សង្គម';
+      } else if (targetGradeKey.includes('12')) {
+        gradeTitleKhmer = 'ថ្នាក់ទី១២';
+      } else if (firstGrade.includes('10')) {
+        gradeTitleKhmer = 'ថ្នាក់ទី១០';
+      } else if (firstGrade.includes('11')) {
+        gradeTitleKhmer = 'ថ្នាក់ទី១១';
+      } else if (firstGrade.includes('12')) {
+        gradeTitleKhmer = 'ថ្នាក់ទី១២';
+      } else if (firstGrade.includes('8')) {
+        gradeTitleKhmer = 'ថ្នាក់ទី៨';
+      } else if (firstGrade.includes('9')) {
+        gradeTitleKhmer = 'ថ្នាក់ទី៩';
+      } else if (firstGrade.includes('7')) {
+        gradeTitleKhmer = 'ថ្នាក់ទី៧';
+      } else if (firstGrade) {
+        gradeTitleKhmer = firstGrade;
+      }
+
+      if (!this.examSubjectOrders) this.examSubjectOrders = this.getDefaultExamSubjectOrders();
+      const defaultOrders = this.getDefaultExamSubjectOrders();
+      const orderedSubjects = (this.examSubjectOrders[targetGradeKey] && this.examSubjectOrders[targetGradeKey].length > 0)
+        ? this.examSubjectOrders[targetGradeKey]
+        : (defaultOrders[targetGradeKey] || defaultOrders.grade_7);
+
+      const sheet = document.createElement('div');
+      sheet.className = docType === 'attendance_sheet' ? 'exam-official-sheet landscape-sheet' : 'exam-official-sheet';
+
+      let tableRows = '';
+      roomStudents.forEach((stu, idx) => {
+        let dobStr = stu.dob || '';
+        if (dobStr) {
+          const parts = dobStr.split(/[-/]/);
+          if (parts.length === 3) {
+            if (parts[0].length === 4) {
+              dobStr = `${parts[2].padStart(2, '0')}-${parts[1].padStart(2, '0')}-${parts[0]}`;
+            } else {
+              dobStr = `${parts[0].padStart(2, '0')}-${parts[1].padStart(2, '0')}-${parts[2]}`;
+            }
+          }
+        }
+
+        const deskNum = parseInt(stu.deskNumber, 10) || (idx + 1);
+        const studentName = this.cleanStudentName(stu.khmerName || stu.name || '');
+        const gender = studentName ? (stu.gender || '') : '';
+        const stuClass = studentName ? (stu.grade || stu.class || '') : '';
+        const foreignLang = stu.foreignLang || 'អង់គ្លេស';
+
+        if (docType === 'door_list') {
+          tableRows += `
+            <tr style="height: 28px; font-family: 'Khmer OS Siemreap', 'Khmer OS Siem Reap', 'Siemreap', var(--font-khmer);">
+              <td style="text-align: center; border: 1px solid #000; padding: 4px 2px;">${deskNum}</td>
+              <td style="text-align: left; border: 1px solid #000; padding: 4px 10px;">${studentName}</td>
+              <td style="text-align: center; border: 1px solid #000; padding: 4px 2px;">${gender}</td>
+              <td style="text-align: center; border: 1px solid #000; padding: 4px 2px;">${dobStr}</td>
+              <td style="text-align: center; border: 1px solid #000; padding: 4px 2px;">${stuClass}</td>
+              <td style="text-align: center; border: 1px solid #000; padding: 4px 2px;">${foreignLang}</td>
+              <td style="text-align: center; border: 1px solid #000; padding: 4px 2px;"></td>
+            </tr>
+          `;
+        } else {
+          const subjectCells = orderedSubjects.map(() => `<td style="border: 1px solid #000; padding: 2px;"></td>`).join('');
+          tableRows += `
+            <tr style="height: 24px; font-family: 'Khmer OS Siemreap', 'Khmer OS Siem Reap', 'Siemreap', var(--font-khmer);">
+              <td style="text-align: center; border: 1px solid #000; padding: 2px;">${deskNum}</td>
+              <td style="text-align: left; border: 1px solid #000; padding: 2px 8px; white-space: nowrap;">${studentName}</td>
+              <td style="text-align: center; border: 1px solid #000; padding: 2px;">${gender}</td>
+              <td style="text-align: center; border: 1px solid #000; padding: 2px; white-space: nowrap;">${dobStr}</td>
+              <td style="text-align: center; border: 1px solid #000; padding: 2px;">${stuClass}</td>
+              ${subjectCells}
+            </tr>
+          `;
+        }
+      });
+
+      const docTitle = docType === 'door_list'
+        ? `បញ្ជីរាយនាមបេក្ខជន ${periodTitle}`
+        : `បញ្ជីស្រង់វត្តមានបេក្ខជន ${periodTitle}`;
+
+      const subjectHeadersHtml = orderedSubjects.map(sub =>
+        `<th style="border: 1px solid #000; text-align: center; font-weight: 700; padding: 3px 2px; font-size: 0.78rem; white-space: nowrap;">${sub}</th>`
+      ).join('');
+
+      sheet.innerHTML = `
+        <div class="exam-doc-moeys-header" style="text-align: center; margin-bottom: 12px; line-height: 1.5;">
+          <div style="font-size: 1.15rem; font-weight: 400; font-family: 'Khmer OS Muol Light', 'Khmer OS Muol', 'Moul', var(--font-khmer);">ព្រះរាជាណាចក្រកម្ពុជា</div>
+          <div style="font-size: 1.05rem; font-weight: 400; font-family: 'Khmer OS Muol Light', 'Khmer OS Muol', 'Moul', var(--font-khmer);">ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+          <div style="display: flex; justify-content: center; margin-top: 4px; margin-bottom: 12px;">
+            <svg width="120" height="12" viewBox="0 0 120 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M 5 6 C 25 1, 35 11, 55 6 C 58 5, 60 4, 65 6 C 70 4, 72 5, 75 6 C 95 11, 105 1, 115 6" stroke="#000" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+              <circle cx="60" cy="6" r="2" fill="#000"/>
+            </svg>
+          </div>
+
+          <div style="font-size: 1.05rem; font-weight: 400; font-family: 'Khmer OS Muol Light', 'Khmer OS Muol', 'Moul', var(--font-khmer); margin-top: 6px;">
+            ${docTitle}
+          </div>
+          <div style="font-size: 0.95rem; font-weight: 400; font-family: 'Khmer OS Siemreap', 'Khmer OS Siem Reap', 'Siemreap', var(--font-khmer); margin-top: 3px;">
+            សម័យប្រឡង៖ ${examDateKhmerShort}
+          </div>
+        </div>
+
+        <div class="exam-doc-moeys-meta" style="display: flex; justify-content: space-between; align-items: flex-end; text-align: left; margin-top: -96px; margin-bottom: 24px; font-size: 0.9rem; line-height: 1.55; font-weight: 400; font-family: 'Khmer OS Muol Light', 'Khmer OS Muol', 'Moul', var(--font-khmer);">
+          <div>
+            <div>ខេត្ត៖ <span>សៀមរាប</span></div>
+            <div>វិទ្យាល័យ៖ <span>២៨ មករា</span></div>
+            <div>បន្ទប់៖ <span>${rmKhmer}</span></div>
+          </div>
+          <div style="text-align: right;">កម្រិតថ្នាក់៖ <span>${gradeTitleKhmer}</span></div>
+        </div>
+
+        <table class="exam-doc-table" style="width: 100%; border-collapse: collapse; border: 1px solid #000; margin-bottom: 10px; font-size: 0.9rem; font-family: 'Khmer OS Siemreap', 'Khmer OS Siem Reap', 'Siemreap', var(--font-khmer);">
+          <thead>
+            ${docType === 'door_list' ? `
+              <tr style="background: #ffffff; height: 32px; font-family: 'Khmer OS Siemreap', 'Khmer OS Siem Reap', 'Siemreap', var(--font-khmer);">
+                <th style="width: 55px; text-align: center; border: 1px solid #000; font-weight: 700; padding: 4px;">លេខតុ</th>
+                <th style="border: 1px solid #000; text-align: center; font-weight: 700; padding: 4px 8px;">នាមត្រកូល និងនាមខ្លួន</th>
+                <th style="width: 60px; text-align: center; border: 1px solid #000; font-weight: 700; padding: 4px;">ភេទ</th>
+                <th style="width: 110px; text-align: center; border: 1px solid #000; font-weight: 700; padding: 4px;">ថ្ងៃខែឆ្នាំកំណើត</th>
+                <th style="width: 65px; text-align: center; border: 1px solid #000; font-weight: 700; padding: 4px;">ថ្នាក់</th>
+                <th style="width: 105px; text-align: center; border: 1px solid #000; font-weight: 700; padding: 4px;">ភាសាបរទេស</th>
+                <th style="width: 95px; text-align: center; border: 1px solid #000; font-weight: 700; padding: 4px;">សេចក្តីផ្សេងៗ</th>
+              </tr>
+            ` : `
+              <tr style="background: #ffffff; height: 28px; font-family: 'Khmer OS Siemreap', 'Khmer OS Siem Reap', 'Siemreap', var(--font-khmer);">
+                <th style="width: 38px; text-align: center; border: 1px solid #000; font-weight: 700; padding: 3px 2px; font-size: 0.78rem; white-space: nowrap;">លេខតុ</th>
+                <th style="min-width: 120px; border: 1px solid #000; text-align: center; font-weight: 700; padding: 3px 6px; font-size: 0.78rem; white-space: nowrap;">គោត្តនាម និង នាម</th>
+                <th style="width: 36px; text-align: center; border: 1px solid #000; font-weight: 700; padding: 3px 2px; font-size: 0.78rem; white-space: nowrap;">ភេទ</th>
+                <th style="width: 78px; text-align: center; border: 1px solid #000; font-weight: 700; padding: 3px 2px; font-size: 0.78rem; white-space: nowrap;">ថ្ងៃ.ខែ.ឆ្នាំកំណើត</th>
+                <th style="width: 44px; text-align: center; border: 1px solid #000; font-weight: 700; padding: 3px 2px; font-size: 0.78rem; white-space: nowrap;">ថ្នាក់ទី</th>
+                ${subjectHeadersHtml}
+              </tr>
+            `}
+          </thead>
+          <tbody>
+            ${tableRows}
+          </tbody>
+        </table>
+
+        <div class="exam-doc-moeys-footer" style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 8px; font-size: 0.9rem; line-height: 1.45;">
+          <div style="font-weight: 700; padding-top: 4px; white-space: nowrap;">
+            បិទបញ្ចប់បញ្ជីត្រឹមចំនួនបេក្ខជន៖ <b>${roomStudents.length}</b> នាក់ ក្នុងនោះស្រី៖ <b>${femaleCount}</b> នាក់
+          </div>
+          <div style="text-align: center; white-space: nowrap; min-width: 220px; overflow: visible;">
+            <div style="font-size: 0.85rem;">${lunarDateStr}</div>
+            <div style="font-weight: 600; margin-top: 2px;">${examDateKhmerFull}</div>
+            <div style="font-size: 1rem; font-weight: 400; font-family: 'Khmer OS Muol Light', 'Khmer OS Muol', 'Moul', var(--font-khmer); margin-top: 4px;">
+              ${roleTitle}
+            </div>
+            ${showSignature === 'yes' ? `
+              <div class="exam-director-signature-wrap" style="position: relative; overflow: visible;">
+                <img src="${sigImgSrc}" alt="ហត្ថលេខា" class="exam-director-signature-img"
+                  style="transform: translate(${imgX}px, ${imgY}px) scale(${imgScale}); transform-origin: center center;"
+                  onerror="this.src='assets/signature-director.jpg'" />
+              </div>
+            ` : `
+              <div class="exam-signature-gap" style="height: 45px;"></div>
+            `}
+            ${directorName ? `
+              <div class="exam-director-name"
+                style="font-size: ${textSize}px !important; transform: translate(${textX}px, ${textY}px); transform-origin: center center; font-weight: 700; font-family: 'Khmer OS Muol Light', 'Khmer OS Muol', 'Moul', var(--font-khmer) !important; margin-top: 4px; color: ${textColor} !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;">
+                ${directorName}
+              </div>
+            ` : ''}
+          </div>
+        </div>
+      `;
+      this.examDocPrintableArea.appendChild(sheet);
+    });
+  }
+
+  // ==========================================================================
+  // Signature & Director Customization Methods
+  // ==========================================================================
+  loadSigConfig() {
+    this.sigConfig = {
+      customImage: '',
+      roleTitle: 'ប្រធានមណ្ឌល',
+      directorName: '',
+      textColor: '#111827',
+      imgScale: 100,
+      imgX: 0,
+      imgY: 0,
+      textSize: 16,
+      textX: 0,
+      textY: 0
+    };
+    try {
+      const saved = localStorage.getItem('sms_exam_signature_settings');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        this.sigConfig = Object.assign(this.sigConfig, parsed);
+      }
+      const savedName = localStorage.getItem('sms_exam_director_name');
+      if (savedName && !this.sigConfig.directorName) {
+        this.sigConfig.directorName = savedName;
+      }
+    } catch (e) {
+      console.warn('Could not load signature settings', e);
+    }
+  }
+
+  saveSigConfig() {
+    try {
+      localStorage.setItem('sms_exam_signature_settings', JSON.stringify(this.sigConfig));
+      localStorage.setItem('sms_exam_director_name', this.sigConfig.directorName || '');
+    } catch (e) {
+      console.warn('Could not save signature settings', e);
+    }
+  }
+
+  syncSigControlsFromState() {
+    if (!this.sigConfig) return;
+    if (this.examDirectorNameInput) this.examDirectorNameInput.value = this.sigConfig.directorName || '';
+    if (this.sigDirectorNameModalInput) this.sigDirectorNameModalInput.value = this.sigConfig.directorName || '';
+    if (this.sigRoleTitleInput) this.sigRoleTitleInput.value = this.sigConfig.roleTitle || 'ប្រធានមណ្ឌល';
+    if (this.sigImgScaleRange) this.sigImgScaleRange.value = this.sigConfig.imgScale || 100;
+    if (this.sigImgScaleBadge) this.sigImgScaleBadge.textContent = `${this.sigConfig.imgScale || 100}%`;
+    if (this.sigImgOffsetXRange) this.sigImgOffsetXRange.value = this.sigConfig.imgX || 0;
+    if (this.sigImgOffsetXBadge) this.sigImgOffsetXBadge.textContent = `${this.sigConfig.imgX || 0} px`;
+    if (this.sigImgOffsetYRange) this.sigImgOffsetYRange.value = this.sigConfig.imgY || 0;
+    if (this.sigImgOffsetYBadge) this.sigImgOffsetYBadge.textContent = `${this.sigConfig.imgY || 0} px`;
+    if (this.sigTextSizeRange) this.sigTextSizeRange.value = this.sigConfig.textSize || 16;
+    if (this.sigTextSizeBadge) this.sigTextSizeBadge.textContent = `${this.sigConfig.textSize || 16} px`;
+    if (this.sigTextColorPicker) this.sigTextColorPicker.value = this.sigConfig.textColor || '#111827';
+    if (this.sigTextColorHex) this.sigTextColorHex.textContent = this.sigConfig.textColor || '#111827';
+    if (this.sigTextOffsetXRange) this.sigTextOffsetXRange.value = this.sigConfig.textX || 0;
+    if (this.sigTextOffsetXBadge) this.sigTextOffsetXBadge.textContent = `${this.sigConfig.textX || 0} px`;
+    if (this.sigTextOffsetYRange) this.sigTextOffsetYRange.value = this.sigConfig.textY || 0;
+    if (this.sigTextOffsetYBadge) this.sigTextOffsetYBadge.textContent = `${this.sigConfig.textY || 0} px`;
+    this.updateSigPreview();
+  }
+
+  updateSigPreview() {
+    if (!this.sigConfig) return;
+    const roleTitle = this.sigConfig.roleTitle || 'ប្រធានមណ្ឌល';
+    const directorName = this.sigConfig.directorName || '[ឈ្មោះប្រធានមណ្ឌល ឬ នាយក]';
+    const imgSrc = this.sigConfig.customImage || 'assets/Sinature Director.jpg';
+    const imgScale = (this.sigConfig.imgScale || 100) / 100;
+    const imgX = this.sigConfig.imgX || 0;
+    const imgY = this.sigConfig.imgY || 0;
+    const textSize = this.sigConfig.textSize || 16;
+    const textX = this.sigConfig.textX || 0;
+    const textY = this.sigConfig.textY || 0;
+
+    if (this.sigPreviewRoleTitle) {
+      this.sigPreviewRoleTitle.textContent = roleTitle;
+    }
+    if (this.sigPreviewImg) {
+      this.sigPreviewImg.src = imgSrc;
+      this.sigPreviewImg.style.transform = `translate(${imgX}px, ${imgY}px) scale(${imgScale})`;
+      this.sigPreviewImg.style.transformOrigin = 'center center';
+    }
+    if (this.sigPreviewDirectorName) {
+      this.sigPreviewDirectorName.textContent = directorName;
+      this.sigPreviewDirectorName.style.fontSize = `${textSize}px`;
+      this.sigPreviewDirectorName.style.color = this.sigConfig.textColor || '#111827';
+      this.sigPreviewDirectorName.style.transform = `translate(${textX}px, ${textY}px)`;
+      this.sigPreviewDirectorName.style.transformOrigin = 'center center';
+    }
+  }
+
+  openSignatureSettingsModal() {
+    this.loadSigConfig();
+    this.syncSigControlsFromState();
+    if (this.signatureSettingsModal) {
+      this.signatureSettingsModal.classList.add('open');
+    }
+  }
+
+  closeSignatureSettingsModal() {
+    if (this.signatureSettingsModal) {
+      this.signatureSettingsModal.classList.remove('open');
+    }
+  }
+
+  initSignatureSettingsEvents() {
+    if (this.btnOpenSignatureSettingsModal) {
+      this.btnOpenSignatureSettingsModal.addEventListener('click', () => this.openSignatureSettingsModal());
+    }
+    if (this.btnCloseSigSettingsModal) {
+      this.btnCloseSigSettingsModal.addEventListener('click', () => this.closeSignatureSettingsModal());
+    }
+    if (this.btnSaveSigSettingsModal) {
+      this.btnSaveSigSettingsModal.addEventListener('click', () => {
+        this.saveSigConfig();
+        this.closeSignatureSettingsModal();
+        this.renderExamAttendanceDoc();
+        this.showToast('បានរក្សាទុកការកំណត់ហត្ថលេខា និងឈ្មោះ!', 'success');
+      });
+    }
+
+    // Close on backdrop click
+    if (this.signatureSettingsModal) {
+      this.signatureSettingsModal.addEventListener('click', (e) => {
+        if (e.target === this.signatureSettingsModal) {
+          this.closeSignatureSettingsModal();
+        }
+      });
+    }
+
+    // Image Upload
+    if (this.btnUploadSigImage && this.sigImageFileInput) {
+      this.btnUploadSigImage.addEventListener('click', () => this.sigImageFileInput.click());
+      this.sigImageFileInput.addEventListener('change', (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+          this.showToast('សូមជ្រើសរើសឯកសាររូបភាព (Image) ត្រឹមត្រូវ!', 'error');
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = (evt) => {
+          this.sigConfig.customImage = evt.target.result;
+          this.saveSigConfig();
+          this.updateSigPreview();
+          this.renderExamAttendanceDoc();
+          this.showToast('បានផ្ទុកឡើងរូបភាពហត្ថលេខាថ្មីដោយជោគជ័យ!', 'success');
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // Reset Image to Default
+    if (this.btnResetSigImage) {
+      this.btnResetSigImage.addEventListener('click', () => {
+        this.sigConfig.customImage = '';
+        if (this.sigImageFileInput) this.sigImageFileInput.value = '';
+        this.saveSigConfig();
+        this.updateSigPreview();
+        this.renderExamAttendanceDoc();
+        this.showToast('បានប្ដូរមកប្រើរូបភាពហត្ថលេខាដើមវិញ!', 'info');
+      });
+    }
+
+    // Image Scale Slider & Buttons
+    if (this.sigImgScaleRange) {
+      this.sigImgScaleRange.addEventListener('input', () => {
+        this.sigConfig.imgScale = parseInt(this.sigImgScaleRange.value, 10);
+        if (this.sigImgScaleBadge) this.sigImgScaleBadge.textContent = `${this.sigConfig.imgScale}%`;
+        this.saveSigConfig();
+        this.updateSigPreview();
+        this.renderExamAttendanceDoc();
+      });
+    }
+    if (this.btnSigImgScaleDec && this.sigImgScaleRange) {
+      this.btnSigImgScaleDec.addEventListener('click', () => {
+        const cur = parseInt(this.sigImgScaleRange.value, 10);
+        this.sigImgScaleRange.value = Math.max(40, cur - 5);
+        this.sigImgScaleRange.dispatchEvent(new Event('input'));
+      });
+    }
+    if (this.btnSigImgScaleInc && this.sigImgScaleRange) {
+      this.btnSigImgScaleInc.addEventListener('click', () => {
+        const cur = parseInt(this.sigImgScaleRange.value, 10);
+        this.sigImgScaleRange.value = Math.min(250, cur + 5);
+        this.sigImgScaleRange.dispatchEvent(new Event('input'));
+      });
+    }
+
+    // Image Offset X (Left / Right)
+    if (this.sigImgOffsetXRange) {
+      this.sigImgOffsetXRange.addEventListener('input', () => {
+        this.sigConfig.imgX = parseInt(this.sigImgOffsetXRange.value, 10);
+        if (this.sigImgOffsetXBadge) this.sigImgOffsetXBadge.textContent = `${this.sigConfig.imgX} px`;
+        this.saveSigConfig();
+        this.updateSigPreview();
+        this.renderExamAttendanceDoc();
+      });
+    }
+    if (this.btnSigImgXDec && this.sigImgOffsetXRange) {
+      this.btnSigImgXDec.addEventListener('click', () => {
+        const cur = parseInt(this.sigImgOffsetXRange.value, 10);
+        this.sigImgOffsetXRange.value = Math.max(-150, cur - 4);
+        this.sigImgOffsetXRange.dispatchEvent(new Event('input'));
+      });
+    }
+    if (this.btnSigImgXInc && this.sigImgOffsetXRange) {
+      this.btnSigImgXInc.addEventListener('click', () => {
+        const cur = parseInt(this.sigImgOffsetXRange.value, 10);
+        this.sigImgOffsetXRange.value = Math.min(150, cur + 4);
+        this.sigImgOffsetXRange.dispatchEvent(new Event('input'));
+      });
+    }
+
+    // Image Offset Y (Up / Down)
+    if (this.sigImgOffsetYRange) {
+      this.sigImgOffsetYRange.addEventListener('input', () => {
+        this.sigConfig.imgY = parseInt(this.sigImgOffsetYRange.value, 10);
+        if (this.sigImgOffsetYBadge) this.sigImgOffsetYBadge.textContent = `${this.sigConfig.imgY} px`;
+        this.saveSigConfig();
+        this.updateSigPreview();
+        this.renderExamAttendanceDoc();
+      });
+    }
+    if (this.btnSigImgYDec && this.sigImgOffsetYRange) {
+      this.btnSigImgYDec.addEventListener('click', () => {
+        const cur = parseInt(this.sigImgOffsetYRange.value, 10);
+        this.sigImgOffsetYRange.value = Math.max(-80, cur - 4);
+        this.sigImgOffsetYRange.dispatchEvent(new Event('input'));
+      });
+    }
+    if (this.btnSigImgYInc && this.sigImgOffsetYRange) {
+      this.btnSigImgYInc.addEventListener('click', () => {
+        const cur = parseInt(this.sigImgOffsetYRange.value, 10);
+        this.sigImgOffsetYRange.value = Math.min(80, cur + 4);
+        this.sigImgOffsetYRange.dispatchEvent(new Event('input'));
+      });
+    }
+
+    // Role Title Input
+    if (this.sigRoleTitleInput) {
+      this.sigRoleTitleInput.addEventListener('input', () => {
+        this.sigConfig.roleTitle = this.sigRoleTitleInput.value.trim() || 'ប្រធានមណ្ឌល';
+        this.saveSigConfig();
+        this.updateSigPreview();
+        this.renderExamAttendanceDoc();
+      });
+    }
+
+    // Director Name Input inside Modal
+    if (this.sigDirectorNameModalInput) {
+      this.sigDirectorNameModalInput.addEventListener('input', () => {
+        this.sigConfig.directorName = this.sigDirectorNameModalInput.value;
+        if (this.examDirectorNameInput) {
+          this.examDirectorNameInput.value = this.sigDirectorNameModalInput.value;
+        }
+        this.saveSigConfig();
+        this.updateSigPreview();
+        this.renderExamAttendanceDoc();
+      });
+    }
+
+    // Text Size Slider & Buttons
+    if (this.sigTextSizeRange) {
+      this.sigTextSizeRange.addEventListener('input', () => {
+        this.sigConfig.textSize = parseInt(this.sigTextSizeRange.value, 10);
+        if (this.sigTextSizeBadge) this.sigTextSizeBadge.textContent = `${this.sigConfig.textSize} px`;
+        this.saveSigConfig();
+        this.updateSigPreview();
+        this.renderExamAttendanceDoc();
+      });
+    }
+    if (this.btnSigTextSizeDec && this.sigTextSizeRange) {
+      this.btnSigTextSizeDec.addEventListener('click', () => {
+        const cur = parseInt(this.sigTextSizeRange.value, 10);
+        this.sigTextSizeRange.value = Math.max(11, cur - 1);
+        this.sigTextSizeRange.dispatchEvent(new Event('input'));
+      });
+    }
+    if (this.btnSigTextSizeInc && this.sigTextSizeRange) {
+      this.btnSigTextSizeInc.addEventListener('click', () => {
+        const cur = parseInt(this.sigTextSizeRange.value, 10);
+        this.sigTextSizeRange.value = Math.min(28, cur + 1);
+        this.sigTextSizeRange.dispatchEvent(new Event('input'));
+      });
+    }
+
+    // Text Color Picker
+    if (this.sigTextColorPicker) {
+      this.sigTextColorPicker.addEventListener('input', () => {
+        this.sigConfig.textColor = this.sigTextColorPicker.value;
+        if (this.sigTextColorHex) this.sigTextColorHex.textContent = this.sigTextColorPicker.value;
+        this.saveSigConfig();
+        this.updateSigPreview();
+        this.renderExamAttendanceDoc();
+      });
+    }
+
+    // Text Color Presets
+    document.querySelectorAll('.sig-color-preset-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const color = btn.getAttribute('data-color');
+        if (!color) return;
+        this.sigConfig.textColor = color;
+        if (this.sigTextColorPicker) this.sigTextColorPicker.value = color;
+        if (this.sigTextColorHex) this.sigTextColorHex.textContent = color;
+        this.saveSigConfig();
+        this.updateSigPreview();
+        this.renderExamAttendanceDoc();
+      });
+    });
+
+    // Text Offset X (Left / Right)
+    if (this.sigTextOffsetXRange) {
+      this.sigTextOffsetXRange.addEventListener('input', () => {
+        this.sigConfig.textX = parseInt(this.sigTextOffsetXRange.value, 10);
+        if (this.sigTextOffsetXBadge) this.sigTextOffsetXBadge.textContent = `${this.sigConfig.textX} px`;
+        this.saveSigConfig();
+        this.updateSigPreview();
+        this.renderExamAttendanceDoc();
+      });
+    }
+    if (this.btnSigTextXDec && this.sigTextOffsetXRange) {
+      this.btnSigTextXDec.addEventListener('click', () => {
+        const cur = parseInt(this.sigTextOffsetXRange.value, 10);
+        this.sigTextOffsetXRange.value = Math.max(-150, cur - 4);
+        this.sigTextOffsetXRange.dispatchEvent(new Event('input'));
+      });
+    }
+    if (this.btnSigTextXInc && this.sigTextOffsetXRange) {
+      this.btnSigTextXInc.addEventListener('click', () => {
+        const cur = parseInt(this.sigTextOffsetXRange.value, 10);
+        this.sigTextOffsetXRange.value = Math.min(150, cur + 4);
+        this.sigTextOffsetXRange.dispatchEvent(new Event('input'));
+      });
+    }
+
+    // Text Offset Y (Up / Down)
+    if (this.sigTextOffsetYRange) {
+      this.sigTextOffsetYRange.addEventListener('input', () => {
+        this.sigConfig.textY = parseInt(this.sigTextOffsetYRange.value, 10);
+        if (this.sigTextOffsetYBadge) this.sigTextOffsetYBadge.textContent = `${this.sigConfig.textY} px`;
+        this.saveSigConfig();
+        this.updateSigPreview();
+        this.renderExamAttendanceDoc();
+      });
+    }
+    if (this.btnSigTextYDec && this.sigTextOffsetYRange) {
+      this.btnSigTextYDec.addEventListener('click', () => {
+        const cur = parseInt(this.sigTextOffsetYRange.value, 10);
+        this.sigTextOffsetYRange.value = Math.max(-60, cur - 4);
+        this.sigTextOffsetYRange.dispatchEvent(new Event('input'));
+      });
+    }
+    if (this.btnSigTextYInc && this.sigTextOffsetYRange) {
+      this.btnSigTextYInc.addEventListener('click', () => {
+        const cur = parseInt(this.sigTextOffsetYRange.value, 10);
+        this.sigTextOffsetYRange.value = Math.min(60, cur + 4);
+        this.sigTextOffsetYRange.dispatchEvent(new Event('input'));
+      });
+    }
+
+    // Reset All Settings Button
+    if (this.btnResetAllSigSettings) {
+      this.btnResetAllSigSettings.addEventListener('click', () => {
+        if (!confirm('តើអ្នកពិតជាចង់កំណត់ឡើងវិញនូវការកំណត់ហត្ថលេខាទាំងអស់មែនទេ?')) return;
+        this.sigConfig = {
+          customImage: '',
+          roleTitle: 'ប្រធានមណ្ឌល',
+          directorName: '',
+          textColor: '#111827',
+          imgScale: 100,
+          imgX: 0,
+          imgY: 0,
+          textSize: 16,
+          textX: 0,
+          textY: 0
+        };
+        if (this.sigImageFileInput) this.sigImageFileInput.value = '';
+        this.saveSigConfig();
+        this.syncSigControlsFromState();
+        this.renderExamAttendanceDoc();
+        this.showToast('បានកំណត់ការកំណត់ឡើងវិញជាលំនាំដើម!', 'info');
+      });
+    }
+  }
+
+  // Export CSV methods for Exam
+  exportExamListCSV() {
+    const list = this.examArrangements || [];
+    if (list.length === 0) {
+      this.showToast('មិនមានទិន្នន័យសម្រាប់ទាញយកឡើយ!', 'error');
+      return;
+    }
+
+    let csv = '\uFEFF';
+    csv += 'ល.រ,អត្តលេខ,គោត្តនាមនិងនាម,ភេទ,ថ្ងៃខែឆ្នាំកំណើត,ថ្នាក់ទី,ស្ថានភាពសិស្ស,លេខបន្ទប់,លេខតុ\n';
+    list.forEach((item, idx) => {
+      csv += `"${idx + 1}","${item.studentId}","${item.khmerName}","${item.gender}","${item.dob}","${item.grade}","${item.status}","${item.roomNumber}","${item.deskNumber}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `បញ្ជីរៀបចំការប្រឡង_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.showToast('បានទាញយកបញ្ជីរៀបចំការប្រឡងរួចរាល់!', 'success');
+  }
+
+  exportExamSecretCSV() {
+    const list = this.examArrangements || [];
+    if (list.length === 0) {
+      this.showToast('មិនមានទិន្នន័យសម្រាប់ទាញយកឡើយ!', 'error');
+      return;
+    }
+
+    let csv = '\uFEFF';
+    csv += 'ល.រ,អត្តលេខ,គោត្តនាមនិងនាម,ភេទ,ថ្នាក់ទី,លេខបន្ទប់,លេខតុ,អក្សរសម្ងាត់\n';
+    list.forEach((item, idx) => {
+      csv += `"${idx + 1}","${item.studentId}","${item.khmerName}","${item.gender}","${item.grade}","${item.roomNumber}","${item.deskNumber}","${item.secretCode || ''}"\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `បញ្ជីអក្សរសម្ងាត់ប្រឡង_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.showToast('បានទាញយកបញ្ជីអក្សរសម្ងាត់រួចរាល់!', 'success');
+  }
+
+  exportExamAttendanceCSV() {
+    const list = this.examArrangements || [];
+    if (list.length === 0) {
+      this.showToast('មិនមានទិន្នន័យសម្រាប់ទាញយកឡើយ!', 'error');
+      return;
+    }
+
+    const selectedGrade = this.examAttendanceGradeSelect ? this.examAttendanceGradeSelect.value : 'ALL';
+    let targetGradeKey = selectedGrade !== 'ALL' ? selectedGrade : 'grade_7';
+    if (selectedGrade === 'ALL' && list[0]) {
+      ['grade_7', 'grade_8', 'grade_9', 'grade_10', 'grade_11_sci', 'grade_11_soc', 'grade_12_sci', 'grade_12_soc'].forEach(g => {
+        if (this.studentMatchesGrade(list[0], g)) targetGradeKey = g;
+      });
+    }
+
+    if (!this.examSubjectOrders) this.examSubjectOrders = this.getDefaultExamSubjectOrders();
+    const defaultOrders = this.getDefaultExamSubjectOrders();
+    const orderedSubjects = (this.examSubjectOrders[targetGradeKey] && this.examSubjectOrders[targetGradeKey].length > 0)
+      ? this.examSubjectOrders[targetGradeKey]
+      : (defaultOrders[targetGradeKey] || defaultOrders.grade_7);
+
+    let csv = '\uFEFF';
+    csv += `លេខបន្ទប់,លេខតុ,គោត្តនាម និង នាម,ភេទ,ថ្ងៃ.ខែ.ឆ្នាំកំណើត,ថ្នាក់ទី,${orderedSubjects.map(s => `"${s}"`).join(',')}\n`;
+    const emptySubjectCols = orderedSubjects.map(() => '""').join(',');
+    list.forEach((item, idx) => {
+      const deskNum = parseInt(item.deskNumber, 10) || (idx + 1);
+      csv += `"${item.roomNumber}","${deskNum}","${this.cleanStudentName(item.khmerName)}","${item.gender}","${item.dob}","${item.grade}",${emptySubjectCols}\n`;
+    });
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `បញ្ជីស្រង់វត្តមានសិស្សតាមបន្ទប់_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.showToast('បានទាញយកបញ្ជីវត្តមានរួចរាល់!', 'success');
+  }
+
+  // ==========================================================================
+  // Student Import Engine (Excel XLSX & CSV) with Class & Class Type
+  // ==========================================================================
+  populateImportClassDropdown() {
+    if (!this.importDefaultClass) return;
+
+    const currentVal = this.importDefaultClass.value;
+    this.importDefaultClass.innerHTML = '';
+
+    // Option 1: Keep Existing Class (for Update / Merge)
+    const optKeep = document.createElement('option');
+    optKeep.value = '__KEEP_EXISTING__';
+    optKeep.textContent = '⚡ រក្សាទុកថ្នាក់ដែលមានស្រាប់ (សម្រាប់ Update សិស្សចាស់)';
+    this.importDefaultClass.appendChild(optKeep);
+
+    const allGradeGroups = [
+      { key: 'grade_7', label: 'ថ្នាក់ទី ៧' },
+      { key: 'grade_8', label: 'ថ្នាក់ទី ៨' },
+      { key: 'grade_9', label: 'ថ្នាក់ទី ៩' },
+      { key: 'grade_10', label: 'ថ្នាក់ទី ១០' },
+      { key: 'grade_11_sci', label: 'ថ្នាក់ទី ១១ វិទ្យាសាស្ត្រ' },
+      { key: 'grade_11_soc', label: 'ថ្នាក់ទី ១១ វិទ្យាសាស្ត្រសង្គម' },
+      { key: 'grade_12_sci', label: 'ថ្នាក់ទី ១២ វិទ្យាសាស្ត្រ' },
+      { key: 'grade_12_soc', label: 'ថ្នាក់ទី ១២ វិទ្យាសាស្ត្រសង្គម' }
+    ];
+
+    allGradeGroups.forEach(g => {
+      const optGroup = document.createElement('optgroup');
+      optGroup.label = g.label;
+
+      const classes = this.getClassListForGradeKey(g.key);
+      classes.forEach(cls => {
+        const opt = document.createElement('option');
+        opt.value = cls;
+        opt.textContent = `ថ្នាក់ ${cls}`;
+        optGroup.appendChild(opt);
+      });
+
+      this.importDefaultClass.appendChild(optGroup);
+    });
+
+    // Auto-select preferred section matching active view
+    let preferredClass = '';
+    if (this.activeSection) {
+      preferredClass = this.formatSectionClassName(this.activeClass, this.activeSection);
+    } else {
+      const activeClasses = this.getClassListForGradeKey(this.activeClass);
+      if (activeClasses.length > 0) preferredClass = activeClasses[0];
+    }
+
+    if (currentVal && Array.from(this.importDefaultClass.options).some(o => o.value === currentVal)) {
+      this.importDefaultClass.value = currentVal;
+    } else if (preferredClass && Array.from(this.importDefaultClass.options).some(o => o.value === preferredClass)) {
+      this.importDefaultClass.value = preferredClass;
+    }
+
+    this.syncImportClassTypeWithSelectedClass();
+  }
+
+  syncImportClassTypeWithSelectedClass() {
+    if (!this.importDefaultClass || !this.importDefaultClassType) return;
+    const selectedClass = this.importDefaultClass.value;
+
+    if (selectedClass === '__KEEP_EXISTING__') {
+      this.importDefaultClassType.disabled = false;
+      return;
+    }
+
+    // Lower secondary (Grade 7, 8, 9, 10): ALWAYS General (ទូទៅ)
+    if (/^(ថ្នាក់ទី\s*)?(7|8|9|10|[៧៨៩]|១០)/i.test(selectedClass)) {
+      this.importDefaultClassType.value = 'ទូទៅ';
+      this.importDefaultClassType.disabled = true;
+    } else if (selectedClass.includes('សង្គម') || /^(11|12)[D-Z]/i.test(selectedClass)) {
+      this.importDefaultClassType.value = 'វិទ្យាសាស្ត្រសង្គម';
+      this.importDefaultClassType.disabled = false;
+    } else if (selectedClass.includes('វិទ្យាសាស្ត្រ') || /^(11|12)[A-C]/i.test(selectedClass)) {
+      this.importDefaultClassType.value = 'វិទ្យាសាស្ត្រ';
+      this.importDefaultClassType.disabled = false;
+    } else {
+      this.importDefaultClassType.disabled = false;
+    }
+  }
+
+  openImportStudentModal() {
+    this.parsedImportStudents = [];
+    if (this.importStudentFileInput) this.importStudentFileInput.value = '';
+    if (this.importFileStatus) this.importFileStatus.innerHTML = '';
+    if (this.importPreviewContainer) this.importPreviewContainer.style.display = 'none';
+    if (this.btnConfirmImportStudents) this.btnConfirmImportStudents.disabled = true;
+    this.populateImportClassDropdown();
+    if (this.importStudentModal) this.importStudentModal.classList.add('open');
+  }
+
+  closeImportStudentModal() {
+    if (this.importStudentModal) this.importStudentModal.classList.remove('open');
+  }
+
+  downloadImportTemplate() {
+    let csv = '\uFEFF'; // UTF-8 BOM
+    csv += 'អត្តលេខ,គោត្តនាមនិងនាម,ឈ្មោះឡាតាំង,ភេទ,ថ្ងៃខែឆ្នាំកំណើត,ថ្នាក់,ប្រភេទថ្នាក់,លេខទូរស័ព្ទ,អាណាព្យាបាល,អាសយដ្ឋាន\n';
+    csv += '"STU-001","សុខ ចាន់ដារ៉ា","SOK CHANDARA","ប្រុស","2008-03-15","7A","ទូទៅ","012345678","សុខ មាស","ភ្នំពេញ"\n';
+    csv += '"STU-002","ចាន់ ធីតា","CHAN THIDA","ស្រី","2008-07-20","7B","ទូទៅ","098765432","ចាន់ សុភ័ក្ត្រ","កណ្ដាល"\n';
+    csv += '"STU-003","កែវ សុភា","KEO SOPHEA","ស្រី","2008-01-10","11A","វិទ្យាសាស្ត្រ","011223344","កែវ សុខុម","សៀមរាប"\n';
+    csv += '"STU-004","រស់ វីរៈ","ROS VIRAK","ប្រុស","2008-05-18","11B","វិទ្យាសាស្ត្រសង្គម","097123456","រស់ សារ៉ាត់","បាត់ដំបង"\n';
+
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `គំរូនាំចូលសិស្ស_SMS_Template.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    this.showToast('បានទាញយកទម្រង់គំរូនាំចូលសិស្ស (CSV Template) រួចរាល់!', 'success');
+  }
+
+  handleStudentFileSelect(e) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+    const fileName = file.name;
+    const fileExt = fileName.split('.').pop().toLowerCase();
+
+    if (this.importFileStatus) {
+      this.importFileStatus.innerHTML = `<span style="color: var(--primary);"><i class="ri-file-line"></i> បានជ្រើសរើស: <strong>${fileName}</strong> (${(file.size / 1024).toFixed(1)} KB)</span>`;
+    }
+
+    if (fileExt === 'xlsx' || fileExt === 'xls') {
+      if (typeof XLSX === 'undefined') {
+        this.showToast('កំពុងផ្ទុកបណ្ណាល័យ XLSX សូមរង់ចាំបន្តិច...', 'info');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const data = new Uint8Array(evt.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+          this.processImportRows(rows);
+        } catch (err) {
+          if (this.importFileStatus) {
+            this.importFileStatus.innerHTML = `<span style="color: var(--danger);"><i class="ri-error-warning-line"></i> មិនអាចអានឯកសារ Excel: ${err.message}</span>`;
+          }
+          this.showToast('មានបញ្ហាក្នុងការអានឯកសារ Excel!', 'error');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    } else {
+      // CSV or plain text
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const text = evt.target.result;
+          const rows = this.parseCSVText(text);
+          this.processImportRows(rows);
+        } catch (err) {
+          if (this.importFileStatus) {
+            this.importFileStatus.innerHTML = `<span style="color: var(--danger);"><i class="ri-error-warning-line"></i> មិនអាចអានឯកសារ CSV: ${err.message}</span>`;
+          }
+          this.showToast('មានបញ្ហាក្នុងការអានឯកសារ CSV!', 'error');
+        }
+      };
+      reader.readAsText(file);
+    }
+  }
+
+  parseCSVText(text) {
+    const cleanText = text.replace(/^\uFEFF/, '');
+    const lines = cleanText.split(/\r?\n/).filter(line => line.trim() !== '');
+    return lines.map(line => this.parseCSVLine(line));
+  }
+
+  parseCSVLine(line) {
+    const row = [];
+    let insideQuote = false;
+    let field = '';
+    for (let i = 0; i < line.length; i++) {
+      const c = line[i];
+      if (c === '"') {
+        if (insideQuote && line[i + 1] === '"') {
+          field += '"';
+          i++;
+        } else {
+          insideQuote = !insideQuote;
+        }
+      } else if (c === ',' && !insideQuote) {
+        row.push(field.trim());
+        field = '';
+      } else {
+        field += c;
+      }
+    }
+    row.push(field.trim());
+    return row;
+  }
+
+  isGeipFormat(rawRows) {
+    if (!rawRows || rawRows.length === 0) return false;
+    for (let r = 0; r < Math.min(5, rawRows.length); r++) {
+      const rowStr = rawRows[r].map(c => String(c || '').toLowerCase()).join(' ');
+      if (rowStr.includes('geip-id') || rowStr.includes('geip') ||
+        (rowStr.includes('នាមត្រកូល') && rowStr.includes('នាមខ្លួន')) ||
+        (rowStr.includes('ឧបករណ៍ជំនួយ') && rowStr.includes('លក្ខខណ្ឌ'))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  processGeipImportRows(rawRows) {
+    let headerRowIndex = -1;
+    // Find header row containing GEIP-ID or នាមត្រកូល
+    for (let r = 0; r < Math.min(5, rawRows.length); r++) {
+      const rowStr = rawRows[r].map(c => String(c || '').toLowerCase()).join(' ');
+      if (rowStr.includes('geip') || rowStr.includes('នាមត្រកូល') || (rowStr.includes('អត្តលេខ') && rowStr.includes('ភេទ'))) {
+        headerRowIndex = r;
+        break;
+      }
+    }
+
+    if (headerRowIndex === -1) {
+      headerRowIndex = 0;
+    }
+
+    const headerCells = rawRows[headerRowIndex].map(c => String(c || '').trim());
+    const findCol = (predicate) => {
+      return headerCells.findIndex((h, idx) => predicate(h.toLowerCase(), idx));
+    };
+
+    const cGeipId = findCol(h => h.includes('geip-id') || h.includes('geip'));
+    const cId = findCol(h => h.includes('អត្តលេខ') || h === 'id');
+    const cLastName = findCol(h => h.includes('នាមត្រកូល') || h.includes('ត្រកូល'));
+    const cFirstName = findCol(h => h.includes('នាមខ្លួន'));
+    const cFullName = findCol(h => h.includes('គោត្តនាម') || h.includes('ឈ្មោះសិស្ស') || (h.includes('ឈ្មោះ') && !h.includes('ឪពុក') && !h.includes('ម្តាយ') && !h.includes('សាលា') && !h.includes('អ្នកមើល')));
+    const cGender = findCol(h => h.includes('ភេទ') || h === 'gender');
+    const cDay = findCol(h => h.includes('ថ្ងៃ') && (h.includes('dd') || h.includes('(25)')));
+    const cMonth = findCol(h => h.includes('ខែ') && (h.includes('mm') || h.includes('(10)')));
+    const cYear = findCol(h => h.includes('ឆ្នាំ') && (h.includes('yyyy') || h.includes('(2004)')));
+    const cDob = findCol(h => h.includes('dd/mm/yyyy') || h.includes('ថ្ងៃខែឆ្នាំកំណើត') || h.includes('កំណើត'));
+    const cAge = findCol(h => h.includes('អាយុ') || h === 'age');
+    const cPisa = findCol(h => h.includes('pisa'));
+    const cGrade = findCol(h => h.includes('ថ្នាក់ទី') || h === 'ថ្នាក់');
+    const cRoom = findCol(h => h.includes('បន្ទប់') && !h.includes('ប្រឡង'));
+    const cClassType = findCol(h => h.includes('ប្រភេទថ្នាក់') || h.includes('ផ្នែក'));
+    const cStudentType = findCol(h => h.includes('ប្រភេទសិស្ស'));
+    const cCondition = findCol(h => h.includes('លក្ខខណ្ឌ'));
+    const cFromSchoolType = findCol(h => h.includes('មកពីសាលារៀន') || h.includes('មកពីសាលា'));
+    const cSchoolAffil = findCol(h => h.includes('សាលាចំណុះ') || h.includes('ចំណុះ'));
+    const cSchoolName = findCol(h => h.includes('ឈ្មោះសាលា') || h.includes('បឋមសិក្សា'));
+    const cIndigenous = findCol(h => h.includes('ជនជាតិដើម'));
+    const cDisability = findCol(h => h.includes('ពិការភាព'));
+    const cAssistive = findCol(h => h.includes('ឧបករណ៍ជំនួយ'));
+    const cOrphan = findCol(h => h.includes('កំព្រា'));
+    const cIdPoor = findCol(h => h.includes('បណ្ណក្រីក្រ') || h.includes('ក្រីក្រ'));
+    const cScholarship = findCol(h => h.includes('អាហារូបករណ៍'));
+    const cInsurance = findCol(h => h.includes('ធានារ៉ាប់រង') || h.includes('ធានារ៉ាបរង'));
+    const cBirthCert = findCol(h => h.includes('សំបុត្រកំណើត'));
+    const cStudentPhone = findCol(h => h.includes('ទូរស័ព្ទសិស្ស') || (h.includes('ទូរស័ព្ទ') && !h.includes('ឪពុក') && !h.includes('ម្តាយ') && !h.includes('អាណាព្យាបាល') && !h.includes('ព្យាបាល')));
+    const cPob = findCol(h => h.includes('ទីកន្លែងកំណើត') || h.includes('កន្លែងកំណើត'));
+    const cFatherName = findCol(h => h.includes('ឈ្មោះឪពុក'));
+    const cMotherName = findCol(h => h.includes('ឈ្មោះម្តាយ') || h.includes('ឈ្មោះម្ដាយ'));
+    const cFatherJob = findCol((h, idx) => h.includes('មុខរបរ') && idx > cFatherName && (cMotherName === -1 || idx < cMotherName));
+    const cFatherPhone = findCol((h, idx) => (h.includes('ទូស័ព្ទ') || h.includes('ទូរស័ព្ទ')) && idx > cFatherName && (cMotherName === -1 || idx < cMotherName));
+    const cMotherJob = findCol((h, idx) => h.includes('មុខរបរ') && idx > cMotherName);
+    const cMotherPhone = findCol((h, idx) => (h.includes('ទូស័ព្ទ') || h.includes('ទូរស័ព្ទ')) && idx > cMotherName);
+    const cAddress = findCol(h => h.includes('អាសយដ្ឋានបច្ចុប្បន្ន') || h.includes('អាសយដ្ឋាន'));
+    const cGuardian = findCol(h => h.includes('អាណាព្យាបាល'));
+    const cCaregiver = findCol(h => h.includes('អ្នកមើលថែទាំ'));
+    const cShelter = findCol(h => h.includes('ផ្ទះសំបែង') || h.includes('ជម្រក'));
+    const cIncome = findCol(h => h.includes('ប្រាក់ចំណូល') || h.includes('ចំណូល'));
+    const cMigration = findCol(h => h.includes('ចំណាកស្រុក'));
+    const cDomesticViolence = findCol(h => h.includes('ហិង្សា') || h.includes('ហឹង្សា'));
+    const cLivingCondition = findCol(h => h.includes('ស្ថានភាពរស់នៅ'));
+    const cSiblings = findCol(h => h.includes('បងប្អូនបង្កើត'));
+    const cChronicDisease = findCol(h => h.includes('ឈ្មោះជំងឺ') || h.includes('ជំងឺប្រចាំកាយ'));
+    const cTreatmentPlan = findCol(h => h.includes('ផែនការព្យាបាល'));
+    const cTreatmentMeans = findCol(h => h.includes('មធ្យោបាយព្យាបាល'));
+    const cHealthProvider = findCol(h => h.includes('អ្នកផ្ដល់ការព្យាបាល') || h.includes('អ្នកផ្តល់ការព្យាបាល'));
+    const cHealthPhone = findCol(h => h.includes('ទូរស័ព្ទអ្នកផ្តល់') || h.includes('ទូរសព្ទអ្នកផ្តល់'));
+    const cWeight = findCol(h => h.includes('ទម្ងន់') || h.includes('weight'));
+    const cHeight = findCol(h => h.includes('កម្ពស់') || h.includes('height'));
+    const cBmi = findCol(h => h === 'bmi' || h.includes('bmi'));
+    const cAssessment = findCol(h => h.includes('វាយតម្លៃ'));
+    const cNutrition = findCol(h => h.includes('អាហារូបត្ថម្ភ') || h.includes('អាហារូបបត្ថម្ភ'));
+    const cStudentStatus = findCol(h => h.includes('ស្ថានភាពសិស្ស'));
+    const cDropoutDate = findCol(h => h.includes('ពេលវេលា') || h.includes('កាលបរិច្ឆេទ'));
+    const cDropoutReason = findCol(h => h.includes('មូលហេតុ') || h.includes('បោះបង់'));
+    const cYouthCouncil = findCol(h => h.includes('ក្រុមប្រឹក្សាយុវជន') || h.includes('ក្រុមប្រឹក្សា'));
+
+    const importedStudents = [];
+    let autoIdCounter = this.students.length + 1;
+
+    for (let r = headerRowIndex + 1; r < rawRows.length; r++) {
+      const row = rawRows[r];
+      if (!row || row.length === 0 || row.every(c => !String(c || '').trim())) continue;
+
+      const getVal = (colIdx) => {
+        if (colIdx < 0 || colIdx >= row.length) return '';
+        const v = row[colIdx];
+        if (v === null || v === undefined) return '';
+        if (v instanceof Date) {
+          const dd = String(v.getDate()).padStart(2, '0');
+          const mm = String(v.getMonth() + 1).padStart(2, '0');
+          const yyyy = v.getFullYear();
+          return `${dd}/${mm}/${yyyy}`;
+        }
+        return String(v).trim();
+      };
+
+      let geipId = getVal(cGeipId);
+      let id = getVal(cId);
+      let lastName = getVal(cLastName);
+      let firstName = getVal(cFirstName);
+      let fullName = getVal(cFullName);
+
+      let khmerName = '';
+      if (lastName && firstName) {
+        khmerName = `${lastName} ${firstName}`.trim();
+      } else if (fullName) {
+        khmerName = fullName;
+        const parts = fullName.split(/\s+/);
+        lastName = lastName || parts[0] || '';
+        firstName = firstName || parts.slice(1).join(' ') || '';
+      } else if (firstName) {
+        khmerName = firstName;
+      }
+
+      khmerName = this.cleanStudentName(khmerName);
+      if (!khmerName && !id && !geipId) continue;
+
+      if (!id) {
+        id = geipId || `STU-${String(autoIdCounter++).padStart(3, '0')}`;
+      }
+
+      let gender = getVal(cGender) || 'ស្រី';
+      if (/^(ប|ប្រុស|m|male)$/i.test(gender)) gender = 'ប្រុស';
+      else if (/^(ស|ស្រី|f|female)$/i.test(gender)) gender = 'ស្រី';
+
+      // DOB resolution
+      let dob = getVal(cDob);
+      if (!dob) {
+        const d = getVal(cDay);
+        const m = getVal(cMonth);
+        const y = getVal(cYear);
+        if (d && m && y) {
+          dob = `${String(d).padStart(2, '0')}/${String(m).padStart(2, '0')}/${y}`;
+        }
+      }
+      if (dob) {
+        dob = this.formatReportDob(dob);
+      }
+
+      // Class / Section resolution (e.g. "ថ្នាក់ទី 8" + "A" => "8A")
+      let rawGrade = getVal(cGrade) || this.importDefaultGrade?.value || 'ថ្នាក់ទី១២';
+      let rawRoom = getVal(cRoom) || '';
+      let className = rawGrade;
+
+      const gDigitMatch = rawGrade.match(/\b(7|8|9|10|11|12|[៧៨៩]|១០|១១|១២)\b/);
+      let gDigit = '';
+      if (gDigitMatch) {
+        const khMap = { '៧': '7', '៨': '8', '៩': '9', '១០': '10', '១១': '11', '១២': '12' };
+        gDigit = khMap[gDigitMatch[1]] || gDigitMatch[1];
+      }
+
+      if (gDigit && rawRoom) {
+        const cleanRoom = rawRoom.replace(/^(បន្ទប់|room|\s)+/i, '').trim().toUpperCase();
+        className = `${gDigit}${cleanRoom}`;
+      } else if (gDigit) {
+        className = `ថ្នាក់ទី${gDigit}`;
+      }
+
+      // Class Type
+      let classType = getVal(cClassType) || 'ទូទៅ';
+      if (className.includes('11') || className.includes('12')) {
+        if (/សង្គម|soc/i.test(classType)) classType = 'វិទ្យាសាស្ត្រសង្គម';
+        else if (/វិទ្យា|sci/i.test(classType)) classType = 'វិទ្យាសាស្ត្រ';
+      }
+
+      // Address & Geography
+      const address = getVal(cAddress);
+      let provCode = '', distCode = '', commCode = '', villCode = '';
+      if (address && window.CambodiaGeoHelper) {
+        const parsed = window.CambodiaGeoHelper.parseAddressString(address);
+        if (parsed) {
+          provCode = parsed.provinceCode || '';
+          distCode = parsed.districtCode || '';
+          commCode = parsed.communeCode || '';
+          villCode = parsed.villageCode || '';
+        }
+      }
+
+      // POB & Geography
+      const pobAddress = getVal(cPob);
+      let pobProvCode = '', pobDistCode = '', pobCommCode = '', pobVillCode = '';
+      if (pobAddress && window.CambodiaGeoHelper) {
+        const parsedPob = window.CambodiaGeoHelper.parseAddressString(pobAddress);
+        if (parsedPob) {
+          pobProvCode = parsedPob.provinceCode || '';
+          pobDistCode = parsedPob.districtCode || '';
+          pobCommCode = parsedPob.communeCode || '';
+          pobVillCode = parsedPob.villageCode || '';
+        }
+      }
+
+      // BMI & Assessment
+      const weight = getVal(cWeight);
+      const height = getVal(cHeight);
+      let bmi = getVal(cBmi);
+      let assessment = getVal(cAssessment);
+      if (weight && height && (!bmi || !assessment)) {
+        const w = parseFloat(weight);
+        let h = parseFloat(height);
+        if (w > 0 && h > 0) {
+          if (h > 3.0) h = h / 100;
+          bmi = (w / (h * h)).toFixed(1);
+          const numBmi = parseFloat(bmi);
+          if (numBmi < 18.5) assessment = 'ស្គម (Underweight)';
+          else if (numBmi < 23.0) assessment = 'ធម្មតា (Normal)';
+          else if (numBmi < 25.0) assessment = 'លើសទម្ងន់កម្រិតស្រាល (Overweight)';
+          else assessment = 'ធាត់ (Obese)';
+        }
+      }
+
+      // Age calculation if missing
+      let age = getVal(cAge);
+      if (!age && dob) {
+        const yM = dob.match(/\b(19\d\d|20\d\d)\b/);
+        if (yM) {
+          age = String(new Date().getFullYear() - parseInt(yM[1], 10));
+        }
+      }
+
+      const stuRecord = {
+        id,
+        geipId,
+        lastName,
+        firstName,
+        khmerName: khmerName || `${lastName} ${firstName}`.trim(),
+        latinName: '',
+        gender,
+        dob: dob || '',
+        age: age || '',
+        class: className,
+        classType,
+        pisa: getVal(cPisa) || '✖️',
+        studentType: getVal(cStudentType) || 'សិស្សចាស់',
+        condition: getVal(cCondition) || 'សិស្សដើមឆ្នាំ',
+        fromSchoolType: getVal(cFromSchoolType) || 'សាលាគោលដៅ',
+        schoolAffiliation: getVal(cSchoolAffil) || 'ចំណុះ',
+        previousSchool: getVal(cSchoolName),
+        pob: pobAddress,
+        birthPlace: pobAddress,
+        pobProvinceCode: pobProvCode,
+        pobDistrictCode: pobDistCode,
+        pobCommuneCode: pobCommCode,
+        pobVillageCode: pobVillCode,
+        address,
+        provinceCode: provCode,
+        districtCode: distCode,
+        communeCode: commCode,
+        villageCode: villCode,
+        indigenous: getVal(cIndigenous) || 'មិនមាន',
+        disability: getVal(cDisability) || 'មិនមាន',
+        assistiveDevice: getVal(cAssistive) || 'មិនមាន',
+        orphan: getVal(cOrphan) || 'មិនមាន',
+        idPoor: getVal(cIdPoor) || 'មិនមាន',
+        scholarship: getVal(cScholarship) || 'មិនមាន',
+        insuranceCardNo: getVal(cInsurance) || '',
+        birthCertNo: getVal(cBirthCert) || '',
+        studentPhone: getVal(cStudentPhone) || '',
+        phone: getVal(cStudentPhone) || '',
+        fatherName: getVal(cFatherName) || '',
+        fatherJob: getVal(cFatherJob) || '',
+        fatherPhone: getVal(cFatherPhone) || '',
+        motherName: getVal(cMotherName) || '',
+        motherJob: getVal(cMotherJob) || '',
+        motherPhone: getVal(cMotherPhone) || '',
+        guardian: getVal(cGuardian) || getVal(cFatherName) || getVal(cMotherName) || '',
+        caregiverName: getVal(cCaregiver) || '',
+        familyShelter: getVal(cShelter) || 'ផ្ទះផ្ទាល់ខ្លួន',
+        familyIncome: getVal(cIncome) || '',
+        migration: getVal(cMigration) || 'មិនមាន',
+        domesticViolence: getVal(cDomesticViolence) || 'មិនមាន',
+        livingCondition: getVal(cLivingCondition) || 'រស់នៅជាមួយឪពុកម្តាយ',
+        siblings: getVal(cSiblings) || '',
+        chronicDisease: getVal(cChronicDisease) || 'មិនមាន',
+        treatmentPlan: getVal(cTreatmentPlan) || 'មិនមាន',
+        treatmentMeans: getVal(cTreatmentMeans) || 'មិនមាន',
+        healthProvider: getVal(cHealthProvider) || '',
+        healthProviderPhone: getVal(cHealthPhone) || '',
+        weight: weight || '',
+        height: height || '',
+        bmi: bmi || '',
+        assessmentResult: assessment || '',
+        nutritionIssue: getVal(cNutrition) || 'មិនមាន',
+        studentStatus: getVal(cStudentStatus) || 'កំពុងរៀន',
+        statusDate: getVal(cDropoutDate) || '',
+        dropoutReason: getVal(cDropoutReason) || '',
+        youthCouncilRole: getVal(cYouthCouncil) || 'សមាជិក'
+      };
+
+      importedStudents.push(stuRecord);
+    }
+
+    if (importedStudents.length === 0) {
+      this.showToast('មិនអាចស្រង់ទិន្នន័យសិស្សពីឯកសារ GEIP បានឡើយ!', 'error');
+      return;
+    }
+
+    let updated = 0;
+    let added = 0;
+    importedStudents.forEach(newStu => {
+      const existingIdx = this.students.findIndex(s =>
+        (s.id && newStu.id && s.id.toLowerCase() === newStu.id.toLowerCase()) ||
+        (s.geipId && newStu.geipId && s.geipId === newStu.geipId) ||
+        (this.cleanStudentName(s.khmerName) === this.cleanStudentName(newStu.khmerName))
+      );
+
+      if (existingIdx !== -1) {
+        this.students[existingIdx] = {
+          ...this.students[existingIdx],
+          ...newStu,
+          id: this.students[existingIdx].id || newStu.id
+        };
+        updated++;
+      } else {
+        this.students.push(newStu);
+        added++;
+      }
+
+      if (!this.scores[newStu.id]) {
+        this.scores[newStu.id] = {};
+      }
+    });
+
+    this.saveState(true);
+    this.createAutoBackup(`នាំចូលសិស្ស GEIP (ថ្មី ${added} | Update ${updated})`);
+    this.syncToSQLite();
+    this.renderNavigation();
+    this.renderCurrentView();
+    this.closeImportStudentModal();
+    this.showToast(`បាននាំចូលទិន្នន័យសាលាគម្រោង GEIP ជោគជ័យ! បន្ថែមថ្មី ${added} នាក់ និងធ្វើបច្ចុប្បន្នភាព ${updated} នាក់។`, 'success');
+  }
+
+  processImportRows(rawRows) {
+    if (!rawRows || rawRows.length === 0) {
+      if (this.importFileStatus) {
+        this.importFileStatus.innerHTML = `<span style="color: var(--danger);">ឯកសារទទេ មិនមានទិន្នន័យឡើយ!</span>`;
+      }
+      return;
+    }
+
+    // Auto-detect GEIP MoEYS format
+    if (this.isGeipFormat(rawRows)) {
+      return this.processGeipImportRows(rawRows);
+    }
+
+    const defaultGrade = this.importDefaultGrade ? this.importDefaultGrade.value : 'ថ្នាក់ទី១២';
+    const defaultClassType = this.importDefaultClassType ? this.importDefaultClassType.value : 'ទូទៅ';
+
+    let startIndex = 0;
+    let headerMap = {
+      id: -1,
+      name: -1,
+      latin: -1,
+      gender: -1,
+      femaleCol: -1,
+      maleCol: -1,
+      dob: -1,
+      class: -1,
+      classType: -1,
+      phone: -1,
+      guardian: -1,
+      address: -1,
+      fromClass: -1,
+      primarySchool: -1,
+      repeatGrade: -1,
+      transferFrom: -1,
+      diplomaSession: -1,
+      diplomaCenter: -1,
+      diplomaRoom: -1,
+      diplomaDesk: -1,
+      note: -1
+    };
+
+    // Analyze first 15 rows to identify header row
+    for (let r = 0; r < Math.min(15, rawRows.length); r++) {
+      const row = rawRows[r].map(c => String(c || '').trim().toLowerCase());
+      const hasKeywords = row.some(cell =>
+        cell.includes('អត្តលេខ') || cell.includes('ឈ្មោះ') || cell.includes('នាម') ||
+        cell.includes('ភេទ') || cell.includes('student') || cell.includes('name') || cell.includes('id') ||
+        cell === 'ស្រី' || cell === 'ប្រុស'
+      );
+      if (hasKeywords) {
+        startIndex = r + 1;
+        row.forEach((cell, idx) => {
+          if (cell.includes('អត្តលេខ') || cell === 'id' || cell.includes('student_id') || cell.includes('កូដ')) {
+            headerMap.id = idx;
+          } else if (cell.includes('ឡាតាំង') || cell.includes('latin') || cell.includes('english')) {
+            headerMap.latin = idx;
+          } else if (cell.includes('គោត្តនាម') || cell.includes('ឈ្មោះ') || cell.includes('name') || cell.includes('នាម')) {
+            headerMap.name = idx;
+          } else if (cell.includes('ភេទ') || cell === 'gender' || cell === 'sex') {
+            headerMap.gender = idx;
+          } else if (cell === 'ស្រី' || cell === 'female') {
+            headerMap.femaleCol = idx;
+          } else if (cell === 'ប្រុស' || cell === 'male') {
+            headerMap.maleCol = idx;
+          } else if (cell.includes('កំណើត') || cell.includes('dob') || cell.includes('birth') || cell.includes('ថ្ងៃខែ')) {
+            headerMap.dob = idx;
+          } else if (cell.includes('ឡើងពីថ្នាក់') || cell.includes('ពីថ្នាក់') || cell.includes('fromclass') || cell.includes('from_class')) {
+            headerMap.fromClass = idx;
+          } else if (cell.includes('មកពីសាលា') || cell.includes('បឋមសិក្សា') || cell.includes('សាលាបឋម') || cell.includes('primaryschool')) {
+            headerMap.primarySchool = idx;
+          } else if (cell.includes('ត្រួតថ្នាក់') || cell === 'ត្រួត' || cell.includes('repeat')) {
+            headerMap.repeatGrade = idx;
+          } else if (cell.includes('ផ្ទេរមកពី') || cell.includes('ផ្ទេរ') || cell.includes('transfer')) {
+            headerMap.transferFrom = idx;
+          } else if (cell.includes('សម័យប្រឡង') || cell === 'សម័យ' || cell.includes('session')) {
+            headerMap.diplomaSession = idx;
+          } else if (cell.includes('ម.ប្រឡង') || cell.includes('មណ្ឌលប្រឡង') || cell === 'មណ្ឌល' || cell.includes('center')) {
+            headerMap.diplomaCenter = idx;
+          } else if (cell.includes('បន្ទប់ប្រឡង') || (cell.includes('បន្ទប់') && !cell.includes('រៀន') && !cell.includes('ថ្នាក់')) || cell.includes('room')) {
+            headerMap.diplomaRoom = idx;
+          } else if (cell.includes('លេខតុ') || cell === 'តុ' || cell.includes('desk')) {
+            headerMap.diplomaDesk = idx;
+          } else if (cell.includes('ផ្សេងៗ') || cell.includes('សម្គាល់') || cell.includes('note') || cell.includes('remark')) {
+            headerMap.note = idx;
+          } else if (cell.includes('ប្រភេទថ្នាក់') || cell.includes('ផ្នែក') || cell.includes('ជំនាញ') || cell.includes('ទិសដៅ') || cell.includes('class_type') || cell.includes('stream') || cell.includes('track')) {
+            headerMap.classType = idx;
+          } else if (cell === 'ថ្នាក់' || cell === 'ថ្នាក់រៀន' || cell === 'បន្ទប់រៀន' || cell === 'class' || cell === 'grade' || cell === 'section' || cell === 'ថ្នាក់បច្ចុប្បន្ន') {
+            headerMap.class = idx;
+          } else if (cell.includes('ថ្នាក់') && !cell.includes('ឡើង') && !cell.includes('ពី') && !cell.includes('ត្រួត') && !cell.includes('ប្រភេទ') && !cell.includes('ចាស់')) {
+            headerMap.class = idx;
+          } else if (cell.includes('ទូរស័ព្ទ') || cell.includes('phone') || cell.includes('tel')) {
+            headerMap.phone = idx;
+          } else if (cell.includes('អាណាព្យាបាល') || cell.includes('guardian') || cell.includes('parent')) {
+            headerMap.guardian = idx;
+          } else if (cell.includes('អាសយដ្ឋាន') || cell.includes('address') || cell.includes('ទីលំនៅ')) {
+            headerMap.address = idx;
+          }
+        });
+        break;
+      }
+    }
+
+    const students = [];
+    let autoIdCounter = this.students.length + 1;
+
+    for (let i = startIndex; i < rawRows.length; i++) {
+      const row = rawRows[i];
+      if (!row || row.length === 0 || row.every(c => !String(c || '').trim())) continue;
+
+      let id = headerMap.id !== -1 ? String(row[headerMap.id] || '').trim() : '';
+      let name = headerMap.name !== -1 ? String(row[headerMap.name] || '').trim() : '';
+      let latin = headerMap.latin !== -1 ? String(row[headerMap.latin] || '').trim() : '';
+      let genderRaw = headerMap.gender !== -1 ? String(row[headerMap.gender] || '').trim() : '';
+      let dob = headerMap.dob !== -1 ? String(row[headerMap.dob] || '').trim() : '';
+      let stuClassType = headerMap.classType !== -1 ? String(row[headerMap.classType] || '').trim() : '';
+      let phone = headerMap.phone !== -1 ? String(row[headerMap.phone] || '').trim() : '';
+      let guardian = headerMap.guardian !== -1 ? String(row[headerMap.guardian] || '').trim() : '';
+      let address = headerMap.address !== -1 ? String(row[headerMap.address] || '').trim() : '';
+
+      // Grade-level extra report fields
+      let fromClass = headerMap.fromClass !== -1 ? String(row[headerMap.fromClass] || '').trim() : '';
+      let primarySchool = headerMap.primarySchool !== -1 ? String(row[headerMap.primarySchool] || '').trim() : '';
+      let repeatGrade = headerMap.repeatGrade !== -1 ? String(row[headerMap.repeatGrade] || '').trim() : '';
+      let transferFrom = headerMap.transferFrom !== -1 ? String(row[headerMap.transferFrom] || '').trim() : '';
+      let diplomaSession = headerMap.diplomaSession !== -1 ? String(row[headerMap.diplomaSession] || '').trim() : '';
+      let diplomaCenter = headerMap.diplomaCenter !== -1 ? String(row[headerMap.diplomaCenter] || '').trim() : '';
+      let diplomaRoom = headerMap.diplomaRoom !== -1 ? String(row[headerMap.diplomaRoom] || '').trim() : '';
+      let diplomaDesk = headerMap.diplomaDesk !== -1 ? String(row[headerMap.diplomaDesk] || '').trim() : '';
+      let note = headerMap.note !== -1 ? String(row[headerMap.note] || '').trim() : '';
+
+      // Fallback: If name was not found by header, find text cell
+      if (!name) {
+        for (let c = 0; c < row.length; c++) {
+          const val = String(row[c] || '').trim();
+          if (!/^\d+$/.test(val) &&
+            !/^\d{1,4}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}$/.test(val) &&
+            !/^(ស្រី|ប្រុស|ស|ប|f|m|female|male)$/i.test(val) &&
+            !/^(7|8|9|10|11|12)[A-Za-z]?$/i.test(val) &&
+            val.length >= 2) {
+            name = val;
+            break;
+          }
+        }
+      }
+
+      name = this.cleanStudentName(name);
+      if (!name) continue; // Skip non-student rows
+
+      // Fallback for DOB if empty
+      if (!dob) {
+        for (let c = 0; c < row.length; c++) {
+          const val = String(row[c] || '').trim();
+          if (/^\d{1,4}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}$/.test(val)) {
+            dob = val;
+            break;
+          }
+        }
+      }
+
+      // Check existing student match in system (by ID or cleaned Khmer name)
+      let existingStu = null;
+      if (id) {
+        existingStu = this.students.find(s => s.id && s.id.toLowerCase() === id.toLowerCase());
+      }
+      if (!existingStu && name) {
+        const cleanN = this.cleanStudentName(name);
+        existingStu = this.students.find(s => this.cleanStudentName(s.khmerName) === cleanN);
+      }
+
+      // 1. Read class from row if present
+      let rawClassInRow = headerMap.class !== -1 ? String(row[headerMap.class] || '').trim() : '';
+      let hasSpecificClassInRow = false;
+
+      // Scan row cells for specific section pattern (e.g. 7A, 7B, 11A, 12D) if header was missing or generic
+      if (!rawClassInRow || rawClassInRow.match(/^ថ្នាក់ទី\s*(៧|៨|៩|១០|១១|១២|\d+)$/)) {
+        for (let c = 0; c < row.length; c++) {
+          const val = String(row[c] || '').trim();
+          if (/^(7|8|9|10|11|12|[៧៨៩]|១០|១១|១២)[A-Za-z]$/i.test(val) ||
+            /^(7|8|9|10|11|12|[៧៨៩]|១០|១១|១២)\s*[\-\_\.]\s*[A-Za-z]$/i.test(val)) {
+            rawClassInRow = val.replace(/[\-\_\.]/g, '').toUpperCase();
+            hasSpecificClassInRow = true;
+            break;
+          }
+        }
+      } else {
+        hasSpecificClassInRow = true;
+      }
+
+      // 2. Resolve Final Class:
+      let stuClass = '';
+      if (existingStu) {
+        // For existing student:
+        // If file had a specific class (like 7B), use it;
+        // OTHERWISE, PRESERVE existing student's class (e.g. 7A, 7B)!
+        if (hasSpecificClassInRow && !rawClassInRow.match(/^ថ្នាក់ទី\s*(៧|៨|៩|១០|១១|១២|\d+)$/)) {
+          stuClass = rawClassInRow;
+        } else {
+          stuClass = existingStu.class || (defaultGrade !== '__KEEP_EXISTING__' ? defaultGrade : '7A');
+        }
+      } else {
+        // For new student:
+        if (hasSpecificClassInRow && rawClassInRow && !rawClassInRow.match(/^ថ្នាក់ទី\s*(៧|៨|៩|១០|១១|១២|\d+)$/)) {
+          stuClass = rawClassInRow;
+        } else {
+          stuClass = (defaultGrade !== '__KEEP_EXISTING__' ? defaultGrade : (this.activeSection ? this.formatSectionClassName(this.activeClass, this.activeSection) : '7A'));
+        }
+      }
+
+      // 3. Resolve Final Class Type (ប្រភេទថ្នាក់):
+      // Lower secondary & Grade 10 (7, 8, 9, 10) are ALWAYS "ទូទៅ" (General)
+      if (/^(ថ្នាក់ទី\s*)?(7|8|9|10|[៧៨៩]|១០)/i.test(stuClass)) {
+        stuClassType = 'ទូទៅ';
+      } else {
+        // Upper secondary (Grade 11 and 12)
+        if (!stuClassType || stuClassType.trim() === '') {
+          // Scan row cells for stream keywords
+          for (let c = 0; c < row.length; c++) {
+            const cellStr = String(row[c] || '').trim().toLowerCase();
+            if (cellStr.includes('វិទ្យាសាស្ត្រសង្គម') || cellStr.includes('សង្គម') || cellStr === 'soc') {
+              stuClassType = 'វិទ្យាសាស្ត្រសង្គម';
+              break;
+            } else if (cellStr.includes('វិទ្យាសាស្ត្រ') || cellStr === 'sci') {
+              stuClassType = 'វិទ្យាសាស្ត្រ';
+              break;
+            }
+          }
+        }
+
+        if (stuClassType) {
+          const ctClean = stuClassType.toLowerCase();
+          if (ctClean.includes('សង្គម') || ctClean.includes('soc')) {
+            stuClassType = 'វិទ្យាសាស្ត្រសង្គម';
+          } else if (ctClean.includes('វិទ្យាសាស្ត្រ') || ctClean.includes('sci')) {
+            stuClassType = 'វិទ្យាសាស្ត្រ';
+          }
+        }
+
+        if (!stuClassType && existingStu && existingStu.classType) {
+          stuClassType = existingStu.classType;
+        }
+
+        if (!stuClassType) {
+          const lowerClass = stuClass.toLowerCase();
+          if (lowerClass.includes('សង្គម') || /^(11|12)[D-Z]/i.test(stuClass)) {
+            stuClassType = 'វិទ្យាសាស្ត្រសង្គម';
+          } else if (lowerClass.includes('វិទ្យាសាស្ត្រ') || /^(11|12)[A-C]/i.test(stuClass)) {
+            stuClassType = 'វិទ្យាសាស្ត្រ';
+          } else {
+            stuClassType = defaultClassType || 'វិទ្យាសាស្ត្រ';
+          }
+        }
+      }
+
+      if (!id) {
+        id = `STU-${String(autoIdCounter++).padStart(3, '0')}`;
+      }
+
+      // Robust Gender Determination
+      let gender = '';
+
+      // 1. Check split columns (Column for Male vs Column for Female)
+      if (headerMap.femaleCol !== -1 && headerMap.femaleCol < row.length) {
+        const fVal = String(row[headerMap.femaleCol] || '').trim().toLowerCase();
+        if (fVal && fVal !== '-' && fVal !== '0') {
+          gender = 'ស្រី';
+        }
+      }
+      if (!gender && headerMap.maleCol !== -1 && headerMap.maleCol < row.length) {
+        const mVal = String(row[headerMap.maleCol] || '').trim().toLowerCase();
+        if (mVal && mVal !== '-' && mVal !== '0') {
+          gender = 'ប្រុស';
+        }
+      }
+
+      // 2. Check standard gender column value
+      if (!gender && genderRaw) {
+        const gClean = genderRaw.toLowerCase();
+        if (gClean.includes('ស្រី') || gClean === 'ស' || gClean === 'ស.' || gClean === 'f' || gClean === 'female' || gClean === '2') {
+          gender = 'ស្រី';
+        } else if (gClean.includes('ប្រុស') || gClean === 'ប' || gClean === 'ប.' || gClean === 'm' || gClean === 'male' || gClean === '1') {
+          gender = 'ប្រុស';
+        }
+      }
+
+      // 3. Scan all cells in the row for gender keywords
+      if (!gender) {
+        for (let c = 0; c < row.length; c++) {
+          const val = String(row[c] || '').trim().toLowerCase();
+          if (val === 'ស្រី' || val === 'ស' || val === 'ស.' || val === 'f' || val === 'female' || val.includes('ស្រី')) {
+            gender = 'ស្រី';
+            break;
+          } else if (val === 'ប្រុស' || val === 'ប' || val === 'ប.' || val === 'm' || val === 'male' || val.includes('ប្រុស')) {
+            gender = 'ប្រុស';
+            break;
+          }
+        }
+      }
+
+      // Default fallback
+      if (!gender) gender = 'ប្រុស';
+
+      // Ensure class is valid
+      if (!stuClass || stuClass === '__KEEP_EXISTING__') {
+        stuClass = defaultGrade !== '__KEEP_EXISTING__' ? defaultGrade : '7A';
+      }
+
+      // Enforce classType rules:
+      // Grade 7, 8, 9, 10 are strictly "ទូទៅ"
+      if (/^(ថ្នាក់ទី\s*)?(7|8|9|10|[៧៨៩]|១០)/i.test(stuClass)) {
+        stuClassType = 'ទូទៅ';
+      } else if (!stuClassType || stuClassType === 'ទូទៅ') {
+        const lowerClass = stuClass.toLowerCase();
+        if (lowerClass.includes('វិទ្យាសាស្ត្រសង្គម') || lowerClass.includes('សង្គម') || lowerClass.includes('soc') || /^(11|12)[D-Z]/i.test(stuClass)) {
+          stuClassType = 'វិទ្យាសាស្ត្រសង្គម';
+        } else {
+          stuClassType = 'វិទ្យាសាស្ត្រ';
+        }
+      }
+
+      students.push({
+        id,
+        khmerName: name,
+        latinName: latin,
+        gender,
+        dob,
+        class: stuClass,
+        classType: stuClassType,
+        phone,
+        guardian,
+        address,
+        avatar: '',
+        fromClass,
+        primarySchool,
+        repeatGrade,
+        transferFrom,
+        diplomaSession,
+        diplomaCenter,
+        diplomaRoom,
+        diplomaDesk,
+        note
+      });
+    }
+
+    if (students.length === 0) {
+      if (this.importFileStatus) {
+        this.importFileStatus.innerHTML = `<span style="color: var(--danger);"><i class="ri-error-warning-line"></i> មិនអាចទាញទិន្នន័យសិស្សពីឯកសារនេះបានទេ! សូមពិនិត្យទម្រង់ជួរឈរឡើងវិញ។</span>`;
+      }
+      return;
+    }
+
+    this.parsedImportStudents = students;
+    this.renderImportPreview(students);
+  }
+
+  renderImportPreview(students) {
+    if (!this.importPreviewContainer || !this.importPreviewBody) return;
+
+    const femaleCount = students.filter(s => s.gender === 'ស្រី').length;
+    const maleCount = students.length - femaleCount;
+
+    let matchedCount = 0;
+    students.forEach(stu => {
+      const match = this.students.find(s =>
+        (stu.id && s.id && s.id.toLowerCase() === stu.id.toLowerCase()) ||
+        (stu.khmerName && s.khmerName && this.cleanStudentName(s.khmerName) === this.cleanStudentName(stu.khmerName))
+      );
+      if (match) matchedCount++;
+    });
+
+    if (this.importPreviewCount) {
+      this.importPreviewCount.textContent = `${students.length} នាក់ (ស្រី ${femaleCount} | ប្រុស ${maleCount}) — Update ត្រូវគ្នា: ${matchedCount} នាក់ | ថ្មី: ${students.length - matchedCount} នាក់`;
+    }
+
+    this.importPreviewBody.innerHTML = '';
+    students.forEach((stu, idx) => {
+      const tr = document.createElement('tr');
+      const genderBadgeClass = stu.gender === 'ស្រី' ? 'gender-female' : 'gender-male';
+
+      const match = this.students.find(s =>
+        (stu.id && s.id && s.id.toLowerCase() === stu.id.toLowerCase()) ||
+        (stu.khmerName && s.khmerName && this.cleanStudentName(s.khmerName) === this.cleanStudentName(stu.khmerName))
+      );
+
+      const statusBadge = match
+        ? `<span style="background: #e0f2fe; color: #0284c7; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 0.75rem;"><i class="ri-refresh-line"></i> Update</span>`
+        : `<span style="background: #dcfce7; color: #16a34a; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 0.75rem;"><i class="ri-user-add-line"></i> ថ្មី</span>`;
+
+      // Class type badge
+      let classTypeBadge = '';
+      if (stu.classType === 'វិទ្យាសាស្ត្រ') {
+        classTypeBadge = `<span class="badge-class-type" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; font-weight: 600; padding: 2px 7px; border-radius: 4px; font-size: 0.76rem;">វិទ្យាសាស្ត្រ</span>`;
+      } else if (stu.classType === 'វិទ្យាសាស្ត្រសង្គម') {
+        classTypeBadge = `<span class="badge-class-type" style="background: #fffbeb; color: #b45309; border: 1px solid #fde68a; font-weight: 600; padding: 2px 7px; border-radius: 4px; font-size: 0.76rem;">វិទ្យាសាស្ត្រសង្គម</span>`;
+      } else {
+        classTypeBadge = `<span class="badge-class-type" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-weight: 600; padding: 2px 7px; border-radius: 4px; font-size: 0.76rem;">ទូទៅ</span>`;
+      }
+
+      // Extra grade-level info tags
+      const extras = [];
+      if (stu.fromClass) extras.push(`<span style="background:#f1f5f9; padding:1px 5px; border-radius:3px; margin: 1px;">ឡើងពី: <strong>${stu.fromClass}</strong></span>`);
+      if (stu.primarySchool) extras.push(`<span style="background:#fef3c7; color:#92400e; padding:1px 5px; border-radius:3px; margin: 1px;">បឋម: <strong>${stu.primarySchool}</strong></span>`);
+      if (stu.repeatGrade) extras.push(`<span style="background:#fee2e2; color:#b91c1c; padding:1px 5px; border-radius:3px; margin: 1px;">ត្រួត: <strong>${stu.repeatGrade}</strong></span>`);
+      if (stu.transferFrom) extras.push(`<span style="background:#ede9fe; color:#6d28d9; padding:1px 5px; border-radius:3px; margin: 1px;">ផ្ទេរ: <strong>${stu.transferFrom}</strong></span>`);
+      if (stu.diplomaSession) extras.push(`<span style="background:#dbeafe; color:#1e40af; padding:1px 5px; border-radius:3px; margin: 1px;">សម័យ: <strong>${stu.diplomaSession}</strong></span>`);
+      if (stu.diplomaCenter) extras.push(`<span style="background:#dbeafe; color:#1e40af; padding:1px 5px; border-radius:3px; margin: 1px;">ម.ប្រឡង: <strong>${stu.diplomaCenter}</strong></span>`);
+      if (stu.diplomaRoom) extras.push(`<span style="background:#e0e7ff; color:#3730a3; padding:1px 5px; border-radius:3px; margin: 1px;">បន្ទប់: <strong>${stu.diplomaRoom}</strong></span>`);
+      if (stu.diplomaDesk) extras.push(`<span style="background:#e0e7ff; color:#3730a3; padding:1px 5px; border-radius:3px; margin: 1px;">តុ: <strong>${stu.diplomaDesk}</strong></span>`);
+      if (stu.note) extras.push(`<span style="background:#f3f4f6; color:#4b5563; padding:1px 5px; border-radius:3px; margin: 1px;">ផ្សេងៗ: <strong>${stu.note}</strong></span>`);
+
+      const extrasHtml = extras.length > 0 ? extras.join(' ') : '<span style="color:var(--text-muted); font-size:0.8rem;">-</span>';
+
+      tr.innerHTML = `
+        <td style="text-align: center; font-weight: 600;">${idx + 1}</td>
+        <td><strong style="color: var(--primary);">${stu.id}</strong></td>
+        <td>
+          <strong>${stu.khmerName}</strong>
+          ${(() => {
+          const extraSummary = [];
+          if (stu.fromClass) extraSummary.push(`ឡើងពី: ${stu.fromClass}`);
+          if (stu.primarySchool) extraSummary.push(`បឋម: ${stu.primarySchool}`);
+          if (stu.repeatGrade) extraSummary.push(`ត្រួត: ${stu.repeatGrade}`);
+          if (stu.transferFrom) extraSummary.push(`ផ្ទេរ: ${stu.transferFrom}`);
+          if (stu.diplomaSession || stu.diplomaCenter) extraSummary.push(`បឋមភូមិ: ${stu.diplomaCenter || ''} ${stu.diplomaSession || ''}`);
+          return extraSummary.length > 0
+            ? `<div style="font-size: 0.73rem; color: #0369a1; margin-top: 2px; font-weight: 500;">${extraSummary.join(' · ')}</div>`
+            : '';
+        })()}
+        </td>
+        <td style="text-align: center;"><span class="gender-badge ${genderBadgeClass}">${stu.gender}</span></td>
+        <td>${stu.dob || '-'}</td>
+        <td style="text-align: center;"><span class="badge-room-tag">${stu.class}</span></td>
+        <td style="text-align: center;">${classTypeBadge}</td>
+        <td style="text-align: center;">${statusBadge}</td>
+        <td style="font-size: 0.8rem;">${extrasHtml}</td>
+      `;
+      this.importPreviewBody.appendChild(tr);
+    });
+
+    this.importPreviewContainer.style.display = 'block';
+    if (this.btnConfirmImportStudents) {
+      this.btnConfirmImportStudents.disabled = false;
+    }
+
+    if (this.importFileStatus) {
+      this.importFileStatus.innerHTML = `<span style="color: var(--success);"><i class="ri-checkbox-circle-line"></i> បានវិភាគដោយជោគជ័យ! រកឃើញសិស្សចំនួន <strong>${students.length}</strong> នាក់ (អាច Update: ${matchedCount} នាក់)។</span>`;
+    }
+  }
+
+  confirmImportStudents() {
+    if (!this.parsedImportStudents || this.parsedImportStudents.length === 0) {
+      this.showToast('មិនមានទិន្នន័យសិស្សសម្រាប់បញ្ចូលឡើយ!', 'error');
+      return;
+    }
+
+    const importModeInput = document.querySelector('input[name="importModeRadio"]:checked') || document.querySelector('input[name="importMode"]:checked');
+    const importMode = importModeInput ? importModeInput.value : 'update';
+
+    let added = 0;
+    let updated = 0;
+
+    if (importMode === 'replace') {
+      if (!confirm(`តើអ្នកពិតជាចង់ជំនួសបញ្ជីសិស្សទាំងអស់ដែលមានស្រាប់ ដោយសិស្សថ្មីចំនួន ${this.parsedImportStudents.length} នាក់មែនទេ?`)) {
+        return;
+      }
+      this.students = this.parsedImportStudents.map(s => {
+        if (/^(ថ្នាក់ទី\s*)?(7|8|9|10|[៧៨៩]|១០)/i.test(s.class)) {
+          s.classType = 'ទូទៅ';
+        }
+        return s;
+      });
+      added = this.students.length;
+    } else if (importMode === 'update') {
+      // Smart Update / Merge Mode:
+      this.parsedImportStudents.forEach(newStu => {
+        let existingIdx = this.students.findIndex(s => s.id && newStu.id && s.id.toLowerCase() === newStu.id.toLowerCase());
+        if (existingIdx === -1 && newStu.khmerName) {
+          const cleanName = this.cleanStudentName(newStu.khmerName);
+          existingIdx = this.students.findIndex(s => this.cleanStudentName(s.khmerName) === cleanName);
+        }
+
+        if (existingIdx !== -1) {
+          const current = this.students[existingIdx];
+          const updateIfVal = (key, val) => {
+            if (val !== undefined && val !== null && String(val).trim() !== '') {
+              current[key] = String(val).trim();
+            }
+          };
+
+          // Extra fields
+          updateIfVal('fromClass', newStu.fromClass);
+          updateIfVal('primarySchool', newStu.primarySchool);
+          updateIfVal('repeatGrade', newStu.repeatGrade);
+          updateIfVal('transferFrom', newStu.transferFrom);
+          updateIfVal('diplomaSession', newStu.diplomaSession);
+          updateIfVal('diplomaCenter', newStu.diplomaCenter);
+          updateIfVal('diplomaRoom', newStu.diplomaRoom);
+          updateIfVal('diplomaDesk', newStu.diplomaDesk);
+          updateIfVal('note', newStu.note);
+
+          // Standard fields
+          updateIfVal('latinName', newStu.latinName);
+          updateIfVal('gender', newStu.gender);
+          updateIfVal('dob', newStu.dob);
+          updateIfVal('phone', newStu.phone);
+          updateIfVal('guardian', newStu.guardian);
+          updateIfVal('address', newStu.address);
+
+          // Class updates:
+          // NEVER downgrade a specific section (e.g. 7A, 7B) to a generic grade (e.g. ថ្នាក់ទី៧)
+          // or __KEEP_EXISTING__!
+          if (newStu.class && newStu.class !== '__KEEP_EXISTING__') {
+            const isGenericNew = /^ថ្នាក់ទី\s*(៧|៨|៩|១០|១១|១២|\d+)$/.test(newStu.class);
+            const isSpecificCurrent = current.class && !/^ថ្នាក់ទី\s*(៧|៨|៩|១០|១១|១២|\d+)$/.test(current.class);
+            if (!isGenericNew || !isSpecificCurrent) {
+              current.class = newStu.class;
+            }
+          }
+
+          // Class type updates:
+          // Grades 7, 8, 9, 10 are strictly "ទូទៅ"
+          if (/^(ថ្នាក់ទី\s*)?(7|8|9|10|[៧៨៩]|១០)/i.test(current.class)) {
+            current.classType = 'ទូទៅ';
+          } else if (newStu.classType && (newStu.classType === 'វិទ្យាសាស្ត្រ' || newStu.classType === 'វិទ្យាសាស្ត្រសង្គម' || newStu.classType === 'ទូទៅ')) {
+            current.classType = newStu.classType;
+          } else if (!current.classType) {
+            current.classType = 'វិទ្យាសាស្ត្រ';
+          }
+
+          this.students[existingIdx] = { ...current };
+          updated++;
+        } else {
+          if (/^(ថ្នាក់ទី\s*)?(7|8|9|10|[៧៨៩]|១០)/i.test(newStu.class)) {
+            newStu.classType = 'ទូទៅ';
+          }
+          this.students.push(newStu);
+          added++;
+        }
+      });
+    } else {
+      // Append mode
+      this.parsedImportStudents.forEach(newStu => {
+        let existingIdx = this.students.findIndex(s => s.id && newStu.id && s.id.toLowerCase() === newStu.id.toLowerCase());
+        if (existingIdx === -1 && newStu.khmerName) {
+          const cleanName = this.cleanStudentName(newStu.khmerName);
+          existingIdx = this.students.findIndex(s => this.cleanStudentName(s.khmerName) === cleanName);
+        }
+
+        if (existingIdx !== -1) {
+          const current = this.students[existingIdx];
+          const merged = {
+            ...current,
+            ...newStu
+          };
+          if (current.class && !/^ថ្នាក់ទី\s*(៧|៨|៩|១០|១១|១២|\d+)$/.test(current.class)) {
+            if (!newStu.class || /^ថ្នាក់ទី\s*(៧|៨|៩|១០|១១|១២|\d+)$/.test(newStu.class) || newStu.class === '__KEEP_EXISTING__') {
+              merged.class = current.class;
+            }
+          }
+          if (/^(ថ្នាក់ទី\s*)?(7|8|9|10|[៧៨៩]|១០)/i.test(merged.class)) {
+            merged.classType = 'ទូទៅ';
+          }
+          this.students[existingIdx] = merged;
+          updated++;
+        } else {
+          if (/^(ថ្នាក់ទី\s*)?(7|8|9|10|[៧៨៩]|១០)/i.test(newStu.class)) {
+            newStu.classType = 'ទូទៅ';
+          }
+          this.students.push(newStu);
+          added++;
+        }
+      });
+    }
+
+    // Ensure all students have a score record
+    this.students.forEach(stu => {
+      if (!this.scores[stu.id]) this.scores[stu.id] = {};
+    });
+
+    this.saveState(true);
+    this.createAutoBackup(`នាំចូល/Update សិស្ស (Update ${updated} | ថ្មី ${added})`);
+    this.syncToSQLite();
+    this.renderNavigation();
+    this.renderCurrentView();
+    this.closeImportStudentModal();
+    this.showToast(`បានដំណើរការដោយជោគជ័យ! បាន Update បន្ថែមព័ត៌មាន ${updated} នាក់ និងបន្ថែមសិស្សថ្មី ${added} នាក់។`, 'success');
+  }
+
+  // Toast Notification System
+  showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    const iconClass = type === 'success'
+      ? 'ri-checkbox-circle-fill'
+      : type === 'error'
+        ? 'ri-error-warning-fill'
+        : 'ri-information-fill';
+
+    toast.innerHTML = `<i class="${iconClass}"></i><span>${message}</span>`;
+    this.toastContainer.appendChild(toast);
+
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transform = 'translateY(10px)';
+      toast.style.transition = 'all 0.3s ease';
+      setTimeout(() => toast.remove(), 300);
+    }, 3500);
+  }
+}
+
+// Global App Instance Initialization
+let app;
+document.addEventListener('DOMContentLoaded', () => {
+  app = new ScoreManagementApp();
+});
