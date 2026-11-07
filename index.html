@@ -26,6 +26,12 @@
   <script src="https://cdn.jsdelivr.net/npm/@thyrith/momentkh@3.0.3/dist/momentkh.min.js" defer></script>
   <!-- Main Stylesheet -->
   <link rel="stylesheet" href="css/style.css">
+  <script>
+    // Auto-detect mobile devices (iPhone / Android) and open mobile app
+    if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) && !window.location.search.includes('desktop=1')) {
+      window.location.replace('mobile.html');
+    }
+  </script>
 </head>
 
 <body>
@@ -75,6 +81,9 @@
 
       <div class="header-right">
         <!-- Quick Action Buttons -->
+        <a href="mobile.html" class="btn btn-outline btn-sm" style="text-decoration: none; display: inline-flex; align-items: center; gap: 0.35rem; color: #0284c7; border-color: #bae6fd; font-weight: 600; background: #f0f9ff;" title="ប្តូរទៅកាន់ App ទូរស័ព្ទ (Mobile App)">
+          <i class="ri-smartphone-line"></i> App ទូរស័ព្ទ
+        </a>
         <button id="btnPrintReport" class="btn btn-primary btn-sm" title="បោះពុម្ពតារាងពិន្ទុ">
           <i class="ri-printer-line"></i> បោះពុម្ពតារាងពិន្ទុ
         </button>

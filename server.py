@@ -1217,6 +1217,9 @@ class ProxyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
         return False
 
     def do_GET(self):
+        req_path = self.path.split('?')[0]
+        if req_path in ('/mobile', '/mobile/'):
+            self.path = '/mobile.html'
         if self.handle_api_data():
             return
         if self.handle_sqlite_api():
