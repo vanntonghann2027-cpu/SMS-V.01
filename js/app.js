@@ -21664,12 +21664,13 @@ class ScoreManagementApp {
   getSupabaseConfig() {
     try {
       const cfg = JSON.parse(localStorage.getItem('sms_db_config') || '{}');
-      const cleaned = this.normalizeSupabaseCredentials(cfg.url || '', cfg.key || '');
+      const cleaned = this.normalizeSupabaseCredentials(cfg.url || 'https://ztyqyvogvvkgaduwdjoy.supabase.co', cfg.key || 'sb_publishable_DZQ6C_WpE-wPN3q_SyLkrw_t0-8YME1');
       cfg.url = cleaned.url;
       cfg.key = cleaned.key;
+      if (!cfg.mode) cfg.mode = 'supabase';
       return cfg;
     } catch (_) {
-      return {};
+      return { mode: 'supabase', url: 'https://ztyqyvogvvkgaduwdjoy.supabase.co', key: 'sb_publishable_DZQ6C_WpE-wPN3q_SyLkrw_t0-8YME1' };
     }
   }
 

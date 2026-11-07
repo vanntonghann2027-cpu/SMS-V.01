@@ -566,7 +566,7 @@
 
       <div class="form-group">
         <label>Supabase Publishable / Anon Key</label>
-        <input type="password" id="cfgSupabaseKey" class="form-control" placeholder="sb_publishable_... ឬ eyJ..." />
+        <input type="password" id="cfgSupabaseKey" class="form-control" value="sb_publishable_DZQ6C_WpE-wPN3q_SyLkrw_t0-8YME1" placeholder="sb_publishable_DZQ6C_WpE-wPN3q_SyLkrw_t0-8YME1" />
       </div>
 
       <div class="form-group">
@@ -652,7 +652,7 @@
       try { mobileCfg = JSON.parse(localStorage.getItem('sms_mobile_ai_config') || '{}'); } catch (_) {}
       return {
         url: (mobileCfg.url || saved.url || 'https://ztyqyvogvvkgaduwdjoy.supabase.co').replace(/\/+$/, ''),
-        key: (mobileCfg.key || saved.key || '').trim(),
+        key: (mobileCfg.key || saved.key || 'sb_publishable_DZQ6C_WpE-wPN3q_SyLkrw_t0-8YME1').trim(),
         teacherName: mobileCfg.teacherName || saved.teacherName || 'teacher_mobile',
         voiceEngine: mobileCfg.voiceEngine || 'hybrid',
         geminiKey: (mobileCfg.geminiKey || '').trim()
