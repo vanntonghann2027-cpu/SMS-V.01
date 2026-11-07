@@ -21,3 +21,4 @@ database/*.db
 
 # Log files
 *.log
+Local Data/

@@ -29,3 +29,4 @@ python3 server.py
 ### ២. ការដំឡើង App លើទូរស័ព្ទ (PWA)
 - **iPhone / iPad**៖ បើក Safari -> ចុចប៊ូតុង Share (📤) -> ជ្រើសរើស **«Add to Home Screen»**
 - **Android**៖ បើក Chrome -> ចុច Menu (⋮) -> ជ្រើសរើស **«Install App»** ឬ **«Add to Home Screen»**
+
