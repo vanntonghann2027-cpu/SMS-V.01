@@ -22178,8 +22178,7 @@ CREATE POLICY "Allow all sms_app_state" ON public.sms_app_state FOR ALL TO anon,
         const existingMap = new Map((this.students || []).map((s) => [String(s.id), s]));
         for (const row of allStuRows) {
           if (row && row.id && row.student_json) {
-            const prev = existingMap.get(String(row.id)) || {};
-            existingMap.set(String(row.id), { ...prev, ...row.student_json });
+            existingMap.set(String(row.id), { ...row.student_json });
           }
         }
         this.students = Array.from(existingMap.values());
