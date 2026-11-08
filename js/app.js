@@ -6028,8 +6028,10 @@ class ScoreManagementApp {
       this.btnFetchSecretRoomScores.addEventListener('click', () => this.fetchSecretRoomScores());
     }
     if (this.inputSearchSecretCode) {
-      this.inputSearchSecretCode.addEventListener('input', () => {
-        this.clearSecretScoreTable(false);
+      this.inputSearchSecretCode.addEventListener('input', (e) => {
+        if (!e.target.value.trim()) {
+          this.clearSecretScoreTable(false);
+        }
       });
       this.inputSearchSecretCode.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -6061,8 +6063,10 @@ class ScoreManagementApp {
       this.btnFetchVoiceSecretRoomScores.addEventListener('click', () => this.fetchVoiceSecretRoomScores());
     }
     if (this.inputSearchVoiceSecretCode) {
-      this.inputSearchVoiceSecretCode.addEventListener('input', () => {
-        this.clearVoiceSecretScoreTable(false);
+      this.inputSearchVoiceSecretCode.addEventListener('input', (e) => {
+        if (!e.target.value.trim()) {
+          this.clearVoiceSecretScoreTable(false);
+        }
       });
       this.inputSearchVoiceSecretCode.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -6105,8 +6109,10 @@ class ScoreManagementApp {
       this.btnFetchVoiceNameSecretRoomScores.addEventListener('click', () => this.fetchVoiceNameSecretRoomScores());
     }
     if (this.inputSearchVoiceNameSecretCode) {
-      this.inputSearchVoiceNameSecretCode.addEventListener('input', () => {
-        this.clearVoiceNameSecretScoreTable(false);
+      this.inputSearchVoiceNameSecretCode.addEventListener('input', (e) => {
+        if (!e.target.value.trim()) {
+          this.clearVoiceNameSecretScoreTable(false);
+        }
       });
       this.inputSearchVoiceNameSecretCode.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -6166,8 +6172,10 @@ class ScoreManagementApp {
       this.btnFetchTouchpadSecretRoomScores.addEventListener('click', () => this.fetchTouchpadSecretRoomScores());
     }
     if (this.inputSearchTouchpadSecretCode) {
-      this.inputSearchTouchpadSecretCode.addEventListener('input', () => {
-        this.clearTouchpadSecretScoreTable(false);
+      this.inputSearchTouchpadSecretCode.addEventListener('input', (e) => {
+        if (!e.target.value.trim()) {
+          this.clearTouchpadSecretScoreTable(false);
+        }
       });
       this.inputSearchTouchpadSecretCode.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
@@ -15593,24 +15601,20 @@ class ScoreManagementApp {
     this.updateKPIOverview();
     this.showToast(`បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! ទិន្នន័យបាន Auto Backup និងភ្ជាប់ទៅកាន់ «បញ្ចូលពិន្ទុតាមខែ» រួចរាល់។`, 'success');
 
-    // សម្អាតតារាងបញ្ចូលពិន្ទុ និងត្រៀមសម្រាប់អក្សរសម្ងាត់បន្ទប់ថ្មី
-    this.secretScoreInputTableBody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align: center; padding: 2.5rem 1rem; color: #15803d; background: #f0fdf4; border-radius: 8px;">
-          <i class="ri-checkbox-circle-fill" style="font-size: 2.2rem; display:block; margin-bottom: 0.5rem; color: #16a34a;"></i>
-          <div style="font-size: 1.1rem; font-weight: 700;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!</div>
-          <div style="font-size: 0.9rem; color: #475569; margin-top: 0.35rem;">ទិន្នន័យបាន Auto Backup និងតភ្ជាប់ទៅតារាងពិន្ទុរួចរាល់។ សូមបញ្ចូលអក្សរសម្ងាត់ថ្មី ដើម្បីបន្តបន្ទប់បន្ទាប់។</div>
-        </td>
-      </tr>
-    `;
-    if (this.inputSearchSecretCode) {
-      this.inputSearchSecretCode.value = '';
-      this.inputSearchSecretCode.focus();
+    // Keep table and all entered scores visible so the teacher can verify their work without anything jumping out!
+    if (this.secretScoreStatusText) {
+      this.secretScoreStatusText.innerHTML = `✅ <strong style="color: #15803d; font-size: 1.05rem;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!</strong> (ទិន្នន័យបាន Auto Backup រួចរាល់។ លោកគ្រូអាចត្រួតពិនិត្យពិន្ទុ ឬវាយអក្សរសម្ងាត់ថ្មីខាងលើ)`;
     }
-    if (this.secretScoreActiveRoomInfo) {
-      this.secretScoreActiveRoomInfo.style.display = 'none';
-    }
-    this.currentSecretRoomGrade = null;
+
+    // Flash inputs with calm green highlight to visually confirm the save
+    inputs.forEach(inp => {
+      inp.style.borderColor = '#16a34a';
+      inp.style.backgroundColor = '#dcfce7';
+      setTimeout(() => {
+        inp.style.borderColor = '';
+        inp.style.backgroundColor = '';
+      }, 1500);
+    });
   }
 
   // ==========================================================================
@@ -15967,6 +15971,11 @@ class ScoreManagementApp {
       // Reached the end of room! Auto-save immediately without clicking Save button per user request
       this.announceVoiceEntrySuccess();
       this.handleSaveVoiceSecretRoomScores();
+      if (allInputs.length > 0) {
+        const lastInp = allInputs[allInputs.length - 1];
+        lastInp.focus({ preventScroll: true });
+        this.highlightVoiceSecretActiveRow(lastInp);
+      }
       return true;
     }
     return false;
@@ -16627,32 +16636,20 @@ class ScoreManagementApp {
     this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! ទិន្នន័យបាន Auto Backup និងភ្ជាប់ទៅកាន់ «បញ្ចូលពិន្ទុតាមខែ» រួចរាល់។`, 'success');
     this.announceVoiceEntrySuccess();
 
-    // សម្អាតតារាងបញ្ចូលពិន្ទុ និងត្រៀមសម្រាប់អក្សរសម្ងាត់បន្ទប់ថ្មី
-    this.voiceSecretScoreInputTableBody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align: center; padding: 2.5rem 1rem; color: #15803d; background: #f0fdf4; border-radius: 8px;">
-          <i class="ri-checkbox-circle-fill" style="font-size: 2.2rem; display:block; margin-bottom: 0.5rem; color: #16a34a;"></i>
-          <div style="font-size: 1.1rem; font-weight: 700;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!</div>
-          <div style="font-size: 0.9rem; color: #475569; margin-top: 0.35rem;">ទិន្នន័យបាន Auto Backup និងតភ្ជាប់ទៅតារាងពិន្ទុរួចរាល់។ សូមបញ្ចូលអក្សរសម្ងាត់ថ្មី ដើម្បីបន្តបន្ទប់បន្ទាប់។</div>
-        </td>
-      </tr>
-    `;
-    if (this.inputSearchVoiceSecretCode) {
-      this.inputSearchVoiceSecretCode.value = '';
-      this.inputSearchVoiceSecretCode.focus();
-    }
-    if (this.voiceSecretScoreActiveRoomInfo) {
-      this.voiceSecretScoreActiveRoomInfo.style.display = 'none';
-    }
-    this._currentVoiceSecretActiveInput = null;
-    this.currentVoiceSecretRoomGrade = null;
-    if (this.voiceSecretActiveTargetBadge) {
-      this.voiceSecretActiveTargetBadge.textContent = 'តុសកម្ម: --';
-      this.voiceSecretActiveTargetBadge.style.background = '#e2e8f0';
-    }
+    // Keep table and all entered scores visible so the teacher can verify their work without anything jumping out!
     if (this.voiceSecretStatusText) {
-      this.voiceSecretStatusText.innerHTML = '✨ <strong>បានរក្សាទុក និងសម្អាតតារាងរួចរាល់!</strong> សូមបញ្ចូលអក្សរសម្ងាត់ថ្មី (ឧ. LE7B ឬ K7e) រួចចុច Enter ដើម្បីបន្ត។';
+      this.voiceSecretStatusText.innerHTML = `✅ <strong style="color: #15803d; font-size: 1.05rem;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!</strong> (ទិន្នន័យបាន Auto Backup រួចរាល់។ លោកគ្រូអាចត្រួតពិនិត្យពិន្ទុ ឬវាយអក្សរសម្ងាត់ថ្មីខាងលើ)`;
     }
+
+    // Flash inputs with calm green highlight to visually confirm the save
+    inputs.forEach(inp => {
+      inp.style.borderColor = '#16a34a';
+      inp.style.backgroundColor = '#dcfce7';
+      setTimeout(() => {
+        inp.style.borderColor = '';
+        inp.style.backgroundColor = '';
+      }, 1500);
+    });
   }
 
   // ==========================================================================
@@ -18433,31 +18430,20 @@ class ScoreManagementApp {
     this.updateKPIOverview();
     this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! ទិន្នន័យបាន Auto Backup រួចរាល់។`, 'success');
 
-    this.voiceNameSecretScoreInputTableBody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align: center; padding: 2.5rem 1rem; color: #0284c7; background: #f0f9ff; border-radius: 8px;">
-          <i class="ri-checkbox-circle-fill" style="font-size: 2.2rem; display:block; margin-bottom: 0.5rem; color: #0284c7;"></i>
-          <div style="font-size: 1.1rem; font-weight: 700;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!</div>
-          <div style="font-size: 0.9rem; color: #475569; margin-top: 0.35rem;">ទិន្នន័យបាន Auto Backup និងតភ្ជាប់ទៅតារាងពិន្ទុរួចរាល់។ សូមបញ្ចូលអក្សរសម្ងាត់ថ្មី ដើម្បីបន្តបន្ទប់បន្ទាប់។</div>
-        </td>
-      </tr>
-    `;
-    if (this.inputSearchVoiceNameSecretCode) {
-      this.inputSearchVoiceNameSecretCode.value = '';
-      this.inputSearchVoiceNameSecretCode.focus();
-    }
-    if (this.voiceNameSecretActiveRoomInfo) {
-      this.voiceNameSecretActiveRoomInfo.style.display = 'none';
-    }
-    this._currentVoiceNameSecretActiveInput = null;
-    this.currentVoiceNameSecretRoomGrade = null;
-    if (this.voiceNameSecretActiveTargetBadge) {
-      this.voiceNameSecretActiveTargetBadge.textContent = 'សិស្សសកម្ម: --';
-      this.voiceNameSecretActiveTargetBadge.style.background = '#e2e8f0';
-    }
+    // Keep table and all entered scores visible so the teacher can verify their work without anything jumping out!
     if (this.voiceNameSecretStatusText) {
-      this.voiceNameSecretStatusText.innerHTML = '✨ <strong>បានរក្សាទុក និងសម្អាតតារាងរួចរាល់!</strong> សូមបញ្ចូលអក្សរសម្ងាត់ថ្មី (ឧ. LE7B ឬ C9E) ដើម្បីបន្ត។';
+      this.voiceNameSecretStatusText.innerHTML = `✅ <strong style="color: #0284c7; font-size: 1.05rem;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!</strong> (ទិន្នន័យបាន Auto Backup រួចរាល់។ លោកគ្រូអាចត្រួតពិនិត្យពិន្ទុ ឬវាយអក្សរសម្ងាត់ថ្មីខាងលើ)`;
     }
+
+    // Flash inputs with calm highlight to visually confirm the save
+    inputs.forEach(inp => {
+      inp.style.borderColor = '#0284c7';
+      inp.style.backgroundColor = '#f0f9ff';
+      setTimeout(() => {
+        inp.style.borderColor = '';
+        inp.style.backgroundColor = '';
+      }, 1500);
+    });
   }
 
   // ==========================================================================
@@ -18817,27 +18803,20 @@ class ScoreManagementApp {
     this.updateKPIOverview();
     this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!`, 'success');
 
-    this.touchpadSecretScoreInputTableBody.innerHTML = `
-      <tr>
-        <td colspan="6" style="text-align: center; padding: 2.8rem 1rem; color: #0d9488; background: #f0fdfa; border-radius: 8px;">
-          <i class="ri-checkbox-circle-fill" style="font-size: 2.4rem; display:block; margin-bottom: 0.5rem; color: #0d9488;"></i>
-          <div style="font-size: 1.15rem; font-weight: 700;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!</div>
-          <div style="font-size: 0.9rem; color: #475569; margin-top: 0.35rem;">ទិន្នន័យបាន Auto Backup និងតភ្ជាប់ទៅតារាងពិន្ទុរួចរាល់។ សូមបញ្ចូលអក្សរសម្ងាត់ថ្មី ដើម្បីបន្តបន្ទប់បន្ទាប់។</div>
-        </td>
-      </tr>
-    `;
-    if (this.inputSearchTouchpadSecretCode) {
-      this.inputSearchTouchpadSecretCode.value = '';
-      this.inputSearchTouchpadSecretCode.focus();
+    // Keep table and all entered scores visible so the teacher can verify their work without anything jumping out!
+    if (this.touchpadSecretStatusText) {
+      this.touchpadSecretStatusText.innerHTML = `✅ <strong style="color: #0d9488; font-size: 1.05rem;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!</strong> (ទិន្នន័យបាន Auto Backup រួចរាល់។ លោកគ្រូអាចត្រួតពិនិត្យពិន្ទុ ឬវាយអក្សរសម្ងាត់ថ្មីខាងលើ)`;
     }
-    if (this.touchpadSecretActiveRoomInfo) {
-      this.touchpadSecretActiveRoomInfo.style.display = 'none';
-    }
-    this._currentTouchpadActiveInput = null;
-    this.currentTouchpadSecretRoomGrade = null;
-    if (this.touchpadActiveDeskBadge) {
-      this.touchpadActiveDeskBadge.textContent = 'តុសកម្ម: --';
-    }
+
+    // Flash inputs with calm highlight to visually confirm the save
+    inputs.forEach(inp => {
+      inp.style.borderColor = '#0d9488';
+      inp.style.backgroundColor = '#f0fdfa';
+      setTimeout(() => {
+        inp.style.borderColor = '';
+        inp.style.backgroundColor = '';
+      }, 1500);
+    });
   }
 
   initTouchpadCanvas() {
