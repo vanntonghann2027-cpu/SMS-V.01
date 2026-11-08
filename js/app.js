@@ -15357,8 +15357,9 @@ class ScoreManagementApp {
 
     const scoreInputs = Array.from(this.secretScoreInputTableBody.querySelectorAll('.secret-score-input-fast'));
     if (scoreInputs[0]) {
-      scoreInputs[0].focus();
+      scoreInputs[0].focus({ preventScroll: true });
       scoreInputs[0].select();
+      this.highlightVoiceSecretActiveRow(scoreInputs[0]);
     }
 
     this.showToast(`បានទាញយកបញ្ជីសិស្ស (${studentsInRoom.length} នាក់) សម្រាប់ ${periodTitle} រួចរាល់!`, 'success');
@@ -15619,6 +15620,8 @@ class ScoreManagementApp {
     scoreInputs.forEach(inp => {
       inp.addEventListener('focus', () => {
         this._currentVoiceSecretActiveInput = inp;
+        this.highlightVoiceSecretActiveRow(inp);
+        this.smoothEnsureVisible(inp);
         const seqNum = inp.getAttribute('data-seq');
         if (this.voiceSecretActiveTargetBadge) {
           this.voiceSecretActiveTargetBadge.textContent = `តុសកម្ម: តុទី ${seqNum}`;
@@ -15664,8 +15667,9 @@ class ScoreManagementApp {
     });
 
     if (scoreInputs[0]) {
-      scoreInputs[0].focus();
+      scoreInputs[0].focus({ preventScroll: true });
       scoreInputs[0].select();
+      this.highlightVoiceSecretActiveRow(scoreInputs[0]);
     }
 
     // Pre-cache "ការបញ្ចូលជោគជ័យ" and "0" in memory for 0ms instant AI voice playback
@@ -15703,6 +15707,93 @@ class ScoreManagementApp {
     this.playKhmerSpeech('ការបញ្ចូលជោគជ័យ');
   }
 
+  // Highlight active desk row with prominent green border and fresh soft tint
+  highlightVoiceSecretActiveRow(activeInput) {
+    if (!activeInput) return;
+    const parentTbody = activeInput.closest('tbody');
+    if (!parentTbody) return;
+    const rows = parentTbody.querySelectorAll('tr');
+    rows.forEach(r => r.classList.remove('voice-active-row'));
+    const parentTr = activeInput.closest('tr');
+    if (parentTr) {
+      parentTr.classList.add('voice-active-row');
+    }
+  }
+
+  // Jitter-free visibility: only scrolls if row is outside the comfortable view zone
+  smoothEnsureVisible(el) {
+    if (!el) return;
+    try {
+      const rect = el.getBoundingClientRect();
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+      if (rect.top < 130 || rect.bottom > viewportHeight - 110) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    } catch (_) { }
+  }
+
+  // Flying Score Animation: Score pops out near mic/speaker and swoops directly into the active input box!
+  playScoreFlyingAnimation(scoreVal, targetInput) {
+    if (!targetInput) return;
+    try {
+      const inputRect = targetInput.getBoundingClientRect();
+      let startX = window.innerWidth / 2;
+      let startY = 160;
+      const banner = this.voiceSecretListeningBanner || document.getElementById('voiceSecretListeningBanner') || this.voiceNameSecretListeningBanner;
+      if (banner) {
+        const bRect = banner.getBoundingClientRect();
+        if (bRect.width > 0 && bRect.height > 0) {
+          startX = bRect.left + bRect.width / 2;
+          startY = bRect.top + bRect.height / 2;
+        }
+      }
+
+      const targetX = inputRect.left + inputRect.width / 2;
+      const targetY = inputRect.top + inputRect.height / 2;
+
+      // Create floating particle
+      const flyEl = document.createElement('div');
+      flyEl.className = 'voice-fly-score-particle';
+      flyEl.innerHTML = `<span class="voice-fly-icon">🗣️</span><span class="voice-fly-num">${scoreVal}</span>`;
+      flyEl.style.left = `${startX}px`;
+      flyEl.style.top = `${startY}px`;
+      flyEl.style.transform = 'translate(-50%, -50%) scale(0.35)';
+      flyEl.style.opacity = '0';
+      document.body.appendChild(flyEl);
+
+      // Phase 1: Pop up boldly near mic/mouth
+      requestAnimationFrame(() => {
+        flyEl.style.transition = 'transform 0.16s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.16s ease';
+        flyEl.style.transform = 'translate(-50%, -50%) scale(1.35)';
+        flyEl.style.opacity = '1';
+
+        // Phase 2: Fly & swoop directly into target input box
+        setTimeout(() => {
+          flyEl.style.transition = 'all 0.36s cubic-bezier(0.25, 1, 0.5, 1)';
+          flyEl.style.left = `${targetX}px`;
+          flyEl.style.top = `${targetY}px`;
+          flyEl.style.transform = 'translate(-50%, -50%) scale(0.4)';
+          flyEl.style.opacity = '0.9';
+
+          // Phase 3: Impact celebration on input box
+          setTimeout(() => {
+            targetInput.classList.remove('score-input-impact');
+            void targetInput.offsetWidth; // Force reflow
+            targetInput.classList.add('score-input-impact');
+            flyEl.style.transition = 'all 0.12s ease';
+            flyEl.style.opacity = '0';
+            flyEl.style.transform = 'translate(-50%, -50%) scale(0.1)';
+            setTimeout(() => {
+              if (flyEl.parentNode) flyEl.parentNode.removeChild(flyEl);
+            }, 140);
+          }, 350);
+        }, 110);
+      });
+    } catch (e) {
+      console.warn('Flying animation error:', e);
+    }
+  }
+
   navigateVoiceSecretInput(direction = 1) {
     if (!this.voiceSecretScoreInputTableBody) return false;
     const allInputs = Array.from(this.voiceSecretScoreInputTableBody.querySelectorAll('.voice-secret-score-input:not([disabled])'));
@@ -15711,8 +15802,10 @@ class ScoreManagementApp {
     if (curIdx === -1) curIdx = 0;
     const targetIdx = curIdx + direction;
     if (targetIdx >= 0 && targetIdx < allInputs.length) {
-      allInputs[targetIdx].focus();
+      allInputs[targetIdx].focus({ preventScroll: true });
       allInputs[targetIdx].select();
+      this.highlightVoiceSecretActiveRow(allInputs[targetIdx]);
+      this.smoothEnsureVisible(allInputs[targetIdx]);
       return false;
     } else if (targetIdx >= allInputs.length) {
       // Reached the end of room! AI announces "ការបញ្ចូលជោគជ័យ" and focuses Save button
@@ -15780,6 +15873,9 @@ class ScoreManagementApp {
       targetInput.classList.remove('score-input-invalid');
       targetInput.value = parsedNum;
       this._lastVoiceFired = { input: targetInput, value: parsedNum };
+
+      // Trigger spectacular flying number animation!
+      this.playScoreFlyingAnimation(parsedNum, targetInput);
 
       const reachedEnd = this.navigateVoiceSecretInput(1);
 

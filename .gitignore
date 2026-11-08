@@ -22,3 +22,4 @@ database/*.db
 # Log files
 *.log
 Local Data/
+data/ai_stt_config.json

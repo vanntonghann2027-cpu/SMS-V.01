@@ -4068,6 +4068,128 @@ input[type="number"] {
   background-color: #334155 !important;
 }
 
+/* =========================================================================
+   VOICE SCORE ENTRY: ACTIVE ROW HIGHLIGHT & FLYING SCORE ANIMATIONS
+   ========================================================================= */
+
+/* Jitter prevention: keep voice banner height stable */
+#voiceSecretListeningBanner,
+#voiceNameSecretListeningBanner {
+  min-height: 54px;
+  contain: layout;
+  transition: border-color 0.2s ease, background-color 0.2s ease;
+}
+
+/* Prominent highlight on the currently active row being scored */
+.voice-active-row {
+  background-color: #f0fdf4 !important; /* Soft fresh mint tint */
+  border-left: 6px solid #16a34a !important; /* Bold green active bar */
+  box-shadow: 0 4px 16px rgba(22, 163, 74, 0.16) !important;
+  position: relative;
+  z-index: 2;
+  transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.voice-active-row td {
+  font-weight: 700 !important;
+  color: #0f172a !important;
+}
+
+.voice-active-row .secret-student-num-circle {
+  background: linear-gradient(135deg, #16a34a, #15803d) !important;
+  color: #ffffff !important;
+  border-color: #16a34a !important;
+  transform: scale(1.18);
+  box-shadow: 0 2px 10px rgba(22, 163, 74, 0.45);
+  transition: all 0.2s ease;
+}
+
+.voice-active-row .voice-secret-score-input {
+  border-color: #16a34a !important;
+  background-color: #ffffff !important;
+  box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.28) !important;
+  transform: scale(1.05);
+}
+
+[data-theme="dark"] .voice-active-row {
+  background-color: #064e3b !important;
+  border-left: 6px solid #34d399 !important;
+  box-shadow: 0 4px 16px rgba(52, 211, 153, 0.22) !important;
+}
+
+[data-theme="dark"] .voice-active-row td {
+  color: #f1f5f9 !important;
+}
+
+[data-theme="dark"] .voice-active-row .secret-student-num-circle {
+  background: linear-gradient(135deg, #059669, #10b981) !important;
+  color: #ffffff !important;
+}
+
+[data-theme="dark"] .voice-active-row .voice-secret-score-input {
+  border-color: #34d399 !important;
+  background-color: #064e3b !important;
+  box-shadow: 0 0 0 4px rgba(52, 211, 153, 0.35) !important;
+}
+
+/* Flying Score Animation: Pops out from speaker's voice and swoops into input */
+.voice-fly-score-particle {
+  position: fixed;
+  z-index: 999999;
+  pointer-events: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0.65rem 1.6rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #7c3aed, #4f46e5, #0284c7);
+  color: #ffffff;
+  font-family: 'Outfit', 'Kantumruy Pro', sans-serif;
+  font-size: 2.2rem;
+  font-weight: 900;
+  letter-spacing: 0.5px;
+  box-shadow: 0 14px 34px rgba(99, 102, 241, 0.6), 0 0 24px rgba(124, 58, 237, 0.45), inset 0 1px 2px rgba(255, 255, 255, 0.6);
+  border: 2.5px solid #ffffff;
+  will-change: transform, opacity, left, top;
+}
+
+.voice-fly-score-particle .voice-fly-icon {
+  font-size: 1.8rem;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+}
+
+.voice-fly-score-particle .voice-fly-num {
+  text-shadow: 0 2px 8px rgba(0,0,0,0.35);
+}
+
+/* Celebration impact pulse when flying score lands into the input box */
+.score-input-impact {
+  animation: scoreImpactPulse 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards !important;
+}
+
+@keyframes scoreImpactPulse {
+  0% {
+    transform: scale(0.92);
+    border-color: #16a34a !important;
+    background-color: #dcfce7 !important;
+    box-shadow: 0 0 0 0 rgba(22, 163, 74, 0.7) !important;
+  }
+  45% {
+    transform: scale(1.18);
+    border-color: #16a34a !important;
+    background-color: #bbf7d0 !important;
+    box-shadow: 0 0 0 10px rgba(22, 163, 74, 0.35), 0 0 24px rgba(34, 197, 94, 0.5) !important;
+  }
+  100% {
+    transform: scale(1);
+    border-color: #16a34a !important;
+    background-color: #f0fdf4 !important;
+    box-shadow: 0 0 0 4px rgba(22, 163, 74, 0.2) !important;
+  }
+}
+
+
 
 
 
