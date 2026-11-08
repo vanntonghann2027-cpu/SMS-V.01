@@ -4113,7 +4113,12 @@ class ScoreManagementApp {
       this.applyParsedState(target.data);
       this.saveState(false);
       this.renderNavigation();
-      this.renderCurrentView();
+      // If currently on secret score entry view, skip re-rendering to avoid wiping or disrupting the active score table!
+      const curMeta = (typeof PERIOD_DEFINITIONS !== 'undefined') ? PERIOD_DEFINITIONS[this.currentPeriod] : null;
+      const isSecretViewActive = curMeta && curMeta.type === 'exam_score';
+      if (!isSecretViewActive) {
+        this.renderCurrentView();
+      }
       this.updateKPIOverview();
       this.closeBackupModal();
       this.showToast(`បានស្តារទិន្នន័យត្រឡប់មកវិញជោគជ័យ (${target.studentCount} នាក់)!`, 'success');
@@ -5546,15 +5551,25 @@ class ScoreManagementApp {
     }
 
     // Auto-pull from Supabase Cloud on window focus and every 45s so scores entered from mobile/tablet show up immediately
+    const isActivelyScoringSecret = () => {
+      return Boolean(
+        this._currentVoiceSecretActiveInput ||
+        this._currentVoiceNameSecretActiveInput ||
+        this._currentTouchpadActiveInput ||
+        (this.voiceSecretScoreInputTableBody && this.voiceSecretScoreInputTableBody.querySelector('.voice-secret-score-input')) ||
+        (this.secretScoreInputTableBody && this.secretScoreInputTableBody.querySelector('.secret-score-input-fast'))
+      );
+    };
+
     window.addEventListener('focus', () => {
       const cfg = this.getSupabaseConfig();
-      if (cfg && cfg.mode === 'supabase' && cfg.key) {
+      if (cfg && cfg.mode === 'supabase' && cfg.key && !isActivelyScoringSecret()) {
         this.pullFromSupabase({ silent: true });
       }
     });
     setInterval(() => {
       const cfg = this.getSupabaseConfig();
-      if (cfg && cfg.mode === 'supabase' && cfg.key) {
+      if (cfg && cfg.mode === 'supabase' && cfg.key && !isActivelyScoringSecret()) {
         this.pullFromSupabase({ silent: true });
       }
     }, 45000);
@@ -11516,7 +11531,12 @@ class ScoreManagementApp {
       }
       this.saveState();
       this.renderNavigation();
-      this.renderCurrentView();
+      // If currently on secret score entry view, skip re-rendering to avoid wiping or disrupting the active score table!
+      const curMeta = (typeof PERIOD_DEFINITIONS !== 'undefined') ? PERIOD_DEFINITIONS[this.currentPeriod] : null;
+      const isSecretViewActive = curMeta && curMeta.type === 'exam_score';
+      if (!isSecretViewActive) {
+        this.renderCurrentView();
+      }
       this.showToast(`បានលុបសិស្ស ${stu.khmerName || stu.id} រួចរាល់!`, 'info');
     }
   }
@@ -15135,20 +15155,24 @@ class ScoreManagementApp {
       this.stopMicAudioDsp();
     }
 
-    // Clean score entry table on Tab switch per user request
+    // Ensure table placeholders exist if tables have never been populated, but NEVER wipe out loaded students or steal focus!
     if (subTabName === 'bySecret') {
-      this.clearSecretScoreTable(true);
-      if (this.inputSearchSecretCode) this.inputSearchSecretCode.focus();
+      if (!this.secretScoreInputTableBody || this.secretScoreInputTableBody.children.length === 0) {
+        this.clearSecretScoreTable(false);
+      }
     } else if (subTabName === 'byVoiceSecret') {
-      this.clearVoiceSecretScoreTable(true);
-      if (this.inputSearchVoiceSecretCode) this.inputSearchVoiceSecretCode.focus();
+      if (!this.voiceSecretScoreInputTableBody || this.voiceSecretScoreInputTableBody.children.length === 0) {
+        this.clearVoiceSecretScoreTable(false);
+      }
     } else if (subTabName === 'byVoiceNameSecret') {
-      this.clearVoiceNameSecretScoreTable(true);
-      if (this.inputSearchVoiceNameSecretCode) this.inputSearchVoiceNameSecretCode.focus();
+      if (!this.voiceNameSecretScoreInputTableBody || this.voiceNameSecretScoreInputTableBody.children.length === 0) {
+        this.clearVoiceNameSecretScoreTable(false);
+      }
     } else if (subTabName === 'byTouchpadSecret') {
-      this.clearTouchpadSecretScoreTable(true);
+      if (!this.touchpadSecretScoreInputTableBody || this.touchpadSecretScoreInputTableBody.children.length === 0) {
+        this.clearTouchpadSecretScoreTable(false);
+      }
       setTimeout(() => this.initTouchpadCanvas(), 60);
-      if (this.inputSearchTouchpadSecretCode) this.inputSearchTouchpadSecretCode.focus();
     } else if (subTabName === 'bySubject') {
       this.renderExamSubjectScoresTable();
     } else if (subTabName === 'byAudit') {
@@ -15157,7 +15181,21 @@ class ScoreManagementApp {
   }
 
   renderExamScoreEntryView() {
-    this.switchScoreSubTab(this.activeScoreSubTab || 'bySecret');
+    const targetSubTab = this.activeScoreSubTab || 'bySecret';
+    // If the table currently has students loaded or an active input, do NOT switch or re-render subtab
+    const isActivelyScoring = Boolean(
+      this._currentVoiceSecretActiveInput ||
+      this._currentVoiceNameSecretActiveInput ||
+      this._currentTouchpadActiveInput ||
+      (this.voiceSecretScoreInputTableBody && this.voiceSecretScoreInputTableBody.querySelector('.voice-secret-score-input')) ||
+      (this.secretScoreInputTableBody && this.secretScoreInputTableBody.querySelector('.secret-score-input-fast')) ||
+      (this.voiceNameSecretScoreInputTableBody && this.voiceNameSecretScoreInputTableBody.querySelector('.voice-name-secret-score-input')) ||
+      (this.touchpadSecretScoreInputTableBody && this.touchpadSecretScoreInputTableBody.querySelector('.touchpad-secret-score-input'))
+    );
+    if (isActivelyScoring) {
+      return;
+    }
+    this.switchScoreSubTab(targetSubTab);
   }
 
   toggleShowStudentInfo(checked) {
@@ -23342,7 +23380,12 @@ CREATE POLICY "Allow all sms_app_state" ON public.sms_app_state FOR ALL TO anon,
       this._skipSupabaseAutoSync = false;
 
       this.renderNavigation();
-      this.renderCurrentView();
+      // If currently on secret score entry view, skip re-rendering to avoid wiping or disrupting the active score table!
+      const curMeta = (typeof PERIOD_DEFINITIONS !== 'undefined') ? PERIOD_DEFINITIONS[this.currentPeriod] : null;
+      const isSecretViewActive = curMeta && curMeta.type === 'exam_score';
+      if (!isSecretViewActive) {
+        this.renderCurrentView();
+      }
 
       const statusEl = document.getElementById('supabaseLastSyncStatus');
       if (statusEl) {
