@@ -15857,7 +15857,15 @@ class ScoreManagementApp {
             const num = parseFloat(val);
             if (!isNaN(num)) {
               this.saveVoiceSecretInputValue(inp, num);
-              this.playVoiceSecretFeedback(num, inp);
+              const fbMode = (this.voiceSecretFeedbackMode && this.voiceSecretFeedbackMode.value) || 'code_score';
+              if (fbMode === 'off') {
+                this.navigateVoiceSecretInput(1);
+              } else {
+                this.playVoiceSecretFeedback(num, inp, () => {
+                  this.navigateVoiceSecretInput(1);
+                });
+              }
+              return;
             }
           }
           this.navigateVoiceSecretInput(1);
@@ -15865,12 +15873,18 @@ class ScoreManagementApp {
           e.preventDefault();
           this.navigateVoiceSecretInput(-1);
         } else if ((e.key === 'a' || e.key === 'A') && e.isTrusted && !e.ctrlKey && !e.metaKey && !e.altKey) {
-          // Pressing physical "A" (Absent / សូន្យ) enters 0 and jumps to next student immediately
+          // Pressing physical "A" (Absent / សូន្យ) enters 0 and jumps to next student
           e.preventDefault();
           inp.value = '0';
           this.saveVoiceSecretInputValue(inp, 0);
-          this.playVoiceSecretFeedback(0, inp);
-          this.navigateVoiceSecretInput(1);
+          const fbMode = (this.voiceSecretFeedbackMode && this.voiceSecretFeedbackMode.value) || 'code_score';
+          if (fbMode === 'off') {
+            this.navigateVoiceSecretInput(1);
+          } else {
+            this.playVoiceSecretFeedback(0, inp, () => {
+              this.navigateVoiceSecretInput(1);
+            });
+          }
         }
       });
     });
@@ -16095,31 +16109,50 @@ class ScoreManagementApp {
       }
       this._pendingCrossResultPrefix = null;
 
-      // Valid score! Fill + JUMP FIRST (zero latency), do heavy work afterwards.
+      // Valid score! Fill current cell and persist immediately
       targetInput.classList.remove('score-input-invalid');
       targetInput.value = parsedNum;
       this._lastVoiceFired = { input: targetInput, value: parsedNum };
+      this.saveVoiceSecretInputValue(targetInput, parsedNum);
 
       // Trigger spectacular flying number animation!
       this.playScoreFlyingAnimation(parsedNum, targetInput);
 
-      const reachedEnd = this.navigateVoiceSecretInput(1);
-
-      // Defer chime / state save / banner so they never delay the cursor jump
+      targetInput.style.backgroundColor = '#dcfce7';
+      targetInput.style.borderColor = '#16a34a';
       setTimeout(() => {
-        const seq = targetInput.getAttribute('data-seq');
-        if (!reachedEnd && this.voiceSecretStatusText) {
-          this.voiceSecretStatusText.innerHTML = `✓ <strong>បញ្ចូលជោគជ័យ៖</strong> តុទី ${seq} = <strong style="color: #15803d; font-size: 1.15rem;">${parsedNum}</strong> ⚡ (ពីសម្លេង «${raw}»)`;
-        }
-        targetInput.style.backgroundColor = '#dcfce7';
-        targetInput.style.borderColor = '#16a34a';
+        targetInput.style.backgroundColor = '';
+        targetInput.style.borderColor = '';
+      }, 300);
+
+      const seq = targetInput.getAttribute('data-seq');
+      if (this.voiceSecretStatusText) {
+        this.voiceSecretStatusText.innerHTML = `✓ <strong>បញ្ចូលជោគជ័យ៖</strong> តុទី ${seq} = <strong style="color: #15803d; font-size: 1.15rem;">${parsedNum}</strong> ⚡ (ពីសម្លេង «${raw}»)`;
+      }
+
+      // Check feedback mode:
+      const fbMode = (this.voiceSecretFeedbackMode && this.voiceSecretFeedbackMode.value) || 'code_score';
+      if (fbMode === 'off') {
+        const reachedEnd = this.navigateVoiceSecretInput(1);
+        if (reachedEnd) this.announceVoiceEntrySuccess();
+      } else if (fbMode === 'beep') {
+        this.playAudioChime(760, 0.08);
         setTimeout(() => {
-          targetInput.style.backgroundColor = '';
-          targetInput.style.borderColor = '';
-        }, 240);
-        this.playVoiceSecretFeedback(parsedNum, targetInput);
-        this.saveVoiceSecretInputValue(targetInput, parsedNum);
-      }, 0);
+          const reachedEnd = this.navigateVoiceSecretInput(1);
+          if (reachedEnd) this.announceVoiceEntrySuccess();
+        }, 90);
+      } else {
+        // Strict 3-phase flow per user request:
+        // 1. Keep cursor on current cell while AI speaks confirmation
+        // 2. Microphone is completely stopped/muted during speech
+        // 3. ONLY after speech ends + echo settles -> jump to next desk & re-open mic!
+        this.playVoiceSecretFeedback(parsedNum, targetInput, () => {
+          const reachedEnd = this.navigateVoiceSecretInput(1);
+          if (reachedEnd) {
+            this.announceVoiceEntrySuccess();
+          }
+        });
+      }
     }
   }
 
@@ -16138,42 +16171,45 @@ class ScoreManagementApp {
 
   // Confirmation sound after a voice score: spoken word in Khmer (code / desk number + score), beep, or off.
   // While a spoken word plays, mic results are ignored so the app never "hears itself".
-  playVoiceSecretFeedback(num, targetInput = null) {
+  playVoiceSecretFeedback(num, targetInput = null, onComplete = null) {
     const mode = (this.voiceSecretFeedbackMode && this.voiceSecretFeedbackMode.value) || 'code_score';
-    if (mode === 'off') return;
+    if (mode === 'off') {
+      if (onComplete) onComplete();
+      return;
+    }
     if (mode === 'beep') {
       this.playAudioChime(760, 0.08);
+      if (onComplete) setTimeout(onComplete, 80);
       return;
     }
 
     const scoreSpeech = this.formatKhmerNumberForSpeech(num);
 
-    if (mode === 'score_only') {
-      this.playKhmerSpeech(scoreSpeech);
-      return;
-    }
-
-    // Default: 'code_score' or legacy 'speak' -> Confirm Code/Desk and Score in Khmer
-    let deskNum = '';
-    let secretCode = '';
-    if (targetInput) {
-      deskNum = targetInput.getAttribute('data-desk') || targetInput.getAttribute('data-seq') || '';
-      secretCode = targetInput.getAttribute('data-secretcode') || '';
-    } else if (this._currentVoiceSecretActiveInput) {
-      deskNum = this._currentVoiceSecretActiveInput.getAttribute('data-desk') || this._currentVoiceSecretActiveInput.getAttribute('data-seq') || '';
-      secretCode = this._currentVoiceSecretActiveInput.getAttribute('data-secretcode') || '';
-    }
-
     let speechText = '';
-    if (secretCode && secretCode !== deskNum) {
-      speechText = `កូដ ${secretCode} តុ ${deskNum} ពិន្ទុ ${scoreSpeech}`;
-    } else if (deskNum) {
-      speechText = `តុ ${deskNum} ពិន្ទុ ${scoreSpeech}`;
+    if (mode === 'score_only') {
+      speechText = scoreSpeech;
     } else {
-      speechText = `ពិន្ទុ ${scoreSpeech}`;
+      // Default: 'code_score' or legacy 'speak' -> Confirm Code/Desk and Score in Khmer
+      let deskNum = '';
+      let secretCode = '';
+      if (targetInput) {
+        deskNum = targetInput.getAttribute('data-desk') || targetInput.getAttribute('data-seq') || '';
+        secretCode = targetInput.getAttribute('data-secretcode') || '';
+      } else if (this._currentVoiceSecretActiveInput) {
+        deskNum = this._currentVoiceSecretActiveInput.getAttribute('data-desk') || this._currentVoiceSecretActiveInput.getAttribute('data-seq') || '';
+        secretCode = this._currentVoiceSecretActiveInput.getAttribute('data-secretcode') || '';
+      }
+
+      if (secretCode && secretCode !== deskNum) {
+        speechText = `កូដ ${secretCode} តុ ${deskNum} ពិន្ទុ ${scoreSpeech}`;
+      } else if (deskNum) {
+        speechText = `តុ ${deskNum} ពិន្ទុ ${scoreSpeech}`;
+      } else {
+        speechText = `ពិន្ទុ ${scoreSpeech}`;
+      }
     }
 
-    this.playKhmerSpeech(speechText);
+    this.playKhmerSpeech(speechText, onComplete);
   }
 
   // Persist one voice-entered score into app state (and mirror to the manual secret-code table)
@@ -16516,6 +16552,11 @@ class ScoreManagementApp {
 
                 this._committedCountByIndex.set(i, idx + 1);
                 commitOneItem(item, isFinalEvent);
+                // In single-desk voice score entry, commit strictly ONE score per speech turn!
+                // Discard any trailing ITN phantom syllables (e.g. Chrome emitting "39 9" or "សាមសិបប្រាំបួន 9")
+                if (item.type === 'score' || !item.type) {
+                  break;
+                }
               }
 
               // Keep Google's km-KH streaming session fresh in isolated-number mode so it never lags or hallucinates sentences
@@ -17928,10 +17969,16 @@ class ScoreManagementApp {
       if (finishedExecuted) return;
       finishedExecuted = true;
       this._voiceTtsSpeaking = false;
-      this._voiceMuteUntil = Date.now() + 450; // Safety buffer for room echo dissipation
+      this._voiceMuteUntil = Date.now() + 350; // Safety buffer for room echo dissipation
 
-      // Automatically re-open microphone after speech ends and room echo settles!
+      // Settling delay after speech ends before advancing desk and reopening mic
       setTimeout(() => {
+        // Step 1: Advance to next desk after verification is completely done
+        if (callback) {
+          try { callback(); } catch (_) { }
+        }
+
+        // Step 2: Open microphone fresh for the next desk
         if (this._voiceSecretListeningActive && this.activeScoreSubTab === 'byVoiceSecret' && !this._voiceTtsSpeaking) {
           if (this._processedResultIndices) this._processedResultIndices.clear();
           if (this._committedCountByIndex) this._committedCountByIndex.clear();
@@ -17941,9 +17988,7 @@ class ScoreManagementApp {
             this.voiceSecretStatusText.innerHTML = `🎙️ កំពុងស្តាប់ពិន្ទុសម្រាប់តុទី <strong>${seq}</strong>... (លោកគ្រូអាចនិយាយបាន)`;
           }
         }
-      }, 350);
-
-      if (callback) callback();
+      }, 220);
     };
 
     // 0ms Latency: Check if audio is already pre-cached in memory Blob!
