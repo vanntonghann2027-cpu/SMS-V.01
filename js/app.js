@@ -16226,7 +16226,7 @@ class ScoreManagementApp {
   }
 
   recoverVoiceSecretRecognition(reason = 'watchdog') {
-    if (!this._voiceSecretListeningActive || this.activeScoreSubTab !== 'byVoiceSecret') return;
+    if (!this._voiceSecretListeningActive || this.activeScoreSubTab !== 'byVoiceSecret' || this._voiceTtsSpeaking) return;
     if (this._voiceWatchdogTimer) {
       clearTimeout(this._voiceWatchdogTimer);
       this._voiceWatchdogTimer = null;
@@ -16245,7 +16245,7 @@ class ScoreManagementApp {
     }
     this._voiceSecretRecognitionRunning = false;
     setTimeout(() => {
-      if (this._voiceSecretListeningActive && this.activeScoreSubTab === 'byVoiceSecret') {
+      if (this._voiceSecretListeningActive && this.activeScoreSubTab === 'byVoiceSecret' && !this._voiceTtsSpeaking) {
         this.startVoiceSecretScoreRecognition();
       }
     }, 30);
@@ -16258,6 +16258,11 @@ class ScoreManagementApp {
         this.btnToggleVoiceSecretListening.style.background = '#64748b';
         if (this.voiceSecretMicBtnText) this.voiceSecretMicBtnText.textContent = 'Browser មិនគាំទ្រ Web Speech';
       }
+      return;
+    }
+
+    if (this._voiceTtsSpeaking) {
+      // While AI is speaking, do NOT open the microphone to avoid self-echo!
       return;
     }
 
@@ -16583,10 +16588,12 @@ class ScoreManagementApp {
           if (this._processedResultIndices) this._processedResultIndices.clear();
           if (this._committedCountByIndex) this._committedCountByIndex.clear();
           clearWatchdog();
+          // DO NOT auto-restart while AI is speaking!
+          if (this._voiceTtsSpeaking) return;
           // Immediately keep online recognition alive ONLY when online and not in offline mode
           if (this._voiceSecretListeningActive && this.activeScoreSubTab === 'byVoiceSecret' && navigator.onLine && !this._forceOfflineVoiceMode && !this._offlineVoiceModeActive) {
             setTimeout(() => {
-              if (this._voiceSecretListeningActive && this.activeScoreSubTab === 'byVoiceSecret' && navigator.onLine && !this._forceOfflineVoiceMode && !this._offlineVoiceModeActive) {
+              if (this._voiceSecretListeningActive && this.activeScoreSubTab === 'byVoiceSecret' && navigator.onLine && !this._forceOfflineVoiceMode && !this._offlineVoiceModeActive && !this._voiceTtsSpeaking) {
                 try {
                   this._voiceSecretRecognition.start();
                   this._voiceSecretRecognitionRunning = true;
@@ -16607,6 +16614,11 @@ class ScoreManagementApp {
   stopVoiceSecretScoreRecognition() {
     this._voiceSecretListeningActive = false;
     this._voiceSecretRecognitionRunning = false;
+    if (this._currentKhmerAudio) {
+      try { this._currentKhmerAudio.pause(); } catch (_) { }
+      this._currentKhmerAudio = null;
+    }
+    this._voiceTtsSpeaking = false;
     if (this._voiceWatchdogTimer) {
       clearTimeout(this._voiceWatchdogTimer);
       this._voiceWatchdogTimer = null;
@@ -17882,11 +17894,55 @@ class ScoreManagementApp {
       return;
     }
 
-    // Mute mic recognition temporarily so it does not hear its own audio
+    // Set speaking flag and immediately stop/abort mic recognition so it NEVER hears itself!
     this._voiceTtsSpeaking = true;
+    this._voiceMuteUntil = Date.now() + 10000; // Guard while audio is active
+
+    if (this._voiceSecretRecognition) {
+      try {
+        this._voiceSecretRecognition.abort();
+      } catch (_) { }
+      this._voiceSecretRecognitionRunning = false;
+    }
+    if (this._voiceWatchdogTimer) {
+      clearTimeout(this._voiceWatchdogTimer);
+      this._voiceWatchdogTimer = null;
+    }
+    if (this._voiceInterimScoreTimer) {
+      clearTimeout(this._voiceInterimScoreTimer);
+      this._voiceInterimScoreTimer = null;
+    }
+    if (this._pendingCrossResultPrefix && this._pendingCrossResultPrefix.timer) {
+      clearTimeout(this._pendingCrossResultPrefix.timer);
+      this._pendingCrossResultPrefix = null;
+    }
+    if (this._processedResultIndices) this._processedResultIndices.clear();
+    if (this._committedCountByIndex) this._committedCountByIndex.clear();
+
+    if (this.voiceSecretStatusText && this.activeScoreSubTab === 'byVoiceSecret') {
+      this.voiceSecretStatusText.innerHTML = `🔊 <strong>AI កំពុងបញ្ជាក់៖</strong> <span style="color: #4338ca; font-weight: 700;">«${cleanStr}»</span> <span style="color: #64748b; font-size: 0.88rem;">(ផ្អាកមីក្រូហ្វូន...)</span>`;
+    }
+
+    let finishedExecuted = false;
     const onFinished = () => {
+      if (finishedExecuted) return;
+      finishedExecuted = true;
       this._voiceTtsSpeaking = false;
-      this._voiceMuteUntil = Date.now() + 60;
+      this._voiceMuteUntil = Date.now() + 450; // Safety buffer for room echo dissipation
+
+      // Automatically re-open microphone after speech ends and room echo settles!
+      setTimeout(() => {
+        if (this._voiceSecretListeningActive && this.activeScoreSubTab === 'byVoiceSecret' && !this._voiceTtsSpeaking) {
+          if (this._processedResultIndices) this._processedResultIndices.clear();
+          if (this._committedCountByIndex) this._committedCountByIndex.clear();
+          this.startVoiceSecretScoreRecognition();
+          if (this.voiceSecretStatusText && this._currentVoiceSecretActiveInput) {
+            const seq = this._currentVoiceSecretActiveInput.getAttribute('data-seq') || '';
+            this.voiceSecretStatusText.innerHTML = `🎙️ កំពុងស្តាប់ពិន្ទុសម្រាប់តុទី <strong>${seq}</strong>... (លោកគ្រូអាចនិយាយបាន)`;
+          }
+        }
+      }, 350);
+
       if (callback) callback();
     };
 
@@ -17902,7 +17958,7 @@ class ScoreManagementApp {
       }
       const audio = new Audio(blobUrl);
       this._currentKhmerAudio = audio;
-      audio.playbackRate = 1.25;
+      audio.playbackRate = 1.35;
       let done = false;
       const handleDone = () => {
         if (done) return;
@@ -17959,7 +18015,7 @@ class ScoreManagementApp {
       audio.referrerPolicy = 'no-referrer';
       audio.src = currentUrl;
       this._currentKhmerAudio = audio;
-      audio.playbackRate = 1.25;
+      audio.playbackRate = 1.35;
 
       let done = false;
       const handleDone = () => {
@@ -18015,7 +18071,7 @@ class ScoreManagementApp {
         return;
       }
 
-      utter.rate = 1.25;
+      utter.rate = 1.35;
       utter.volume = 1.0;
 
       let done = false;
