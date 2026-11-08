@@ -4189,6 +4189,287 @@ input[type="number"] {
   }
 }
 
+/* ==========================================================================
+   TOUCHPAD & HANDWRITING MATH SCORE ENTRY WORKSPACE
+   ========================================================================== */
+.touchpad-workspace-grid {
+  display: grid;
+  grid-template-columns: minmax(360px, 1fr) 520px;
+  gap: 1.25rem;
+  align-items: start;
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 1100px) {
+  .touchpad-workspace-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.touchpad-pad-card {
+  background: #ffffff;
+  border: 2px solid #0d9488;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px -5px rgba(13, 148, 136, 0.18), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  position: sticky;
+  top: 15px;
+  z-index: 10;
+}
+
+.touchpad-card-header {
+  background: linear-gradient(135deg, #f0fdfa, #ccfbf1);
+  border-bottom: 1.5px solid #99f6e4;
+  padding: 0.65rem 0.95rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.touchpad-badge-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: #0d9488;
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.15rem;
+  box-shadow: 0 2px 4px rgba(13, 148, 136, 0.3);
+}
+
+.touchpad-desk-badge {
+  font-size: 0.82rem;
+  font-weight: 800;
+  background: #0d9488;
+  color: #ffffff;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  box-shadow: 0 2px 4px rgba(13, 148, 136, 0.25);
+  white-space: nowrap;
+}
+
+.touchpad-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.5rem 0.75rem;
+  background: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.touchpad-tool-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: #ffffff;
+  padding: 2px 5px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+}
+
+.touchpad-color-dot {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #ffffff;
+  outline: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.15s, outline-color 0.15s;
+}
+
+.touchpad-color-dot.active {
+  outline-color: #0d9488;
+  transform: scale(1.15);
+}
+
+.touchpad-tool-btn {
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 7px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: #475569;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.2rem;
+  transition: all 0.15s;
+  font-family: var(--font-khmer);
+}
+
+.touchpad-tool-btn:hover {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.touchpad-tool-btn.active {
+  background: #0d9488;
+  color: #ffffff;
+}
+
+.touchpad-canvas-container {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  background: #ffffff;
+  overflow: hidden;
+  user-select: none;
+  touch-action: none;
+}
+
+.touchpad-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.touchpad-canvas.grid-math {
+  background-color: #ffffff;
+  background-image: linear-gradient(#e0f2fe 1px, transparent 1px), linear-gradient(90deg, #e0f2fe 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.touchpad-canvas.grid-dot {
+  background-color: #ffffff;
+  background-image: radial-gradient(#cbd5e1 1.5px, transparent 1.5px);
+  background-size: 20px 20px;
+}
+
+.touchpad-canvas.grid-blank {
+  background: #ffffff;
+}
+
+.touchpad-canvas-hint {
+  position: absolute;
+  bottom: 8px;
+  right: 10px;
+  pointer-events: none;
+  font-size: 0.72rem;
+  color: #94a3b8;
+  background: rgba(255, 255, 255, 0.88);
+  padding: 2px 7px;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.touchpad-calc-panel {
+  padding: 0.75rem 0.95rem;
+  background: #f8fafc;
+  border-top: 1.5px solid #e2e8f0;
+}
+
+.touchpad-score-total-display {
+  font-size: 1.02rem;
+  font-weight: 800;
+  color: #0f766e;
+  background: #f0fdfa;
+  border: 1.5px solid #99f6e4;
+  padding: 0.2rem 0.65rem;
+  border-radius: 6px;
+}
+
+.touchpad-math-input {
+  flex: 1;
+  font-family: monospace, var(--font-khmer);
+  font-size: 1.05rem;
+  font-weight: 700;
+  padding: 0.45rem 0.75rem;
+  border: 1.5px solid #0d9488;
+  border-radius: 6px;
+  color: #0f766e;
+  background: #ffffff;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.touchpad-math-input:focus {
+  border-color: #0f766e;
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.25);
+}
+
+.touchpad-chips-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.touchpad-chip {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 999px;
+  padding: 0.22rem 0.6rem;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.touchpad-chip:hover {
+  background: #0d9488;
+  color: #ffffff;
+  border-color: #0d9488;
+  transform: translateY(-1px);
+}
+
+.touchpad-chip.text-red {
+  color: #dc2626;
+  border-color: #fca5a5;
+  background: #fef2f2;
+}
+
+.touchpad-chip.text-red:hover {
+  background: #dc2626;
+  color: #ffffff;
+}
+
+.touchpad-chip.text-green {
+  color: #16a34a;
+  border-color: #86efac;
+  background: #f0fdf4;
+}
+
+.touchpad-chip.text-green:hover {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+/* Flying Score Particle Animation in Teal for Touchpad */
+.touchpad-active-row {
+  background-color: #f0fdfa !important;
+  border-left: 6px solid #0d9488 !important;
+  box-shadow: inset 0 0 0 1px #99f6e4;
+  transition: background-color 0.18s ease, border-left 0.18s ease;
+}
+
+.touchpad-active-row td {
+  background-color: transparent !important;
+}
+
+.touchpad-active-row .secret-student-num-circle {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.35);
+  background-color: #0d9488 !important;
+  color: #ffffff !important;
+  border-color: #0f766e !important;
+}
+
+.touchpad-active-row .touchpad-secret-score-input {
+  border-color: #0d9488 !important;
+  box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.28) !important;
+  background-color: #ffffff !important;
+}
+
+
 
 
 

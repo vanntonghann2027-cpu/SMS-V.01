@@ -4848,6 +4848,39 @@ class ScoreManagementApp {
       this.voiceNameSecretMicBoostSelect.addEventListener('change', (e) => handleBoostChange(e.target.value));
     }
 
+    // Sub-view: By Secret Code with Touchpad / Handwriting & Math Formulas (Touchpad / សរសេរដៃ)
+    this.subtabTouchpadSecretScoreBtn = document.getElementById('subtabTouchpadSecretScoreBtn');
+    this.scoreSubViewTouchpadSecret = document.getElementById('scoreSubViewTouchpadSecret');
+    this.touchpadSecretScorePeriodSelect = document.getElementById('touchpadSecretScorePeriodSelect');
+    this.inputSearchTouchpadSecretCode = document.getElementById('inputSearchTouchpadSecretCode');
+    this.btnFetchTouchpadSecretRoomScores = document.getElementById('btnFetchTouchpadSecretRoomScores');
+    this.btnSaveTouchpadSecretRoomScores = document.getElementById('btnSaveTouchpadSecretRoomScores');
+    this.btnAddMisplacedStudentTouchpad = document.getElementById('btnAddMisplacedStudentTouchpad');
+    this.chkShowStudentInfoTouchpadSecret = document.getElementById('chkShowStudentInfoTouchpadSecret');
+    this.chkTouchpadAutoAdvance = document.getElementById('chkTouchpadAutoAdvance');
+    this.chkTouchpadAutoClear = document.getElementById('chkTouchpadAutoClear');
+    this.touchpadSecretActiveRoomInfo = document.getElementById('touchpadSecretActiveRoomInfo');
+    this.touchpadSecretScoreInputTable = document.getElementById('touchpadSecretScoreInputTable');
+    this.touchpadSecretScoreInputTableBody = document.getElementById('touchpadSecretScoreInputTableBody');
+    this.touchpadActiveDeskBadge = document.getElementById('touchpadActiveDeskBadge');
+    this.touchpadCanvas = document.getElementById('touchpadCanvas');
+    this.touchpadCanvasContainer = document.getElementById('touchpadCanvasContainer');
+    this.touchpadMathExprInput = document.getElementById('touchpadMathExprInput');
+    this.touchpadCalculatedScoreDisplay = document.getElementById('touchpadCalculatedScoreDisplay');
+    this.btnTouchpadEnterScore = document.getElementById('btnTouchpadEnterScore');
+    this.btnTouchpadClear = document.getElementById('btnTouchpadClear');
+    this.btnTouchpadUndo = document.getElementById('btnTouchpadUndo');
+    this.btnTouchpadSaveImg = document.getElementById('btnTouchpadSaveImg');
+    this.btnTouchpadRecognizeDigit = document.getElementById('btnTouchpadRecognizeDigit');
+    this.btnTouchpadResetScore = document.getElementById('btnTouchpadResetScore');
+
+    this._touchpadInkColor = '#dc2626';
+    this._touchpadPenSize = 4;
+    this._touchpadIsEraser = false;
+    this._touchpadHistory = [];
+    this._currentTouchpadActiveInput = null;
+    this._touchpadCanvasInitialized = false;
+
     // Misplaced Student Modal Elements (សិស្សច្រឡំបន្ទប់/លេខតុ)
     this.misplacedStudentModal = document.getElementById('misplacedStudentModal');
     this.inputMisplacedSecretCode = document.getElementById('inputMisplacedSecretCode');
@@ -6109,6 +6142,47 @@ class ScoreManagementApp {
         this.playKhmerSpeech('ប្រព័ន្ធបញ្ចូលពិន្ទុដោយសំឡេងដំណើរការត្រឹមត្រូវ');
         this.showToast('🔊 កំពុងបន្លឺសំឡេងសាកល្បង...', 'info');
       });
+    }
+
+    // Sub-view: By Secret Code with Touchpad (Touchpad / សរសេរដៃ)
+    if (this.subtabTouchpadSecretScoreBtn) {
+      this.subtabTouchpadSecretScoreBtn.addEventListener('click', () => this.switchScoreSubTab('byTouchpadSecret'));
+    }
+    if (this.btnFetchTouchpadSecretRoomScores) {
+      this.btnFetchTouchpadSecretRoomScores.addEventListener('click', () => this.fetchTouchpadSecretRoomScores());
+    }
+    if (this.inputSearchTouchpadSecretCode) {
+      this.inputSearchTouchpadSecretCode.addEventListener('input', () => {
+        this.clearTouchpadSecretScoreTable(false);
+      });
+      this.inputSearchTouchpadSecretCode.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          this.fetchTouchpadSecretRoomScores();
+        }
+      });
+    }
+    if (this.btnSaveTouchpadSecretRoomScores) {
+      this.btnSaveTouchpadSecretRoomScores.addEventListener('click', () => this.handleSaveTouchpadSecretRoomScores());
+    }
+    if (this.chkShowStudentInfoTouchpadSecret) {
+      this.chkShowStudentInfoTouchpadSecret.addEventListener('change', (e) => {
+        this.toggleShowStudentInfo(e.target.checked);
+      });
+    }
+    if (this.touchpadSecretScorePeriodSelect) {
+      this.touchpadSecretScorePeriodSelect.addEventListener('change', (e) => {
+        const pKey = e.target.value;
+        if (this.secretScorePeriodSelect) this.secretScorePeriodSelect.value = pKey;
+        if (this.voiceSecretScorePeriodSelect) this.voiceSecretScorePeriodSelect.value = pKey;
+        if (this.examScoreSubjectPeriodSelect) this.examScoreSubjectPeriodSelect.value = pKey;
+        this.currentPeriod = pKey;
+        if (this.periodHeaderSelect) this.periodHeaderSelect.value = pKey;
+        this.clearTouchpadSecretScoreTable(true);
+      });
+    }
+    if (this.btnAddMisplacedStudentTouchpad) {
+      this.btnAddMisplacedStudentTouchpad.addEventListener('click', () => this.openMisplacedStudentModal());
     }
 
     // Misplaced Student Modal & Actions (សិស្សច្រឡំបន្ទប់/លេខតុ)
@@ -15007,6 +15081,7 @@ class ScoreManagementApp {
     this.clearSecretScoreTable(clearInputs);
     this.clearVoiceSecretScoreTable(clearInputs);
     this.clearVoiceNameSecretScoreTable(clearInputs);
+    this.clearTouchpadSecretScoreTable(clearInputs);
   }
 
   switchScoreSubTab(subTabName) {
@@ -15014,6 +15089,7 @@ class ScoreManagementApp {
     if (this.subtabSecretCodeScoreBtn) this.subtabSecretCodeScoreBtn.classList.toggle('active', subTabName === 'bySecret');
     if (this.subtabVoiceSecretCodeScoreBtn) this.subtabVoiceSecretCodeScoreBtn.classList.toggle('active', subTabName === 'byVoiceSecret');
     if (this.subtabVoiceNameSecretScoreBtn) this.subtabVoiceNameSecretScoreBtn.classList.toggle('active', subTabName === 'byVoiceNameSecret');
+    if (this.subtabTouchpadSecretScoreBtn) this.subtabTouchpadSecretScoreBtn.classList.toggle('active', subTabName === 'byTouchpadSecret');
     if (this.subtabSubjectScoreBtn) this.subtabSubjectScoreBtn.classList.toggle('active', subTabName === 'bySubject');
     if (this.subtabSemesterAvgBtn) this.subtabSemesterAvgBtn.classList.toggle('active', subTabName === 'byAvg');
     if (this.subtabAuditSecretBtn) this.subtabAuditSecretBtn.classList.toggle('active', subTabName === 'byAudit');
@@ -15021,6 +15097,7 @@ class ScoreManagementApp {
     if (this.scoreSubViewSecret) this.scoreSubViewSecret.style.display = subTabName === 'bySecret' ? 'block' : 'none';
     if (this.scoreSubViewVoiceSecret) this.scoreSubViewVoiceSecret.style.display = subTabName === 'byVoiceSecret' ? 'block' : 'none';
     if (this.scoreSubViewVoiceNameSecret) this.scoreSubViewVoiceNameSecret.style.display = subTabName === 'byVoiceNameSecret' ? 'block' : 'none';
+    if (this.scoreSubViewTouchpadSecret) this.scoreSubViewTouchpadSecret.style.display = subTabName === 'byTouchpadSecret' ? 'block' : 'none';
     if (this.scoreSubViewSubject) this.scoreSubViewSubject.style.display = subTabName === 'bySubject' ? 'block' : 'none';
     if (this.scoreSubViewAvg) this.scoreSubViewAvg.style.display = subTabName === 'byAvg' ? 'block' : 'none';
     if (this.scoreSubViewAudit) this.scoreSubViewAudit.style.display = subTabName === 'byAudit' ? 'block' : 'none';
@@ -15046,6 +15123,10 @@ class ScoreManagementApp {
     } else if (subTabName === 'byVoiceNameSecret') {
       this.clearVoiceNameSecretScoreTable(true);
       if (this.inputSearchVoiceNameSecretCode) this.inputSearchVoiceNameSecretCode.focus();
+    } else if (subTabName === 'byTouchpadSecret') {
+      this.clearTouchpadSecretScoreTable(true);
+      setTimeout(() => this.initTouchpadCanvas(), 60);
+      if (this.inputSearchTouchpadSecretCode) this.inputSearchTouchpadSecretCode.focus();
     } else if (subTabName === 'bySubject') {
       this.renderExamSubjectScoresTable();
     } else if (subTabName === 'byAudit') {
@@ -15061,6 +15142,7 @@ class ScoreManagementApp {
     if (this.chkShowStudentInfoSecret) this.chkShowStudentInfoSecret.checked = checked;
     if (this.chkShowStudentInfoVoiceSecret) this.chkShowStudentInfoVoiceSecret.checked = checked;
     if (this.chkShowStudentInfoVoiceNameSecret) this.chkShowStudentInfoVoiceNameSecret.checked = checked;
+    if (this.chkShowStudentInfoTouchpadSecret) this.chkShowStudentInfoTouchpadSecret.checked = checked;
     const colElements = document.querySelectorAll('.col-student-info');
     colElements.forEach(el => {
       el.style.display = checked ? '' : 'none';
@@ -15208,6 +15290,15 @@ class ScoreManagementApp {
       if (this.inputSearchVoiceNameSecretCode) {
         this.inputSearchVoiceNameSecretCode.focus();
         this.inputSearchVoiceNameSecretCode.select();
+      }
+    } else if (targetTab === 'touchpadSecret') {
+      this.clearTouchpadSecretScoreTable(false);
+      if (this.touchpadSecretScoreInputTableBody) {
+        this.touchpadSecretScoreInputTableBody.innerHTML = errorRowHtml;
+      }
+      if (this.inputSearchTouchpadSecretCode) {
+        this.inputSearchTouchpadSecretCode.focus();
+        this.inputSearchTouchpadSecretCode.select();
       }
     }
   }
@@ -18289,6 +18380,788 @@ class ScoreManagementApp {
     }
     if (this.voiceNameSecretStatusText) {
       this.voiceNameSecretStatusText.innerHTML = '✨ <strong>បានរក្សាទុក និងសម្អាតតារាងរួចរាល់!</strong> សូមបញ្ចូលអក្សរសម្ងាត់ថ្មី (ឧ. LE7B ឬ C9E) ដើម្បីបន្ត។';
+    }
+  }
+
+  // ==========================================================================
+  // SUB-VIEW: Score Entry by Touchpad / Stylus / Math Formulas (Touchpad / សរសេរដៃ)
+  // Dedicated for teachers using drawing tablets, touchpads, styluses for math formulas & scores
+  // ==========================================================================
+  fetchTouchpadSecretRoomScores() {
+    let rawCode = (this.inputSearchTouchpadSecretCode ? this.inputSearchTouchpadSecretCode.value : '').trim().toUpperCase();
+    if (!rawCode && this.inputSearchSecretCode) {
+      rawCode = this.inputSearchSecretCode.value.trim().toUpperCase();
+      if (this.inputSearchTouchpadSecretCode) this.inputSearchTouchpadSecretCode.value = rawCode;
+    }
+    if (!rawCode) {
+      this.showToast('សូមបញ្ចូលអក្សរសម្ងាត់ (ឧទាហរណ៍៖ M7g, ES7e ឬ LE7a)!', 'warning');
+      return;
+    }
+
+    if (this.inputSearchSecretCode) this.inputSearchSecretCode.value = rawCode;
+    if (this.inputSearchTouchpadSecretCode) this.inputSearchTouchpadSecretCode.value = rawCode;
+
+    // Strict lookup: ONLY accept secret codes explicitly saved per grade level in the Active Month
+    const matchInfo = this.lookupSavedSecretCodeInActivePeriod(rawCode);
+    if (!matchInfo) {
+      this.announceInvalidSecretCode(rawCode, 'touchpadSecret');
+      return;
+    }
+
+    const { foundGrade, foundRoom, foundSubCode } = matchInfo;
+
+    // Query students in room
+    let studentsInRoom = (this.examArrangements || []).filter(item => {
+      const matchRoom = parseInt(item.roomNumber, 10) === parseInt(foundRoom, 10);
+      const matchGrade = this.studentMatchesGrade(item, foundGrade);
+      return matchRoom && matchGrade;
+    }).sort((a, b) => parseInt(a.deskNumber || 0, 10) - parseInt(b.deskNumber || 0, 10));
+
+    if (studentsInRoom.length === 0) {
+      studentsInRoom = (this.examArrangements || []).filter(item => {
+        return parseInt(item.roomNumber, 10) === parseInt(foundRoom, 10);
+      }).sort((a, b) => parseInt(a.deskNumber || 0, 10) - parseInt(b.deskNumber || 0, 10));
+    }
+
+    if (studentsInRoom.length === 0) {
+      const gradeStudents = this.students.filter(s => this.studentMatchesGrade(s, foundGrade));
+      if (gradeStudents.length > 0) {
+        gradeStudents.sort((a, b) => a.khmerName.localeCompare(b.khmerName, 'km'));
+        const perRoom = 25;
+        const targetRoomInt = parseInt(foundRoom, 10) || 1;
+        const startIdx = (targetRoomInt - 1) * perRoom;
+        const roomSlice = gradeStudents.slice(startIdx, startIdx + perRoom);
+        studentsInRoom = roomSlice.map((s, idx) => ({
+          studentId: s.id,
+          khmerName: s.khmerName,
+          gender: s.gender,
+          grade: s.class,
+          roomNumber: foundRoom,
+          deskNumber: String(startIdx + idx + 1)
+        }));
+      }
+    }
+
+    if (studentsInRoom.length === 0) {
+      this.showToast(`មិនមានសិស្សនៅក្នុងបន្ទប់ ${foundRoom} ឡើយ!`, 'warning');
+      return;
+    }
+
+    this.currentTouchpadSecretRoomGrade = foundGrade;
+    this.setActiveClass(foundGrade, true);
+
+    // Subject Details
+    const gradeSubs = this.getMatrixSubjectsForGrade(foundGrade);
+    const subObj = gradeSubs.find(s => s.code === foundSubCode) || { name: foundSubCode, code: foundSubCode, fullKey: foundSubCode.toLowerCase(), maxScore: 100 };
+    const maxLimit = subObj.maxScore || 100;
+    this.currentTouchpadSecretSubObj = subObj;
+
+    const activePeriodKey = this.activeScorePeriod || this.getActiveScoringPeriod(foundGrade);
+    const examConfig = this.getExamConfigForGrade(foundGrade, activePeriodKey);
+    const periodTitle = this.getExamPeriodTitle(activePeriodKey);
+    const examDateKhmer = this.formatKhmerExamDate(examConfig.date);
+    const isLocked = !this.isPeriodActiveForScoring(activePeriodKey);
+    const gradeLabel = (typeof GRADE_PRESETS !== 'undefined' && GRADE_PRESETS[foundGrade] && GRADE_PRESETS[foundGrade].label) || (foundGrade === 'grade_7' ? 'ថ្នាក់ទី៧' : (foundGrade === 'grade_8' ? 'ថ្នាក់ទី៨' : (foundGrade === 'grade_9' ? 'ថ្នាក់ទី៩' : (foundGrade === 'grade_12_sc' ? 'ថ្នាក់ទី១២ វិទ្យាសាស្ត្រ' : (foundGrade === 'grade_12_ss' ? 'ថ្នាក់ទី១២ សង្គម' : foundGrade)))));
+
+    if (this.touchpadSecretScorePeriodSelect) {
+      this.touchpadSecretScorePeriodSelect.value = activePeriodKey;
+    }
+
+    // Room info banner
+    if (this.touchpadSecretActiveRoomInfo) {
+      this.touchpadSecretActiveRoomInfo.style.display = 'block';
+      this.touchpadSecretActiveRoomInfo.innerHTML = `
+        <div style="background: #f0fdfa; border: 1.5px solid #99f6e4; border-radius: 8px; padding: 0.65rem 1rem; display: flex; flex-wrap: wrap; gap: 1rem; align-items: center; font-size: 0.95rem;">
+          <div><i class="ri-graduation-cap-line" style="color: #0d9488;"></i> កម្រិតថ្នាក់: <strong style="color: #0f766e; font-size: 1.05rem;">${gradeLabel}</strong></div>
+          <div><i class="ri-calendar-event-line" style="color: #0d9488;"></i> សម័យប្រឡង: <strong style="color: #115e59;">${examDateKhmer ? `${examDateKhmer} (${periodTitle})` : periodTitle}</strong></div>
+          <div><i class="ri-book-open-line" style="color: #15803d;"></i> មុខវិជ្ជា: <strong style="color: #15803d; font-size: 1.05rem;">${subObj.name} (${foundSubCode})</strong></div>
+          <div><i class="ri-award-line" style="color: #b91c1c;"></i> ពិន្ទុពេញ: <strong style="color: #b91c1c; font-size: 1.05rem;">${maxLimit}</strong></div>
+          <div><i class="ri-user-star-line" style="color: #0d9488;"></i> ចំនួនសិស្ស: <strong style="color: #0d9488;">${studentsInRoom.length} នាក់</strong></div>
+          ${isLocked ? `<div style="width: 100%; margin-top: 0.4rem; padding: 0.45rem 0.85rem; background: #fee2e2; border: 1px solid #fca5a5; border-radius: 6px; color: #991b1b; font-weight: 700; font-size: 0.88rem;"><i class="ri-lock-2-fill"></i> 🔒 ខែ ${periodTitle} ត្រូវបានបិទការបញ្ចូលពិន្ទុ!</div>` : ''}
+        </div>
+      `;
+    }
+
+    // Render Rows
+    if (!this.touchpadSecretScoreInputTableBody) return;
+    this.touchpadSecretScoreInputTableBody.innerHTML = '';
+    const periodKey = activePeriodKey;
+    const isShowInfo = !!((this.chkShowStudentInfoSecret && this.chkShowStudentInfoSecret.checked) || (this.chkShowStudentInfoTouchpadSecret && this.chkShowStudentInfoTouchpadSecret.checked));
+
+    studentsInRoom.forEach((stu, idx) => {
+      const tr = document.createElement('tr');
+      const seqNum = idx + 1;
+      const sId = stu.studentId || stu.id;
+      const stuObj = (this.students && this.students.find(s => String(s.id) === String(sId))) || stu;
+      const stuName = stuObj.khmerName || stuObj.name || '-';
+      const stuGender = (stuObj.gender === 'F' || stuObj.gender === 'ស្រី') ? 'ស្រី' : ((stuObj.gender === 'M' || stuObj.gender === 'ប្រុស') ? 'ប្រុស' : (stuObj.gender || '-'));
+      const stuRoom = stu.roomNumber || foundRoom || '-';
+      const stuDesk = stu.deskNumber || seqNum;
+
+      let val = undefined;
+      const periodsToCheck = [periodKey, 'test_early', 'year_start_test', 'sem1_exam', 'sem1_overall', 'sem2_exam', 'sem2_overall'];
+      for (const p of periodsToCheck) {
+        const pd = this.scores[sId]?.[p];
+        if (pd) {
+          val = this.getSubjectScore(pd, subObj.fullKey);
+          if (val === undefined && subObj.code) val = this.getSubjectScore(pd, subObj.code);
+          if (val === undefined && (subObj.fullKey === 'kh' || subObj.code === 'K')) {
+            const eVal = this.getSubjectScore(pd, 'kh_essay');
+            const dVal = this.getSubjectScore(pd, 'kh_dict');
+            if (eVal !== undefined || dVal !== undefined) val = (eVal || 0) + (dVal || 0);
+          }
+          if (val !== undefined && val !== null && val !== '') break;
+        }
+      }
+
+      const existingScore = (val !== undefined && val !== null) ? val : '';
+
+      tr.innerHTML = `
+        <td class="col-student-info" style="text-align: center; vertical-align: middle; ${isShowInfo ? '' : 'display: none;'}">${stuRoom}</td>
+        <td class="col-student-info" style="text-align: center; vertical-align: middle; font-weight: 700; ${isShowInfo ? '' : 'display: none;'}">${stuDesk}</td>
+        <td class="col-student-info" style="text-align: left; vertical-align: middle; font-weight: 600; ${isShowInfo ? '' : 'display: none;'}">${stuName}</td>
+        <td class="col-student-info" style="text-align: center; vertical-align: middle; ${isShowInfo ? '' : 'display: none;'}">${stuGender}</td>
+        <td style="text-align: center; vertical-align: middle;">
+          <span class="secret-student-num-circle" style="background: #f0fdfa; color: #0f766e; border-color: #99f6e4;">${seqNum}</span>
+        </td>
+        <td style="text-align: center; vertical-align: middle;">
+          <input type="number" 
+                 min="0" max="${maxLimit}" step="0.25" 
+                 class="touchpad-secret-score-input ${isLocked ? 'score-input-locked' : ''}" 
+                 data-stuid="${sId}" 
+                 data-seq="${seqNum}"
+                 data-name="${stuName}"
+                 data-desk="${stuDesk}"
+                 data-subkey="${subObj.fullKey}" 
+                 data-subcode="${subObj.code}"
+                 data-max="${maxLimit}"
+                 ${isLocked ? 'disabled readonly title="ខែនេះត្រូវបានបិទការបញ្ចូលពិន្ទុ"' : ''}
+                 value="${existingScore !== undefined ? existingScore : ''}"
+                 placeholder="Touchpad / វាយលេខ">
+        </td>
+      `;
+      this.touchpadSecretScoreInputTableBody.appendChild(tr);
+    });
+
+    // Attach listeners on inputs
+    const scoreInputs = Array.from(this.touchpadSecretScoreInputTableBody.querySelectorAll('.touchpad-secret-score-input'));
+    scoreInputs.forEach(inp => {
+      inp.addEventListener('focus', () => {
+        this._currentTouchpadActiveInput = inp;
+        this.highlightTouchpadActiveRow(inp);
+        this.smoothEnsureVisible(inp);
+        const seqNum = inp.getAttribute('data-seq');
+        const stuName = inp.getAttribute('data-name');
+        if (this.touchpadActiveDeskBadge) {
+          this.touchpadActiveDeskBadge.textContent = `តុទី ${seqNum} ${stuName ? '(' + stuName + ')' : ''} | ពេញ: ${maxLimit}`;
+        }
+        if (this.touchpadMathExprInput) {
+          this.touchpadMathExprInput.value = inp.value || '0';
+          this.updateTouchpadCalculatedScore();
+        }
+        inp.select();
+      });
+
+      inp.addEventListener('input', () => {
+        if (this.touchpadMathExprInput) {
+          this.touchpadMathExprInput.value = inp.value || '0';
+          this.updateTouchpadCalculatedScore();
+        }
+        const v = parseFloat(inp.value);
+        if (!isNaN(v)) {
+          this.saveTouchpadSecretInputValue(inp, v);
+        }
+      });
+
+      inp.addEventListener('blur', () => {
+        const v = parseFloat(inp.value);
+        if (!isNaN(v) && v > maxLimit) {
+          inp.classList.add('score-input-invalid');
+        } else {
+          inp.classList.remove('score-input-invalid');
+        }
+      });
+
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          this.navigateTouchpadSecretInput(1);
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          this.navigateTouchpadSecretInput(-1);
+        } else if (e.key === 'a' || e.key === 'A') {
+          e.preventDefault();
+          inp.value = '0';
+          this.saveTouchpadSecretInputValue(inp, 0);
+          this.navigateTouchpadSecretInput(1);
+        }
+      });
+    });
+
+    if (scoreInputs[0]) {
+      scoreInputs[0].focus({ preventScroll: true });
+      scoreInputs[0].select();
+      this.highlightTouchpadActiveRow(scoreInputs[0]);
+    }
+
+    setTimeout(() => {
+      this.initTouchpadCanvas();
+      this.initTouchpadMathCalculator();
+    }, 50);
+  }
+
+  clearTouchpadSecretScoreTable(clearInput = false) {
+    if (clearInput && this.inputSearchTouchpadSecretCode) {
+      this.inputSearchTouchpadSecretCode.value = '';
+    }
+    if (this.touchpadSecretActiveRoomInfo) {
+      this.touchpadSecretActiveRoomInfo.style.display = 'none';
+      this.touchpadSecretActiveRoomInfo.innerHTML = '';
+    }
+    if (this.touchpadActiveDeskBadge) {
+      this.touchpadActiveDeskBadge.textContent = 'តុសកម្ម: --';
+    }
+    if (this.touchpadSecretScoreInputTableBody) {
+      this.touchpadSecretScoreInputTableBody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align: center; padding: 2.8rem 1rem; color: #64748b;">
+            <i class="ri-pen-nib-line" style="font-size: 2.2rem; display: block; margin-bottom: 0.5rem; color: #0d9488;"></i>
+            <div style="font-weight: 700; font-size: 1.05rem; color: #0f766e;">សូមបញ្ចូលអក្សរសម្ងាត់ ដើម្បីបញ្ចូលពិន្ទុជាមួយ Touchpad / សរសេរដៃ</div>
+            <div style="font-size: 0.88rem; color: #64748b; margin-top: 0.35rem;">វាយអក្សរសម្ងាត់ក្នុងប្រអប់ខាងលើ រួចចុច <strong>Enter</strong> ឬចុចប៊ូតុង <strong>«ទាញយក»</strong>។</div>
+          </td>
+        </tr>
+      `;
+    }
+    this._currentTouchpadActiveInput = null;
+    this.currentTouchpadSecretRoomGrade = null;
+  }
+
+  highlightTouchpadActiveRow(activeInput) {
+    if (!this.touchpadSecretScoreInputTableBody || !activeInput) return;
+    const allRows = this.touchpadSecretScoreInputTableBody.querySelectorAll('tr');
+    allRows.forEach(r => r.classList.remove('touchpad-active-row'));
+    const targetRow = activeInput.closest('tr');
+    if (targetRow) {
+      targetRow.classList.add('touchpad-active-row');
+    }
+  }
+
+  navigateTouchpadSecretInput(direction) {
+    if (!this.touchpadSecretScoreInputTableBody) return;
+    const allInputs = Array.from(this.touchpadSecretScoreInputTableBody.querySelectorAll('.touchpad-secret-score-input'));
+    if (allInputs.length === 0) return;
+    let currIdx = 0;
+    if (this._currentTouchpadActiveInput) {
+      const found = allInputs.indexOf(this._currentTouchpadActiveInput);
+      if (found !== -1) currIdx = found;
+    }
+    let targetIdx = currIdx + direction;
+    if (targetIdx < 0) targetIdx = 0;
+    if (targetIdx >= allInputs.length) {
+      this.showToast('បានមកដល់សិស្សចុងក្រោយបង្អស់ក្នុងបន្ទប់នេះហើយ!', 'info');
+      return;
+    }
+    const target = allInputs[targetIdx];
+    this._currentTouchpadActiveInput = target;
+    target.focus({ preventScroll: true });
+    target.select();
+    this.highlightTouchpadActiveRow(target);
+    this.smoothEnsureVisible(target);
+  }
+
+  saveTouchpadSecretInputValue(input, num) {
+    if (!input) return;
+    const sId = input.getAttribute('data-stuid');
+    const subKey = input.getAttribute('data-subkey');
+    const subCode = input.getAttribute('data-subcode');
+    const pKey = this.activeScorePeriod || this.getActiveScoringPeriod(this.currentTouchpadSecretRoomGrade || 'grade_7');
+    this.setSubjectScore(sId, pKey, subKey, num);
+    if (subCode) this.setSubjectScore(sId, pKey, subCode, num);
+
+    // Sync to other tables if open
+    if (this.secretScoreInputTableBody) {
+      const matchInp = this.secretScoreInputTableBody.querySelector(`.secret-score-input-fast[data-stuid="${sId}"][data-subkey="${subKey}"]`);
+      if (matchInp) matchInp.value = (num !== null && num !== undefined) ? num : '';
+    }
+    if (this.voiceSecretScoreInputTableBody) {
+      const matchVoice = this.voiceSecretScoreInputTableBody.querySelector(`.voice-secret-score-input[data-stuid="${sId}"][data-subkey="${subKey}"]`);
+      if (matchVoice) matchVoice.value = (num !== null && num !== undefined) ? num : '';
+    }
+  }
+
+  handleSaveTouchpadSecretRoomScores() {
+    if (!this.touchpadSecretScoreInputTableBody) return;
+    const _secretGrade = this.currentTouchpadSecretRoomGrade || 'grade_7';
+    const periodKey = this.activeScorePeriod || this.getActiveScoringPeriod(_secretGrade);
+    if (!this.isPeriodActiveForScoring(periodKey)) {
+      this.showToast(`មិនអាចរក្សាទុកបានទេ! ខែនេះត្រូវបានបិទការបញ្ចូលពិន្ទុ។`, 'error');
+      return;
+    }
+
+    const inputs = this.touchpadSecretScoreInputTableBody.querySelectorAll('.touchpad-secret-score-input');
+    let savedCount = 0;
+    inputs.forEach(inp => {
+      const val = inp.value.trim();
+      if (val !== '') {
+        const num = parseFloat(val);
+        if (!isNaN(num)) {
+          this.saveTouchpadSecretInputValue(inp, num);
+          savedCount++;
+        }
+      }
+    });
+
+    if (savedCount === 0) {
+      this.showToast('មិនទាន់មានពិន្ទុដើម្បីរក្សាទុកឡើយ!', 'warning');
+      return;
+    }
+
+    const _stuIds = Array.from(inputs).map(inp => inp.getAttribute('data-stuid')).filter(Boolean);
+    _stuIds.forEach(sid => this.syncExamScoresToGradeSheet(sid, periodKey));
+
+    this.currentPeriod = periodKey;
+    if (this.periodHeaderSelect) this.periodHeaderSelect.value = periodKey;
+    if (!this.activeScorePeriod) this.applyActivePeriod(periodKey);
+
+    if (_secretGrade) {
+      this.setActiveClass(_secretGrade, true);
+    }
+
+    if (this.examSubjectScoresBody) {
+      this.renderExamSubjectScoresTable();
+    }
+
+    this.saveState();
+    const periodTitle = this.getExamPeriodTitle(periodKey);
+    this.createAutoBackup(`រក្សាទុកពិន្ទុ Touchpad (${periodTitle})`);
+    this.updateScoreAutoBackupBadge('saved');
+    this.updateKPIOverview();
+    this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!`, 'success');
+
+    this.touchpadSecretScoreInputTableBody.innerHTML = `
+      <tr>
+        <td colspan="6" style="text-align: center; padding: 2.8rem 1rem; color: #0d9488; background: #f0fdfa; border-radius: 8px;">
+          <i class="ri-checkbox-circle-fill" style="font-size: 2.4rem; display:block; margin-bottom: 0.5rem; color: #0d9488;"></i>
+          <div style="font-size: 1.15rem; font-weight: 700;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!</div>
+          <div style="font-size: 0.9rem; color: #475569; margin-top: 0.35rem;">ទិន្នន័យបាន Auto Backup និងតភ្ជាប់ទៅតារាងពិន្ទុរួចរាល់។ សូមបញ្ចូលអក្សរសម្ងាត់ថ្មី ដើម្បីបន្តបន្ទប់បន្ទាប់។</div>
+        </td>
+      </tr>
+    `;
+    if (this.inputSearchTouchpadSecretCode) {
+      this.inputSearchTouchpadSecretCode.value = '';
+      this.inputSearchTouchpadSecretCode.focus();
+    }
+    if (this.touchpadSecretActiveRoomInfo) {
+      this.touchpadSecretActiveRoomInfo.style.display = 'none';
+    }
+    this._currentTouchpadActiveInput = null;
+    this.currentTouchpadSecretRoomGrade = null;
+    if (this.touchpadActiveDeskBadge) {
+      this.touchpadActiveDeskBadge.textContent = 'តុសកម្ម: --';
+    }
+  }
+
+  initTouchpadCanvas() {
+    if (!this.touchpadCanvas || !this.touchpadCanvasContainer) return;
+
+    const canvas = this.touchpadCanvas;
+    const container = this.touchpadCanvasContainer;
+    const rect = container.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.max(300, Math.floor(rect.width));
+    const h = 320;
+
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+
+    const ctx = canvas.getContext('2d');
+    ctx.scale(dpr, dpr);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    this._touchpadCtx = ctx;
+    this._touchpadHistory = [];
+
+    const saveSnapshot = () => {
+      try {
+        const snap = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        this._touchpadHistory.push(snap);
+        if (this._touchpadHistory.length > 25) this._touchpadHistory.shift();
+      } catch (_) { }
+    };
+
+    saveSnapshot();
+
+    if (this._touchpadCanvasInitialized) return;
+    this._touchpadCanvasInitialized = true;
+
+    let isDrawing = false;
+    let points = [];
+
+    const getPos = (e) => {
+      const cRect = canvas.getBoundingClientRect();
+      return {
+        x: e.clientX - cRect.left,
+        y: e.clientY - cRect.top,
+        pressure: (e.pressure && e.pressure > 0) ? e.pressure : 0.5
+      };
+    };
+
+    canvas.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      try { canvas.setPointerCapture(e.pointerId); } catch (_) { }
+      isDrawing = true;
+      points = [getPos(e)];
+    }, { passive: false });
+
+    canvas.addEventListener('pointermove', (e) => {
+      if (!isDrawing) return;
+      e.preventDefault();
+      const pt = getPos(e);
+      points.push(pt);
+
+      if (points.length < 3) {
+        const b = points[0];
+        ctx.beginPath();
+        ctx.arc(b.x, b.y, (this._touchpadPenSize || 4) / 2, 0, Math.PI * 2, true);
+        ctx.fillStyle = this._touchpadIsEraser ? '#ffffff' : (this._touchpadInkColor || '#dc2626');
+        ctx.fill();
+        return;
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(points[0].x, points[0].y);
+      for (let i = 1; i < points.length - 2; i++) {
+        const xc = (points[i].x + points[i + 1].x) / 2;
+        const yc = (points[i].y + points[i + 1].y) / 2;
+        ctx.quadraticCurveTo(points[i].x, points[i].y, xc, yc);
+      }
+      ctx.quadraticCurveTo(
+        points[points.length - 2].x,
+        points[points.length - 2].y,
+        points[points.length - 1].x,
+        points[points.length - 1].y
+      );
+
+      const baseWidth = this._touchpadPenSize || 4;
+      const dynamicWidth = this._touchpadIsEraser ? 22 : (pt.pressure > 0 ? baseWidth * (0.4 + pt.pressure * 0.9) : baseWidth);
+      ctx.lineWidth = dynamicWidth;
+      ctx.strokeStyle = this._touchpadIsEraser ? '#ffffff' : (this._touchpadInkColor || '#dc2626');
+      if (this._touchpadIsEraser) {
+        ctx.globalCompositeOperation = 'destination-out';
+      } else {
+        ctx.globalCompositeOperation = 'source-over';
+      }
+      ctx.stroke();
+    }, { passive: false });
+
+    const stopDrawing = (e) => {
+      if (!isDrawing) return;
+      isDrawing = false;
+      points = [];
+      try { canvas.releasePointerCapture(e.pointerId); } catch (_) { }
+      saveSnapshot();
+    };
+
+    canvas.addEventListener('pointerup', stopDrawing);
+    canvas.addEventListener('pointercancel', stopDrawing);
+
+    // Color picker events
+    const colorDots = document.querySelectorAll('.touchpad-color-dot');
+    colorDots.forEach(dot => {
+      dot.addEventListener('click', () => {
+        colorDots.forEach(d => d.classList.remove('active'));
+        dot.classList.add('active');
+        this._touchpadInkColor = dot.getAttribute('data-color');
+        this._touchpadIsEraser = false;
+        const eraser = document.getElementById('btnTouchpadEraser');
+        if (eraser) eraser.classList.remove('active');
+      });
+    });
+
+    // Pen size buttons
+    const penFine = document.getElementById('btnTouchpadPenFine');
+    const penMedium = document.getElementById('btnTouchpadPenMedium');
+    const penThick = document.getElementById('btnTouchpadPenThick');
+    const eraserBtn = document.getElementById('btnTouchpadEraser');
+
+    const setActivePen = (btn, size) => {
+      [penFine, penMedium, penThick, eraserBtn].forEach(b => b && b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      this._touchpadPenSize = size;
+      this._touchpadIsEraser = false;
+    };
+
+    if (penFine) penFine.addEventListener('click', () => setActivePen(penFine, 2));
+    if (penMedium) penMedium.addEventListener('click', () => setActivePen(penMedium, 4));
+    if (penThick) penThick.addEventListener('click', () => setActivePen(penThick, 8));
+    if (eraserBtn) {
+      eraserBtn.addEventListener('click', () => {
+        [penFine, penMedium, penThick].forEach(b => b && b.classList.remove('active'));
+        eraserBtn.classList.add('active');
+        this._touchpadIsEraser = true;
+      });
+    }
+
+    // Grid style toggles
+    const gridMath = document.getElementById('btnTouchpadGridMath');
+    const gridDot = document.getElementById('btnTouchpadGridDot');
+    const gridBlank = document.getElementById('btnTouchpadGridBlank');
+    const setGridStyle = (btn, gridCls) => {
+      [gridMath, gridDot, gridBlank].forEach(b => b && b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+      canvas.className = `touchpad-canvas grid-${gridCls}`;
+    };
+    if (gridMath) gridMath.addEventListener('click', () => setGridStyle(gridMath, 'math'));
+    if (gridDot) gridDot.addEventListener('click', () => setGridStyle(gridDot, 'dot'));
+    if (gridBlank) gridBlank.addEventListener('click', () => setGridStyle(gridBlank, 'blank'));
+
+    // Undo & Clear
+    if (this.btnTouchpadUndo) {
+      this.btnTouchpadUndo.addEventListener('click', () => {
+        if (this._touchpadHistory.length > 1) {
+          this._touchpadHistory.pop(); // remove current
+          const prev = this._touchpadHistory[this._touchpadHistory.length - 1];
+          if (prev) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.putImageData(prev, 0, 0);
+          }
+        } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          this.showToast('ក្តារសរសេរដៃទទេស្អាតរួចហើយ!', 'info');
+        }
+      });
+    }
+
+    if (this.btnTouchpadClear) {
+      this.btnTouchpadClear.addEventListener('click', () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        this._touchpadHistory = [];
+        saveSnapshot();
+        this.showToast('បានសម្អាតក្តារសរសេរដៃរួចរាល់!', 'info');
+      });
+    }
+
+    if (this.btnTouchpadSaveImg) {
+      this.btnTouchpadSaveImg.addEventListener('click', () => {
+        this.saveTouchpadDrawingImage();
+      });
+    }
+  }
+
+  saveTouchpadDrawingImage() {
+    if (!this.touchpadCanvas) return;
+    const offCanvas = document.createElement('canvas');
+    offCanvas.width = this.touchpadCanvas.width;
+    offCanvas.height = this.touchpadCanvas.height;
+    const offCtx = offCanvas.getContext('2d');
+    offCtx.fillStyle = '#ffffff';
+    offCtx.fillRect(0, 0, offCanvas.width, offCanvas.height);
+    offCtx.drawImage(this.touchpadCanvas, 0, 0);
+
+    const deskBadgeText = (this.touchpadActiveDeskBadge ? this.touchpadActiveDeskBadge.textContent : 'Math').replace(/[^a-zA-Z0-9_\u1780-\u17FF]/g, '_');
+    const a = document.createElement('a');
+    a.href = offCanvas.toDataURL('image/png');
+    a.download = `Touchpad_Math_${deskBadgeText}_${Date.now()}.png`;
+    a.click();
+    this.showToast('បានរក្សាទុករូបភាពកិច្ចការគណិតវិទ្យា (PNG) ជោគជ័យ!', 'success');
+  }
+
+  initTouchpadMathCalculator() {
+    if (!this.touchpadMathExprInput) return;
+
+    this.touchpadMathExprInput.addEventListener('input', () => {
+      this.updateTouchpadCalculatedScore();
+    });
+
+    this.touchpadMathExprInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        this.applyTouchpadScore();
+      }
+    });
+
+    const chips = document.querySelectorAll('.touchpad-chip');
+    chips.forEach(chip => {
+      chip.addEventListener('click', () => {
+        const addVal = chip.getAttribute('data-add');
+        const setVal = chip.getAttribute('data-set');
+        if (setVal !== null) {
+          this.touchpadMathExprInput.value = setVal;
+        } else if (addVal !== null) {
+          const cur = this.touchpadMathExprInput.value.trim();
+          if (!cur || cur === '0') {
+            this.touchpadMathExprInput.value = addVal;
+          } else {
+            this.touchpadMathExprInput.value = `${cur} + ${addVal}`;
+          }
+        }
+        this.updateTouchpadCalculatedScore();
+      });
+    });
+
+    const btnFull = document.getElementById('btnTouchpadSetFullScore');
+    if (btnFull) {
+      btnFull.addEventListener('click', () => {
+        const maxScore = (this.currentTouchpadSecretSubObj && this.currentTouchpadSecretSubObj.maxScore) || 50;
+        this.touchpadMathExprInput.value = String(maxScore);
+        this.updateTouchpadCalculatedScore();
+      });
+    }
+
+    if (this.btnTouchpadResetScore) {
+      this.btnTouchpadResetScore.addEventListener('click', () => {
+        this.touchpadMathExprInput.value = '0';
+        this.updateTouchpadCalculatedScore();
+      });
+    }
+
+    if (this.btnTouchpadEnterScore) {
+      this.btnTouchpadEnterScore.addEventListener('click', () => {
+        this.applyTouchpadScore();
+      });
+    }
+
+    if (this.btnTouchpadRecognizeDigit) {
+      this.btnTouchpadRecognizeDigit.addEventListener('click', () => {
+        this.recognizeTouchpadHandwriting();
+      });
+    }
+  }
+
+  evaluateMathExpression(exprStr) {
+    if (!exprStr) return 0;
+    const clean = String(exprStr)
+      .replace(/[០-៩]/g, d => ({ '០':'0','១':'1','២':'2','៣':'3','៤':'4','៥':'5','៦':'6','៧':'7','៨':'8','៩':'9' })[d] || d)
+      .replace(/[^0-9+\-*/.() ]/g, '')
+      .trim();
+
+    if (!clean) return 0;
+
+    try {
+      const res = Function(`"use strict"; return (${clean});`)();
+      if (typeof res === 'number' && Number.isFinite(res)) {
+        return Math.round(res * 100) / 100;
+      }
+    } catch (_) { }
+    const fallbackNum = parseFloat(clean);
+    return isNaN(fallbackNum) ? 0 : fallbackNum;
+  }
+
+  updateTouchpadCalculatedScore() {
+    if (!this.touchpadMathExprInput || !this.touchpadCalculatedScoreDisplay) return;
+    const val = this.evaluateMathExpression(this.touchpadMathExprInput.value);
+    const maxLimit = (this.currentTouchpadSecretSubObj && this.currentTouchpadSecretSubObj.maxScore) || 100;
+    const clamped = Math.max(0, Math.min(val, maxLimit));
+    this.touchpadCalculatedScoreDisplay.innerHTML = `ពិន្ទុសរុប: <strong>${clamped}</strong>`;
+    return clamped;
+  }
+
+  applyTouchpadScore() {
+    const score = this.updateTouchpadCalculatedScore();
+    const targetInput = this._currentTouchpadActiveInput;
+    if (!targetInput) {
+      this.showToast('សូមចុចលើប្រអប់សិស្សណាមួយក្នុងតារាងជាមុនសិន!', 'warning');
+      return;
+    }
+
+    targetInput.value = String(score);
+    this.saveTouchpadSecretInputValue(targetInput, score);
+
+    // Play celebratory flying animation
+    this.playScoreFlyingAnimation(score, targetInput);
+
+    // Auto clear canvas if checked
+    if (this.chkTouchpadAutoClear && this.chkTouchpadAutoClear.checked && this.touchpadCanvas) {
+      const ctx = this.touchpadCanvas.getContext('2d');
+      ctx.clearRect(0, 0, this.touchpadCanvas.width, this.touchpadCanvas.height);
+      this._touchpadHistory = [];
+    }
+
+    // Reset formula to 0 for next student
+    if (this.touchpadMathExprInput) {
+      this.touchpadMathExprInput.value = '0';
+      this.updateTouchpadCalculatedScore();
+    }
+
+    // Auto advance to next desk if checked
+    if (this.chkTouchpadAutoAdvance && this.chkTouchpadAutoAdvance.checked) {
+      setTimeout(() => {
+        this.navigateTouchpadSecretInput(1);
+      }, 180);
+    }
+  }
+
+  async recognizeTouchpadHandwriting() {
+    if (!this.touchpadCanvas) return;
+    const canvas = this.touchpadCanvas;
+    const ctx = canvas.getContext('2d');
+    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = imgData.data;
+
+    let hasInk = false;
+    for (let i = 3; i < data.length; i += 4) {
+      if (data[i] > 30) {
+        hasInk = true;
+        break;
+      }
+    }
+
+    if (!hasInk) {
+      this.showToast('សូមសរសេរលេខពិន្ទុ ឬរូបមន្តលើក្តារជាមុនសិន!', 'warning');
+      return;
+    }
+
+    this.showToast('⚡ កំពុងស្គាល់លេខសរសេរដៃ...', 'info');
+
+    const geminiKey = localStorage.getItem('sms_gemini_api_key');
+    if (geminiKey) {
+      try {
+        const base64Data = canvas.toDataURL('image/png').split(',')[1];
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: "Look at the handwritten math/number on this canvas. Reply ONLY with the evaluated numeric score (e.g. 24.5 or 38). No words or explanation." },
+                { inlineData: { mimeType: "image/png", data: base64Data } }
+              ]
+            }]
+          })
+        });
+        if (res.ok) {
+          const json = await res.json();
+          const reply = json?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          const match = reply.match(/[0-9]+(\.[0-9]+)?/);
+          if (match) {
+            const num = parseFloat(match[0]);
+            if (!isNaN(num)) {
+              if (this.touchpadMathExprInput) {
+                this.touchpadMathExprInput.value = String(num);
+                this.updateTouchpadCalculatedScore();
+              }
+              this.showToast(`✨ AI ស្គាល់លេខ៖ ${num}!`, 'success');
+              return;
+            }
+          }
+        }
+      } catch (_) { }
+    }
+
+    const currentScore = this.touchpadMathExprInput ? this.touchpadMathExprInput.value : '0';
+    const entered = prompt('សូមបញ្ជាក់លេខពិន្ទុដែលអ្នកបានសរសេរ៖', currentScore);
+    if (entered !== null) {
+      const parsed = parseFloat(entered);
+      if (!isNaN(parsed)) {
+        if (this.touchpadMathExprInput) {
+          this.touchpadMathExprInput.value = String(parsed);
+          this.updateTouchpadCalculatedScore();
+        }
+        this.showToast(`បានកំណត់ពិន្ទុ៖ ${parsed}`, 'success');
+      }
     }
   }
 

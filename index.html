@@ -1388,6 +1388,10 @@
                 data-subtab="byVoiceNameSecret" style="color: #0284c7; font-weight: 700;">
                 🗣️ បញ្ចូលតាមអក្សរសម្ងាត់ (អានឈ្មោះសិស្ស)
               </button>
+              <button type="button" class="score-subtab-btn" id="subtabTouchpadSecretScoreBtn"
+                data-subtab="byTouchpadSecret" style="color: #0d9488; font-weight: 700;">
+                ✍️ បញ្ចូលតាមអក្សរសម្ងាត់ (Touchpad / សរសេរដៃ)
+              </button>
               <button type="button" class="score-subtab-btn" id="subtabSubjectScoreBtn" data-subtab="bySubject">
                 📋 បញ្ចូលតាមតារាងមុខវិជ្ជា
               </button>
@@ -1783,6 +1787,235 @@
                     </tr>
                   </tbody>
                 </table>
+              </div>
+            </div>
+
+            <!-- Sub-view: By Secret Code with Touchpad / Handwriting & Math Formulas (បញ្ចូលតាមអក្សរសម្ងាត់ ជាមួយ Touchpad) -->
+            <div class="score-subview-panel" id="scoreSubViewTouchpadSecret" style="display: none;">
+              <h3 style="margin-top: 0; margin-bottom: 0.75rem; font-size: 1.15rem; color: #0f766e; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="ri-edit-line" style="color: #0d9488;"></i> ការបញ្ចូលពិន្ទុតាមអក្សរសម្ងាត់ (ប្រើជាមួយ Touchpad / ប៊ិចឌីជីថល គណនារូបមន្តគណិត)
+              </h3>
+
+              <div class="secret-score-search-box" style="flex-wrap: wrap; gap: 0.75rem; align-items: center;">
+                <div class="exam-control-item">
+                  <label for="touchpadSecretScorePeriodSelect" style="font-weight: 700; white-space: nowrap; color: #0f766e;">ខែ/សម័យប្រឡង</label>
+                  <select id="touchpadSecretScorePeriodSelect" class="exam-input-orange" style="min-width: 150px; font-weight: 700;">
+                    <option value="test_early">តេស្តដើមឆ្នាំ</option>
+                    <option value="month_11">វិច្ឆិកា</option>
+                    <option value="month_12">ធ្នូ</option>
+                    <option value="month_1">មករា</option>
+                    <option value="sem1_exam">ប្រឡងឆមាសទី១</option>
+                    <option value="month_2">កុម្ភៈ</option>
+                    <option value="month_3">មីនា</option>
+                    <option value="month_4">មេសា</option>
+                    <option value="month_5">ឧសភា</option>
+                    <option value="sem2_exam">ប្រឡងឆមាសទី២</option>
+                  </select>
+                </div>
+
+                <div class="exam-control-item">
+                  <label for="inputSearchTouchpadSecretCode" style="font-weight: 700; white-space: nowrap; color: #0f766e;">បញ្ចូលអក្សរសម្ងាត់</label>
+                  <input type="text" id="inputSearchTouchpadSecretCode" class="exam-input-orange"
+                    placeholder="ឧទាហរណ៍: M7g, ES7e, LE7a..." style="min-width: 190px; text-transform: uppercase; font-weight: 700;">
+                </div>
+
+                <button type="button" class="btn btn-warning" id="btnFetchTouchpadSecretRoomScores"
+                  style="background: #0d9488; color: white; border: none; font-weight: 700; padding: 0.5rem 1.1rem; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                  <i class="ri-search-line"></i> <span>ទាញយក</span>
+                </button>
+
+                <button type="button" class="btn btn-success" id="btnSaveTouchpadSecretRoomScores"
+                  style="background: #16a34a; color: white; border: none; font-weight: 700; padding: 0.5rem 1.1rem; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+                  <i class="ri-save-line"></i> <span>រក្សាទុក</span>
+                </button>
+
+                <button type="button" class="btn btn-outline" id="btnAddMisplacedStudentTouchpad"
+                  style="border-color: #f59e0b; color: #b45309; font-weight: 700; background: #fffbeb; padding: 0.5rem 0.85rem; border-radius: 6px; display: inline-flex; align-items: center; gap: 0.4rem;"
+                  title="បន្ថែមសិស្សដែលច្រឡំមកប្រឡងក្នុងបន្ទប់នេះ ឬអង្គុយខុសលេខតុ">
+                  <i class="ri-user-add-line"></i> <span>➕ សិស្សច្រឡំបន្ទប់/តុ</span>
+                </button>
+
+                <label style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 700; font-size: 0.88rem; color: #0f766e; background: #f0fdfa; border: 1.5px solid #99f6e4; padding: 0.45rem 0.85rem; border-radius: 6px; user-select: none;">
+                  <input type="checkbox" id="chkShowStudentInfoTouchpadSecret" style="cursor: pointer; width: 17px; height: 17px; accent-color: #0d9488;">
+                  <span><i class="ri-user-search-line"></i> បង្ហាញព័ត៌មានសិស្ស</span>
+                </label>
+
+                <label style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600; font-size: 0.84rem; color: #334155; background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.45rem 0.75rem; border-radius: 6px; user-select: none;"
+                  title="ពេលបញ្ចូលពិន្ទុហើយ លោតទៅតុបន្ទាប់ដោយស្វ័យប្រវត្តិ">
+                  <input type="checkbox" id="chkTouchpadAutoAdvance" checked style="cursor: pointer; width: 16px; height: 16px; accent-color: #0d9488;">
+                  <span>ចុះតុបន្ទាប់ស្វ័យប្រវត្តិ [Enter]</span>
+                </label>
+
+                <label style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600; font-size: 0.84rem; color: #334155; background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.45rem 0.75rem; border-radius: 6px; user-select: none;"
+                  title="ពេលបញ្ចូលពិន្ទុហើយ ជូតសម្អាតក្តារសរសេរដៃត្រៀមសម្រាប់សិស្សបន្ទាប់">
+                  <input type="checkbox" id="chkTouchpadAutoClear" checked style="cursor: pointer; width: 16px; height: 16px; accent-color: #0d9488;">
+                  <span>សម្អាតក្តារស្វ័យប្រវត្តិ</span>
+                </label>
+              </div>
+
+              <!-- Notice and Room info -->
+              <div id="touchpadSecretActiveRoomInfo" style="margin-bottom: 0.75rem; font-weight: 700; color: #0f766e; display: none;"></div>
+
+              <!-- Dual-Pane Workspace Grid -->
+              <div class="touchpad-workspace-grid">
+                <!-- Left Pane: Room Secret Score Table -->
+                <div class="touchpad-table-column">
+                  <div class="secret-score-table-wrap" style="max-height: 720px; overflow-y: auto;">
+                    <table class="secret-score-table" id="touchpadSecretScoreInputTable">
+                      <thead>
+                        <tr>
+                          <th class="col-student-info" style="width: 75px; text-align: center; display: none;">បន្ទប់</th>
+                          <th class="col-student-info" style="width: 75px; text-align: center; display: none;">លេខតុ</th>
+                          <th class="col-student-info" style="min-width: 140px; text-align: left; display: none;">គោត្តនាម-នាម</th>
+                          <th class="col-student-info" style="width: 65px; text-align: center; display: none;">ភេទ</th>
+                          <th style="width: 85px; text-align: center;">អក្សរសម្ងាត់</th>
+                          <th style="text-align: center;">
+                            <i class="ri-edit-circle-line" style="color: #0d9488;"></i> បញ្ចូលពិន្ទុ (Touchpad / វាយលេខ)
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody id="touchpadSecretScoreInputTableBody">
+                        <tr>
+                          <td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2.8rem 1rem;">
+                            <i class="ri-pen-nib-line" style="font-size: 2.2rem; display: block; margin-bottom: 0.5rem; color: #0d9488;"></i>
+                            <div style="font-weight: 700; font-size: 1.05rem; color: #0f766e;">សូមបញ្ចូលអក្សរសម្ងាត់ ដើម្បីបញ្ចូលពិន្ទុជាមួយ Touchpad / សរសេរដៃ</div>
+                            <div style="font-size: 0.88rem; color: #64748b; margin-top: 0.35rem;">វាយអក្សរសម្ងាត់ក្នុងប្រអប់ខាងលើ រួចចុច <strong>Enter</strong> ឬចុចប៊ូតុង <strong>«ទាញយក»</strong>។</div>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <!-- Right Pane: Touchpad Math & Handwriting Workspace -->
+                <div class="touchpad-pad-column">
+                  <div class="touchpad-pad-card">
+                    <!-- Pad Header -->
+                    <div class="touchpad-card-header">
+                      <div style="display: flex; align-items: center; gap: 0.5rem;">
+                        <span class="touchpad-badge-icon"><i class="ri-quill-pen-line"></i></span>
+                        <div>
+                          <div style="font-weight: 800; font-size: 0.98rem; color: #0f766e;">ក្តារសរសេរដៃ Touchpad & រូបមន្តគណិតវិទ្យា</div>
+                          <div style="font-size: 0.76rem; color: #64748b;">គាំទ្រ Touchpad, ថេប្លេតគូររូប (Drawing Pad), Stylus, Mouse & Touch Screen</div>
+                        </div>
+                      </div>
+                      <span id="touchpadActiveDeskBadge" class="touchpad-desk-badge">
+                        តុសកម្ម: --
+                      </span>
+                    </div>
+
+                    <!-- Canvas Toolbar -->
+                    <div class="touchpad-toolbar">
+                      <!-- Ink Colors -->
+                      <div class="touchpad-tool-group" title="ពណ៌ទឹកប៊ិចកែប្រឡង">
+                        <button type="button" class="touchpad-color-dot active" data-color="#dc2626" style="background: #dc2626;" title="ប៊ិចក្រហម (កែប្រឡង)"></button>
+                        <button type="button" class="touchpad-color-dot" data-color="#2563eb" style="background: #2563eb;" title="ប៊ិចខៀវ"></button>
+                        <button type="button" class="touchpad-color-dot" data-color="#0f172a" style="background: #0f172a;" title="ប៊ិចខ្មៅ"></button>
+                        <button type="button" class="touchpad-color-dot" data-color="#16a34a" style="background: #16a34a;" title="ប៊ិចបៃតង"></button>
+                      </div>
+
+                      <!-- Pen Sizes & Eraser -->
+                      <div class="touchpad-tool-group">
+                        <button type="button" class="touchpad-tool-btn" id="btnTouchpadPenFine" data-size="2" title="ប៊ិចស្តើង (Fine 2px)">
+                          <span style="display:inline-block; width:4px; height:4px; border-radius:50%; background:currentColor;"></span>
+                        </button>
+                        <button type="button" class="touchpad-tool-btn active" id="btnTouchpadPenMedium" data-size="4" title="ប៊ិចមធ្យម (Normal 4px)">
+                          <span style="display:inline-block; width:7px; height:7px; border-radius:50%; background:currentColor;"></span>
+                        </button>
+                        <button type="button" class="touchpad-tool-btn" id="btnTouchpadPenThick" data-size="8" title="ប៊ិចក្រាស់ (Thick 8px)">
+                          <span style="display:inline-block; width:11px; height:11px; border-radius:50%; background:currentColor;"></span>
+                        </button>
+                        <button type="button" class="touchpad-tool-btn" id="btnTouchpadEraser" title="ជ័រលុប (Eraser)">
+                          <i class="ri-eraser-line"></i>
+                        </button>
+                      </div>
+
+                      <!-- Canvas Grid Style -->
+                      <div class="touchpad-tool-group">
+                        <button type="button" class="touchpad-tool-btn active" id="btnTouchpadGridMath" data-grid="math" title="ក្រឡាគណិតវិទ្យា (Math Grid)">
+                          <i class="ri-grid-line"></i> ក្រឡា
+                        </button>
+                        <button type="button" class="touchpad-tool-btn" id="btnTouchpadGridDot" data-grid="dot" title="ក្រឡាចំណុច (Dot Matrix)">
+                          <i class="ri-more-line"></i>
+                        </button>
+                        <button type="button" class="touchpad-tool-btn" id="btnTouchpadGridBlank" data-grid="blank" title="ផ្ទៃស (Blank)">
+                          <i class="ri-checkbox-blank-line"></i>
+                        </button>
+                      </div>
+
+                      <!-- Undo / Clear / Save -->
+                      <div class="touchpad-tool-group" style="margin-left: auto;">
+                        <button type="button" class="touchpad-tool-btn" id="btnTouchpadUndo" title="ថយក្រោយ (Undo)">
+                          <i class="ri-arrow-go-back-line"></i>
+                        </button>
+                        <button type="button" class="touchpad-tool-btn text-danger" id="btnTouchpadClear" title="លុបក្តារសរសេរទាំងអស់ (Clear)">
+                          <i class="ri-delete-bin-line"></i>
+                        </button>
+                        <button type="button" class="touchpad-tool-btn" id="btnTouchpadSaveImg" title="រក្សាទុករូបភាពកិច្ចការ (PNG)">
+                          <i class="ri-download-2-line"></i>
+                        </button>
+                      </div>
+                    </div>
+
+                    <!-- The Canvas Container -->
+                    <div class="touchpad-canvas-container" id="touchpadCanvasContainer">
+                      <canvas id="touchpadCanvas" class="touchpad-canvas grid-math"></canvas>
+                      <div class="touchpad-canvas-hint">
+                        <span><i class="ri-fingerprint-line"></i> សរសេររូបមន្ត ឬលេខពិន្ទុដោយផ្ទាល់លើក្តារនេះ</span>
+                      </div>
+                    </div>
+
+                    <!-- Math Sub-Scores & Calculator Box -->
+                    <div class="touchpad-calc-panel">
+                      <!-- Sub-Scores / Math Formula Row -->
+                      <div style="display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.45rem;">
+                        <div style="font-size: 0.84rem; font-weight: 700; color: #0f766e; display: flex; align-items: center; gap: 0.35rem;">
+                          <i class="ri-calculator-line"></i> គណនាពិន្ទុរង / រូបមន្ត (Sub-Scores & Total):
+                        </div>
+                        <div id="touchpadCalculatedScoreDisplay" class="touchpad-score-total-display">
+                          ពិន្ទុសរុប: <strong>0</strong>
+                        </div>
+                      </div>
+
+                      <div style="display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.55rem;">
+                        <input type="text" id="touchpadMathExprInput" class="touchpad-math-input"
+                          placeholder="ឧ. 5 + 7.5 + 4 ឬ 12.5 + 8 (ចុចប៊ូតុងខាងក្រោម ឬវាយផ្ទាល់)" value="0">
+                        <button type="button" id="btnTouchpadResetScore" class="btn btn-sm btn-outline"
+                          style="border-color: #cbd5e1; color: #64748b; padding: 0.35rem 0.65rem;" title="កំណត់ឡើងវិញជា 0">
+                          <i class="ri-refresh-line"></i>
+                        </button>
+                      </div>
+
+                      <!-- Quick Add Sub-score Chips -->
+                      <div class="touchpad-chips-row">
+                        <span style="font-size: 0.76rem; font-weight: 700; color: #64748b; margin-right: 2px;">បូកពិន្ទុរហ័ស:</span>
+                        <button type="button" class="touchpad-chip" data-add="0.25">+0.25</button>
+                        <button type="button" class="touchpad-chip" data-add="0.5">+0.5</button>
+                        <button type="button" class="touchpad-chip" data-add="1">+1</button>
+                        <button type="button" class="touchpad-chip" data-add="2">+2</button>
+                        <button type="button" class="touchpad-chip" data-add="5">+5</button>
+                        <button type="button" class="touchpad-chip" data-add="10">+10</button>
+                        <button type="button" class="touchpad-chip text-red" data-set="0">0 (អវត្តមាន)</button>
+                        <button type="button" class="touchpad-chip text-green" id="btnTouchpadSetFullScore">ពេញ</button>
+                      </div>
+
+                      <!-- Action Buttons: Recognize & Submit -->
+                      <div style="display: flex; gap: 0.5rem; align-items: center; margin-top: 0.75rem;">
+                        <button type="button" id="btnTouchpadRecognizeDigit" class="btn btn-outline"
+                          style="border-color: #0d9488; color: #0f766e; font-weight: 700; padding: 0.55rem 0.85rem; border-radius: 8px; font-size: 0.88rem; display: inline-flex; align-items: center; gap: 0.35rem; cursor: pointer;"
+                          title="ស្គាល់លេខដែលបានសរសេរលើក្តារដោយស្វ័យប្រវត្តិ">
+                          <i class="ri-scan-2-line"></i> <span>⚡ ស្គាល់លេខសរសេរដៃ</span>
+                        </button>
+
+                        <button type="button" id="btnTouchpadEnterScore" class="btn btn-primary"
+                          style="flex: 1; background: linear-gradient(135deg, #0d9488, #0f766e); color: white; border: none; font-weight: 800; padding: 0.6rem 1.1rem; border-radius: 8px; font-size: 0.95rem; box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.3); display: inline-flex; align-items: center; justify-content: center; gap: 0.45rem; cursor: pointer;">
+                          <i class="ri-checkbox-circle-fill" style="font-size: 1.1rem;"></i>
+                          <span>បញ្ចូលពិន្ទុទៅតុនេះ ➔ [Enter]</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
