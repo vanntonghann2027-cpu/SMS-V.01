@@ -1524,13 +1524,14 @@
                   <i class="ri-robot-2-line" style="color: #7c3aed;"></i> <span id="btnOfflineVoiceBadgeText">🤖 សម្លេង AI (Gemini Flash / Whisper / Offline)</span>
                 </button>
 
-                <!-- Feedback sound mode: spoken word (default) / beep / off -->
+                <!-- Feedback sound mode: spoken word (code+score / score only) / beep / off -->
                 <div class="exam-control-item">
                   <label for="voiceSecretFeedbackMode"
                     style="font-weight: 700; white-space: nowrap;">សំឡេងបញ្ជាក់</label>
                   <select id="voiceSecretFeedbackMode" class="exam-input-orange"
-                    style="min-width: 130px; font-weight: 700;">
-                    <option value="speak" selected>🗣️ និយាយពាក្យ</option>
+                    style="min-width: 140px; font-weight: 700;">
+                    <option value="code_score" selected>🗣️ និយាយពាក្យ (កូដ+ពិន្ទុ)</option>
+                    <option value="score_only">🗣️ និយាយតែពិន្ទុ</option>
                     <option value="beep">🔔 ប៊ីប</option>
                     <option value="off">🔇 បិទ</option>
                   </select>

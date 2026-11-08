@@ -15764,6 +15764,8 @@ class ScoreManagementApp {
                  class="voice-secret-score-input ${isLocked ? 'score-input-locked' : ''}" 
                  data-stuid="${sId}" 
                  data-seq="${seqNum}"
+                 data-desk="${stuDesk}"
+                 data-secretcode="${stu.secretCode || stu.secret_code || ''}"
                  data-subkey="${subObj.fullKey}" 
                  data-subcode="${subObj.code}"
                  data-max="${maxLimit}"
@@ -15812,6 +15814,14 @@ class ScoreManagementApp {
       inp.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' || e.key === 'ArrowDown') {
           e.preventDefault();
+          const val = inp.value.trim();
+          if (val !== '') {
+            const num = parseFloat(val);
+            if (!isNaN(num)) {
+              this.saveVoiceSecretInputValue(inp, num);
+              this.playVoiceSecretFeedback(num, inp);
+            }
+          }
           this.navigateVoiceSecretInput(1);
         } else if (e.key === 'ArrowUp') {
           e.preventDefault();
@@ -15821,6 +15831,7 @@ class ScoreManagementApp {
           e.preventDefault();
           inp.value = '0';
           this.saveVoiceSecretInputValue(inp, 0);
+          this.playVoiceSecretFeedback(0, inp);
           this.navigateVoiceSecretInput(1);
         }
       });
@@ -16068,24 +16079,63 @@ class ScoreManagementApp {
           targetInput.style.backgroundColor = '';
           targetInput.style.borderColor = '';
         }, 240);
-        if (!reachedEnd) {
-          this.playVoiceSecretFeedback(parsedNum);
-        }
+        this.playVoiceSecretFeedback(parsedNum, targetInput);
         this.saveVoiceSecretInputValue(targetInput, parsedNum);
       }, 0);
     }
   }
 
-  // Confirmation sound after a voice score: spoken word (default), beep, or off.
+  formatKhmerNumberForSpeech(num) {
+    if (num === 0 || num === '0') return 'សូន្យ';
+    const n = parseFloat(num);
+    if (isNaN(n)) return String(num);
+    if (n === 0) return 'សូន្យ';
+    const intPart = Math.floor(n);
+    const frac = n - intPart;
+    if (Math.abs(frac - 0.5) < 0.01) {
+      return intPart === 0 ? 'កន្លះពិន្ទុ' : `${intPart} កន្លះ`;
+    }
+    return String(num);
+  }
+
+  // Confirmation sound after a voice score: spoken word in Khmer (code / desk number + score), beep, or off.
   // While a spoken word plays, mic results are ignored so the app never "hears itself".
-  playVoiceSecretFeedback(num) {
-    const mode = (this.voiceSecretFeedbackMode && this.voiceSecretFeedbackMode.value) || 'speak';
+  playVoiceSecretFeedback(num, targetInput = null) {
+    const mode = (this.voiceSecretFeedbackMode && this.voiceSecretFeedbackMode.value) || 'code_score';
     if (mode === 'off') return;
     if (mode === 'beep') {
       this.playAudioChime(760, 0.08);
       return;
     }
-    this.playKhmerSpeech(String(num));
+
+    const scoreSpeech = this.formatKhmerNumberForSpeech(num);
+
+    if (mode === 'score_only') {
+      this.playKhmerSpeech(scoreSpeech);
+      return;
+    }
+
+    // Default: 'code_score' or legacy 'speak' -> Confirm Code/Desk and Score in Khmer
+    let deskNum = '';
+    let secretCode = '';
+    if (targetInput) {
+      deskNum = targetInput.getAttribute('data-desk') || targetInput.getAttribute('data-seq') || '';
+      secretCode = targetInput.getAttribute('data-secretcode') || '';
+    } else if (this._currentVoiceSecretActiveInput) {
+      deskNum = this._currentVoiceSecretActiveInput.getAttribute('data-desk') || this._currentVoiceSecretActiveInput.getAttribute('data-seq') || '';
+      secretCode = this._currentVoiceSecretActiveInput.getAttribute('data-secretcode') || '';
+    }
+
+    let speechText = '';
+    if (secretCode && secretCode !== deskNum) {
+      speechText = `កូដ ${secretCode} តុ ${deskNum} ពិន្ទុ ${scoreSpeech}`;
+    } else if (deskNum) {
+      speechText = `តុ ${deskNum} ពិន្ទុ ${scoreSpeech}`;
+    } else {
+      speechText = `ពិន្ទុ ${scoreSpeech}`;
+    }
+
+    this.playKhmerSpeech(speechText);
   }
 
   // Persist one voice-entered score into app state (and mirror to the manual secret-code table)
