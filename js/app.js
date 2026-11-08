@@ -15447,6 +15447,57 @@ class ScoreManagementApp {
     });
 
     const scoreInputs = Array.from(this.secretScoreInputTableBody.querySelectorAll('.secret-score-input-fast'));
+    scoreInputs.forEach((inp, idx) => {
+      inp.addEventListener('focus', () => {
+        this.highlightVoiceSecretActiveRow(inp);
+        this.smoothEnsureVisible(inp);
+        inp.select();
+      });
+
+      inp.addEventListener('input', () => {
+        const val = inp.value.trim();
+        if (val !== '') {
+          const num = parseFloat(val);
+          if (!isNaN(num)) this.saveSecretInputValue(inp, num);
+        }
+      });
+
+      inp.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === 'ArrowDown') {
+          e.preventDefault();
+          if (idx === scoreInputs.length - 1) {
+            // Reached last input in room: auto-save immediately!
+            const val = inp.value.trim();
+            if (val !== '') {
+              const num = parseFloat(val);
+              if (!isNaN(num)) this.saveSecretInputValue(inp, num);
+            }
+            this.announceVoiceEntrySuccess();
+            this.handleSaveSecretRoomScores();
+          } else {
+            const nextInp = scoreInputs[idx + 1];
+            if (nextInp) {
+              nextInp.focus({ preventScroll: true });
+              nextInp.select();
+              this.highlightVoiceSecretActiveRow(nextInp);
+              this.smoothEnsureVisible(nextInp);
+            }
+          }
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          if (idx > 0) {
+            const prevInp = scoreInputs[idx - 1];
+            if (prevInp) {
+              prevInp.focus({ preventScroll: true });
+              prevInp.select();
+              this.highlightVoiceSecretActiveRow(prevInp);
+              this.smoothEnsureVisible(prevInp);
+            }
+          }
+        }
+      });
+    });
+
     if (scoreInputs[0]) {
       scoreInputs[0].focus({ preventScroll: true });
       scoreInputs[0].select();
@@ -15899,15 +15950,9 @@ class ScoreManagementApp {
       this.smoothEnsureVisible(allInputs[targetIdx]);
       return false;
     } else if (targetIdx >= allInputs.length) {
-      // Reached the end of room! AI announces "ការបញ្ចូលជោគជ័យ" and focuses Save button
-      if (this.voiceSecretStatusText) {
-        this.voiceSecretStatusText.innerHTML = '🎉 <strong style="color: #15803d; font-size: 1.05rem;">ការបញ្ចូលជោគជ័យ!</strong> បានបញ្ចូលពិន្ទុគ្រប់សិស្សទាំងអស់រួចរាល់។ សូមចុចប៊ូតុង <strong>«💾 រក្សាទុក»</strong>។';
-      }
-      this.showToast('🎉 ការបញ្ចូលជោគជ័យ! បានបញ្ចូលពិន្ទុគ្រប់សិស្សទាំងអស់រួចរាល់។ សូមចុច «💾 រក្សាទុក»។', 'success');
-      if (this.btnSaveVoiceSecretRoomScores) {
-        this.btnSaveVoiceSecretRoomScores.focus();
-      }
+      // Reached the end of room! Auto-save immediately without clicking Save button per user request
       this.announceVoiceEntrySuccess();
+      this.handleSaveVoiceSecretRoomScores();
       return true;
     }
     return false;
@@ -18163,16 +18208,10 @@ class ScoreManagementApp {
 
     const nextIdx = currentIdx + 1;
     if (nextIdx >= inputs.length) {
-      // Reached the end of room! Stop listening and inform teacher to click Save button
+      // Reached the end of room! Stop listening and auto-save immediately
       this.stopVoiceNameSecretScoreRecognition();
-      this.showToast("🎉 ការបញ្ចូលជោគជ័យ! បានបញ្ចូលពិន្ទុគ្រប់សិស្សទាំងអស់ក្នុងបន្ទប់នេះរួចរាល់! សូមចុចប៊ូតុង «រក្សាទុក»", "success");
-      if (this.voiceNameSecretStatusText) {
-        this.voiceNameSecretStatusText.innerHTML = "🎉 <strong style='color: #15803d;'>ការបញ្ចូលជោគជ័យ!</strong> បានបញ្ចូលគ្រប់សិស្សទាំងអស់ក្នុងបន្ទប់នេះហើយ។ សូមចុចប៊ូតុង <strong>«💾 រក្សាទុក»</strong>។";
-      }
-      if (this.btnSaveVoiceNameSecretRoomScores) {
-        this.btnSaveVoiceNameSecretRoomScores.focus();
-      }
       this.announceVoiceEntrySuccess();
+      this.handleSaveVoiceNameSecretRoomScores();
       return;
     }
 
@@ -18658,7 +18697,9 @@ class ScoreManagementApp {
     let targetIdx = currIdx + direction;
     if (targetIdx < 0) targetIdx = 0;
     if (targetIdx >= allInputs.length) {
-      this.showToast('បានមកដល់សិស្សចុងក្រោយបង្អស់ក្នុងបន្ទប់នេះហើយ!', 'info');
+      // Reached the end of room! Auto-save immediately
+      this.announceVoiceEntrySuccess();
+      this.handleSaveTouchpadSecretRoomScores();
       return;
     }
     const target = allInputs[targetIdx];
