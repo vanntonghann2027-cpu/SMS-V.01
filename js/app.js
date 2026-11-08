@@ -2797,7 +2797,7 @@ class ScoreManagementApp {
     let norm = this.normalizeKhmerNumberPhonetics(raw);
     norm = norm.replace(/(?:ហើយនិង|ហើយ|និង|នឹង)/g, ' ');
 
-    const tokenRegex = /(រក្សាទុក|save|បន្ទាប់|next|រំលង|ថយក្រោយ|back|លុប|delete|clear|ពេញពិន្ទុ|ពិន្ទុពេញ|ពេញ|full|អវត្តមាន|អវត្ត|អត់មក|អត់ប្រឡង|អក្សរ\s*a|អក្សរ\s*អេ|អក្សរ\s*អា|ដាក់\s*a|ដាក់\s*អេ|ដាក់\s*អា|មួយរយ|រយ|កៅសិប|ប៉ែតសិប|ចិតសិប|ហុកសិប|ហាសិប|សែសិប|សាមសិប|ម្ភៃ|ដប់|កៅ|ប៉ែត|ចិត|ហុក|ហា|សែ|សាម|ប្រាំបួន|ប្រាំបី|ប្រាំពីរ|ប្រាំមួយ|ប្រាំ|បួន|បី|ពីរ|មួយ|សូន្យ|កន្លះពិន្ទុ|កន្លះ|half|ចុច|ក្បៀស|\d+(?:\.\d+)?|(?:^|\s)(?:a|អេ|អា|ឯ|zero)(?=\s|$))/gi;
+    const tokenRegex = /(រក្សាទុក|save|បន្ទាប់|next|រំលង|ថយក្រោយ|back|លុប|delete|clear|ពេញពិន្ទុ|ពិន្ទុពេញ|ពេញ|full|អវត្តមាន|អវត្ត|អត់មក|អត់ប្រឡង|អក្សរ\s*a|អក្សរ\s*អេ|អក្សរ\s*អា|ដាក់\s*a|ដាក់\s*អេ|ដាក់\s*អា|មួយរយ|រយ|កៅសិប|ប៉ែតសិប|ចិតសិប|ហុកសិប|ហាសិប|សែសិប|សាមសិប|ម្ភៃ|ដប់|កៅ|ប៉ែត|ចិត|ហុក|ហា|សែ|សាម|ប្រាំបួន|ប្រាំបី|ប្រាំពីរ|ប្រាំមួយ|ប្រាំ|បួន|បី|ពីរ|មួយ|សូន្យ|កន្លះពិន្ទុ|កន្លះ|half|ចុច|ក្បៀស|\d+(?:\.\d+)?|(?:^|\s)(?:zero)(?=\s|$))/gi;
 
     const rawTokens = [];
     let m;
@@ -2809,7 +2809,7 @@ class ScoreManagementApp {
       else if (/^(?:ថយក្រោយ|back)$/i.test(t)) rawTokens.push({ kind: 'cmd', cmd: 'back', raw: t });
       else if (/^(?:លុប|delete|clear)$/i.test(t)) rawTokens.push({ kind: 'cmd', cmd: 'clear', raw: t });
       else if (/^(?:ពេញពិន្ទុ|ពិន្ទុពេញ|ពេញ|full)$/i.test(t)) rawTokens.push({ kind: 'full', value: maxLimit || 100, raw: t });
-      else if (/^(?:អវត្តមាន|អវត្ត|អត់មក|អត់ប្រឡង|អក្សរ\s*a|អក្សរ\s*អេ|អក្សរ\s*អា|ដាក់\s*a|ដាក់\s*អេ|ដាក់\s*អា|a|អេ|អា|ឯ|zero)$/i.test(t)) rawTokens.push({ kind: 'absent_zero', value: 0, raw: t });
+      else if (/^(?:អវត្តមាន|អវត្ត|អត់មក|អត់ប្រឡង|អក្សរ\s*a|អក្សរ\s*អេ|អក្សរ\s*អា|ដាក់\s*a|ដាក់\s*អេ|ដាក់\s*អា|zero)$/i.test(t)) rawTokens.push({ kind: 'absent_zero', value: 0, raw: t });
       else if (t === 'សូន្យ' || t === '0') rawTokens.push({ kind: 'zero_digit', value: 0, raw: t });
       else if (t === 'មួយរយ' || t === 'រយ' || t === '100') rawTokens.push({ kind: 'hundred', value: 100, raw: t });
       else if (t === 'កៅសិប' || t === 'កៅ' || t === '90') rawTokens.push({ kind: 'tens', value: 90, raw: t });
@@ -2959,7 +2959,21 @@ class ScoreManagementApp {
       }
     }
 
-    return items;
+    // Suppress consecutive identical scores / Google ITN echo (e.g. "សូន្យ 0" -> 0, "សាមសិបបួន 34" -> 34, "0 0" -> 0)
+    const dedupedItems = [];
+    for (let i = 0; i < items.length; i++) {
+      const cur = items[i];
+      if (cur.type === 'score' && dedupedItems.length > 0) {
+        const prev = dedupedItems[dedupedItems.length - 1];
+        if (prev.type === 'score' && prev.value === cur.value) {
+          prev.raw = (prev.raw + ' ' + cur.raw).trim();
+          continue;
+        }
+      }
+      dedupedItems.push(cur);
+    }
+
+    return dedupedItems;
   }
 
   playAudioChime(freq = 620, duration = 0.12) {
@@ -15798,8 +15812,8 @@ class ScoreManagementApp {
         } else if (e.key === 'ArrowUp') {
           e.preventDefault();
           this.navigateVoiceSecretInput(-1);
-        } else if (e.key === 'a' || e.key === 'A') {
-          // Pressing "A" (Absent / សូន្យ) enters 0 and jumps to next student immediately
+        } else if ((e.key === 'a' || e.key === 'A') && e.isTrusted && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          // Pressing physical "A" (Absent / សូន្យ) enters 0 and jumps to next student immediately
           e.preventDefault();
           inp.value = '0';
           this.saveVoiceSecretInputValue(inp, 0);
@@ -16004,6 +16018,24 @@ class ScoreManagementApp {
         this.showToast(`⚠️ ពិន្ទុ ${parsedNum} លើសពីពិន្ទុពេញ (${maxLimit})! សូមនិយាយម្តងទៀត។`, 'warning');
         return;
       }
+
+      const now = Date.now();
+      // Cooldown guard: prevent rapid duplicate speech events or trailing 0 from leaking into the next newly focused cell
+      if (this._lastVoiceSecretCommitTs && (now - this._lastVoiceSecretCommitTs < 450)) {
+        if (this._lastVoiceSecretCommittedValue === parsedNum || parsedNum === 0) {
+          return;
+        }
+      }
+
+      this._lastVoiceSecretCommitTs = now;
+      this._lastVoiceSecretCommittedValue = parsedNum;
+      this._lastVoiceSecretCommittedInput = targetInput;
+
+      // Clear pending cross-result prefix timer so leftover digits never spill into subsequent cells
+      if (this._pendingCrossResultPrefix && this._pendingCrossResultPrefix.timer) {
+        clearTimeout(this._pendingCrossResultPrefix.timer);
+      }
+      this._pendingCrossResultPrefix = null;
 
       // Valid score! Fill + JUMP FIRST (zero latency), do heavy work afterwards.
       targetInput.classList.remove('score-input-invalid');
@@ -16370,7 +16402,13 @@ class ScoreManagementApp {
                 const isLastItem = (idx === items.length - 1);
 
                 // While still in interim (!isFinalEvent), ONLY commit early if the trailing item is a terminal 2-digit score (not ending in 5 and not a round ten)
-                if (!isFinalEvent && isLastItem && (!item.isComplete || item.value % 10 === 5)) {
+                // For 0 or single digit numbers, wait for isFinalEvent to ensure Chrome does not emit trailing duplicates
+                if (!isFinalEvent && isLastItem && (!item.isComplete || item.value % 10 === 5 || item.value === 0 || item.scoreKind === 'zero_digit')) {
+                  break;
+                }
+
+                // Guard against multiple items in a single speech cycle leaking across consecutive rows in 0ms
+                if (idx > alreadyCommitted && (Date.now() - (this._lastVoiceScoreCommitTs || 0) < 450)) {
                   break;
                 }
 
