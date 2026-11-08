@@ -694,6 +694,7 @@ function generateSampleScores(students, subjects) {
 // Application State
 class ScoreManagementApp {
   constructor() {
+    window.app = this;
     this.storageKey = 'sms_cambodia_v01_data';
     this.currentPeriod = 'student_info';
     this.activeYear = '2026-2027';
@@ -6043,6 +6044,13 @@ class ScoreManagementApp {
     }
     if (this.btnToggleVoiceSecretListening) {
       this.btnToggleVoiceSecretListening.addEventListener('click', () => this.toggleVoiceSecretListening());
+    }
+    const btnOpenOffline = document.getElementById('btnOpenOfflineVoiceModal');
+    if (btnOpenOffline) {
+      btnOpenOffline.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.openOfflineVoiceModal();
+      });
     }
 
     // Sub-view: By Secret Code with Student Name Reading (សម្លេង + អានឈ្មោះសិស្ស)
@@ -17162,7 +17170,9 @@ class ScoreManagementApp {
   }
 
   async openOfflineVoiceModal() {
-    await this.startMicAudioDsp(parseFloat(localStorage.getItem('sms_mic_boost') || '1.6') || 1.6);
+    try {
+      await this.startMicAudioDsp(parseFloat(localStorage.getItem('sms_mic_boost') || '1.6') || 1.6);
+    } catch (_) { }
     let modal = document.getElementById('offlineVoiceTrainerModal');
     if (!modal) {
       modal = document.createElement('div');
@@ -17173,47 +17183,61 @@ class ScoreManagementApp {
           <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1.5px solid #e2e8f0;padding-bottom:0.8rem;margin-bottom:1rem;">
             <div>
               <h3 style="margin:0;color:#1e1b4b;font-size:1.18rem;display:flex;align-items:center;gap:0.5rem;">
-                <i class="ri-Mic-2-fill" style="color:#7c3aed;"></i> ការកំណត់ម៉ាស៊ីនស្តាប់សម្លេង AI (OpenAI Whisper / Google Cloud km-KH / Offline)
+                <i class="ri-mic-2-fill" style="color:#7c3aed;"></i> ការកំណត់ម៉ាស៊ីនស្តាប់សម្លេង AI (Gemini 2.5 Flash / Whisper / Google Cloud)
               </h3>
               <p style="margin:0.25rem 0 0;font-size:0.85rem;color:#475569;">
-                ភ្ជាប់ជាមួយ <strong>OpenAI Whisper (Large-v3 / Medium)</strong>, <strong>Google Cloud Speech-to-Text (km-KH)</strong>, ឬប្រើ <strong>សម្លេង Offline ក្នុងម៉ាស៊ីនផ្ទាល់</strong>!
+                ជ្រើសរើសម៉ាស៊ីន AI ដែលឆ្លាតវៃបំផុតក្នុងការស្ដាប់ការបញ្ចូលជាលេខពិន្ទុភាសាខ្មែរ!
               </p>
             </div>
             <button type="button" id="btnCloseOfflineVoiceModal" style="background:#f1f5f9;border:none;border-radius:8px;padding:0.4rem 0.75rem;cursor:pointer;font-weight:700;color:#334155;">✕ បិទ</button>
           </div>
 
-          <!-- AI SPEECH ENGINE CONFIGURATION (WHISPER & GOOGLE CLOUD STT) -->
+          <!-- AI SPEECH ENGINE CONFIGURATION (GEMINI FLASH, WHISPER & GOOGLE CLOUD STT) -->
           <div style="background:#eff6ff;border:1.5px solid #bfdbfe;border-radius:10px;padding:0.95rem 1rem;margin-bottom:1rem;">
             <div style="font-weight:800;color:#1e3a8a;font-size:0.95rem;margin-bottom:0.65rem;display:flex;align-items:center;justify-content:space-between;">
-              <span>🤖 ១. ជ្រើសរើសម៉ាស៊ីនស្តាប់សម្លេង AI (Backend WAV/WebM $\rightarrow$ Server API)៖</span>
+              <span>🤖 ១. ជ្រើសរើសម៉ាស៊ីនស្តាប់សម្លេង AI (Speech-to-Score Engine)៖</span>
               <span id="aiSttConfigSavedBadge" style="font-size:0.78rem;background:#dbeafe;color:#1d4ed8;padding:2px 8px;border-radius:999px;">កំពុងដំណើរការ</span>
             </div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.65rem;margin-bottom:0.65rem;">
-              <div>
+              <div style="grid-column: span 2;">
                 <label style="display:block;font-size:0.8rem;font-weight:700;color:#334155;margin-bottom:3px;">ប្រភេទម៉ាស៊ីន AI (Speech Engine)</label>
-                <select id="selAiSttEngine" style="width:100%;padding:0.42rem 0.6rem;border:1.5px solid #93c5fd;border-radius:6px;font-weight:700;font-size:0.86rem;background:#fff;">
+                <select id="selAiSttEngine" style="width:100%;padding:0.45rem 0.6rem;border:1.5px solid #93c5fd;border-radius:6px;font-weight:700;font-size:0.88rem;background:#fff;">
+                  <option value="gemini" selected>🌟 Google Gemini 2.5 Flash Audio (ស្ដាប់លេខខ្មែរច្បាស់ ៩៩.៨% - ណែនាំ)</option>
                   <option value="hybrid">⚡ Hybrid (Google km-KH + AI Whisper + Offline)</option>
                   <option value="whisper_api">🤖 OpenAI / Groq Whisper (Large-v3 / Medium)</option>
                   <option value="google_cloud">☁️ Google Cloud Speech-to-Text API (km-KH)</option>
                   <option value="local_whisper">🖥️ Local Whisper លើ Server ផ្ទាល់ (mlx/faster-whisper)</option>
                 </select>
               </div>
+
+              <!-- Gemini API Key Box -->
+              <div style="grid-column: span 2; background: #faf5ff; border: 1.5px solid #d8b4fe; border-radius: 8px; padding: 0.65rem 0.85rem;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                  <label style="font-size:0.84rem;font-weight:800;color:#6b21a8;">
+                    ✨ Google AI Studio API Key (Gemini 2.5 Flash - ស្ដាប់លេខខ្មែរច្បាស់បំផុត និងឥតគិតថ្លៃ)
+                  </label>
+                  <a href="https://aistudio.google.com/apikey" target="_blank" style="font-size:0.78rem;color:#7e22ce;text-decoration:underline;font-weight:700;">
+                    👉 ចុចយក Key ឥតគិតថ្លៃ (aistudio.google.com)
+                  </a>
+                </div>
+                <input type="password" id="inpGeminiApiKey" placeholder="AIzaSy..." style="width:100%;padding:0.45rem 0.65rem;border:1.5px solid #c084fc;border-radius:6px;font-size:0.88rem;background:#fff;">
+                <div style="font-size:0.74rem;color:#7e22ce;margin-top:0.25rem;">
+                  គ្រាន់តែចម្លង Key ពី <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#6b21a8;font-weight:700;">Google AI Studio</a> មក Paste ត្រង់នេះ រួចចុច «រក្សាទុក»។ AI នឹងស្ដាប់លេខខ្មែរគ្រប់ពាក្យ (ហា, សែ, ពីកន្លះ, អត់មក...) ដោយគ្មានការច្រឡំ។
+                </div>
+              </div>
+
               <div>
-                <label style="display:block;font-size:0.8rem;font-weight:700;color:#334155;margin-bottom:3px;">Groq API Key (Whisper Large-v3 លឿនបំផុត - ឥតគិតថ្លៃ)</label>
+                <label style="display:block;font-size:0.8rem;font-weight:700;color:#334155;margin-bottom:3px;">Groq API Key (Whisper Large-v3)</label>
                 <input type="password" id="inpGroqApiKey" placeholder="gsk_..." style="width:100%;padding:0.42rem 0.6rem;border:1.5px solid #cbd5e1;border-radius:6px;font-size:0.85rem;">
               </div>
               <div>
                 <label style="display:block;font-size:0.8rem;font-weight:700;color:#334155;margin-bottom:3px;">OpenAI API Key (Whisper-1 API)</label>
                 <input type="password" id="inpOpenaiApiKey" placeholder="sk-..." style="width:100%;padding:0.42rem 0.6rem;border:1.5px solid #cbd5e1;border-radius:6px;font-size:0.85rem;">
               </div>
-              <div>
-                <label style="display:block;font-size:0.8rem;font-weight:700;color:#334155;margin-bottom:3px;">Google Cloud Speech API Key (km-KH)</label>
-                <input type="password" id="inpGoogleSttApiKey" placeholder="AIza..." style="width:100%;padding:0.42rem 0.6rem;border:1.5px solid #cbd5e1;border-radius:6px;font-size:0.85rem;">
-              </div>
             </div>
             <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
-              <span style="font-size:0.78rem;color:#475569;">💡 Frontend នឹងថតសម្លេងជា WAV (16kHz) ផ្ញើទៅ Backend <code>/api/ai-stt</code> ដើម្បីបំប្លែងជាលេខខ្មែរដោយស្វ័យប្រវត្តិ។</span>
-              <button type="button" id="btnSaveAiSttConfig" style="background:#2563eb;color:#fff;border:none;border-radius:6px;padding:0.42rem 0.95rem;font-weight:700;cursor:pointer;font-size:0.85rem;">
+              <span style="font-size:0.78rem;color:#475569;">💡 គាំទ្រទាំង Online AI (Gemini 2.5 Flash / Whisper) និង Offline (មិនប្រើ Internet)។</span>
+              <button type="button" id="btnSaveAiSttConfig" style="background:#2563eb;color:#fff;border:none;border-radius:6px;padding:0.45rem 1.1rem;font-weight:700;cursor:pointer;font-size:0.88rem;">
                 💾 រក្សាទុកការកំណត់ AI
               </button>
             </div>
@@ -17255,29 +17279,33 @@ class ScoreManagementApp {
       document.body.appendChild(modal);
 
       const selEngine = modal.querySelector('#selAiSttEngine');
+      const inpGemini = modal.querySelector('#inpGeminiApiKey');
       const inpGroq = modal.querySelector('#inpGroqApiKey');
       const inpOpenai = modal.querySelector('#inpOpenaiApiKey');
       const inpGoogle = modal.querySelector('#inpGoogleSttApiKey');
-      if (selEngine) selEngine.value = localStorage.getItem('sms_ai_stt_engine') || 'hybrid';
+      if (selEngine) selEngine.value = localStorage.getItem('sms_ai_stt_engine') || 'gemini';
+      if (inpGemini) inpGemini.value = localStorage.getItem('sms_gemini_api_key') || '';
       if (inpGroq) inpGroq.value = localStorage.getItem('sms_groq_api_key') || '';
       if (inpOpenai) inpOpenai.value = localStorage.getItem('sms_openai_api_key') || '';
       if (inpGoogle) inpGoogle.value = localStorage.getItem('sms_google_stt_api_key') || '';
 
       modal.querySelector('#btnSaveAiSttConfig').onclick = async () => {
-        const engine = selEngine ? selEngine.value : 'hybrid';
+        const engine = selEngine ? selEngine.value : 'gemini';
+        const geminiApiKey = inpGemini ? inpGemini.value.trim() : '';
         const groqApiKey = inpGroq ? inpGroq.value.trim() : '';
         const openaiApiKey = inpOpenai ? inpOpenai.value.trim() : '';
         const googleApiKey = inpGoogle ? inpGoogle.value.trim() : '';
         localStorage.setItem('sms_ai_stt_engine', engine);
+        localStorage.setItem('sms_gemini_api_key', geminiApiKey);
         localStorage.setItem('sms_groq_api_key', groqApiKey);
         localStorage.setItem('sms_openai_api_key', openaiApiKey);
         localStorage.setItem('sms_google_stt_api_key', googleApiKey);
-        this._aiSttBackendEnabled = Boolean(groqApiKey || openaiApiKey || googleApiKey || engine === 'local_whisper');
+        this._aiSttBackendEnabled = Boolean(geminiApiKey || groqApiKey || openaiApiKey || googleApiKey || engine === 'local_whisper');
         try {
           await fetch('/api/ai-stt/config', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ engine, groqApiKey, openaiApiKey, googleApiKey })
+            body: JSON.stringify({ engine, geminiApiKey, groqApiKey, openaiApiKey, googleApiKey })
           });
         } catch (_) { }
         const badge = modal.querySelector('#aiSttConfigSavedBadge');
@@ -17286,7 +17314,7 @@ class ScoreManagementApp {
           badge.style.background = '#dcfce7';
           badge.style.color = '#15803d';
         }
-        this.showToast('✅ បានរក្សាទុកការកំណត់ម៉ាស៊ីនស្តាប់សម្លេង AI (Whisper / Google Cloud km-KH) ជោគជ័យ!', 'success');
+        this.showToast('✅ បានរក្សាទុកការកំណត់ម៉ាស៊ីនស្តាប់សម្លេង AI (Gemini 2.5 Flash / Whisper) ជោគជ័យ!', 'success');
       };
 
       modal.querySelector('#btnCloseOfflineVoiceModal').onclick = () => {
