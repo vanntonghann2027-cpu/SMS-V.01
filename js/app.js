@@ -6071,7 +6071,7 @@ class ScoreManagementApp {
       });
     }
     if (this.btnSaveSecretRoomScores) {
-      this.btnSaveSecretRoomScores.addEventListener('click', () => this.handleSaveSecretRoomScores());
+      this.btnSaveSecretRoomScores.addEventListener('click', () => this.handleSaveSecretRoomScores(true));
     }
     if (this.chkShowStudentInfoSecret) {
       this.chkShowStudentInfoSecret.addEventListener('change', (e) => {
@@ -6112,7 +6112,7 @@ class ScoreManagementApp {
       });
     }
     if (this.btnSaveVoiceSecretRoomScores) {
-      this.btnSaveVoiceSecretRoomScores.addEventListener('click', () => this.handleSaveVoiceSecretRoomScores());
+      this.btnSaveVoiceSecretRoomScores.addEventListener('click', () => this.handleSaveVoiceSecretRoomScores(true));
     }
     if (this.btnToggleVoiceSecretListening) {
       this.btnToggleVoiceSecretListening.addEventListener('click', () => this.toggleVoiceSecretListening());
@@ -6143,7 +6143,7 @@ class ScoreManagementApp {
       });
     }
     if (this.btnSaveVoiceNameSecretRoomScores) {
-      this.btnSaveVoiceNameSecretRoomScores.addEventListener('click', () => this.handleSaveVoiceNameSecretRoomScores());
+      this.btnSaveVoiceNameSecretRoomScores.addEventListener('click', () => this.handleSaveVoiceNameSecretRoomScores(true));
     }
     if (this.chkShowStudentInfoVoiceNameSecret) {
       this.chkShowStudentInfoVoiceNameSecret.addEventListener('change', (e) => {
@@ -6206,7 +6206,7 @@ class ScoreManagementApp {
       });
     }
     if (this.btnSaveTouchpadSecretRoomScores) {
-      this.btnSaveTouchpadSecretRoomScores.addEventListener('click', () => this.handleSaveTouchpadSecretRoomScores());
+      this.btnSaveTouchpadSecretRoomScores.addEventListener('click', () => this.handleSaveTouchpadSecretRoomScores(true));
     }
     if (this.chkShowStudentInfoTouchpadSecret) {
       this.chkShowStudentInfoTouchpadSecret.addEventListener('change', (e) => {
@@ -15039,6 +15039,10 @@ class ScoreManagementApp {
       this.secretScoreActiveRoomInfo.style.display = 'none';
       this.secretScoreActiveRoomInfo.innerHTML = '';
     }
+    if (this.secretScoreNoticeBanner) {
+      this.secretScoreNoticeBanner.innerHTML = '<i class="ri-checkbox-circle-fill"></i> រួចរាល់! សូមវាយអក្សរសម្ងាត់ រួចចុច Enter បន្តបន្ទាប់បានយ៉ាងរហ័ស។';
+      this.secretScoreNoticeBanner.style.color = '#16a34a';
+    }
     if (this.secretScoreInputTableBody) {
       this.secretScoreInputTableBody.innerHTML = `
         <tr>
@@ -15529,17 +15533,17 @@ class ScoreManagementApp {
       });
 
       inp.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' || e.key === 'ArrowDown') {
+        if (e.key === 'Enter' || e.key === 'ArrowDown' || (e.key === 'Tab' && !e.shiftKey)) {
           e.preventDefault();
           if (idx === scoreInputs.length - 1) {
-            // Reached last input in room: auto-save immediately!
+            // Reached last input in room: auto-save immediately and clear table per user request!
             const val = inp.value.trim();
             if (val !== '') {
               const num = parseFloat(val);
               if (!isNaN(num)) this.saveSecretInputValue(inp, num);
             }
             this.announceVoiceEntrySuccess();
-            this.handleSaveSecretRoomScores();
+            this.handleSaveSecretRoomScores(true);
           } else {
             const nextInp = scoreInputs[idx + 1];
             if (nextInp) {
@@ -15549,7 +15553,7 @@ class ScoreManagementApp {
               this.smoothEnsureVisible(nextInp);
             }
           }
-        } else if (e.key === 'ArrowUp') {
+        } else if (e.key === 'ArrowUp' || (e.key === 'Tab' && e.shiftKey)) {
           e.preventDefault();
           if (idx > 0) {
             const prevInp = scoreInputs[idx - 1];
@@ -15573,7 +15577,7 @@ class ScoreManagementApp {
     this.showToast(`បានទាញយកបញ្ជីសិស្ស (${studentsInRoom.length} នាក់) សម្រាប់ ${periodTitle} រួចរាល់!`, 'success');
   }
 
-  handleSaveSecretRoomScores() {
+  handleSaveSecretRoomScores(clearTable = false) {
     if (!this.secretScoreInputTableBody) return;
     // Determine grade from currently displayed room info
     const _secretGradeForPeriod = this.currentSecretRoomGrade || (this.examSecretGradeSelect ? this.examSecretGradeSelect.value : 'grade_7');
@@ -15643,9 +15647,25 @@ class ScoreManagementApp {
     this.createAutoBackup(`រក្សាទុកពិន្ទុតាមអក្សរសម្ងាត់ (${periodTitle})`);
     this.updateScoreAutoBackupBadge('saved');
     this.updateKPIOverview();
+
+    if (clearTable) {
+      inputs.forEach(inp => {
+        inp.style.borderColor = '#16a34a';
+        inp.style.backgroundColor = '#dcfce7';
+      });
+      setTimeout(() => {
+        this.clearSecretScoreTable(true);
+        if (this.inputSearchSecretCode) {
+          this.inputSearchSecretCode.focus();
+          this.inputSearchSecretCode.select();
+        }
+        this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! តារាងត្រូវបានសម្អាតរួចរាល់ សម្រាប់បញ្ចូលអក្សរសម្ងាត់បន្ទាប់។`, 'success');
+      }, 400);
+      return;
+    }
+
     this.showToast(`បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! ទិន្នន័យបាន Auto Backup និងភ្ជាប់ទៅកាន់ «បញ្ចូលពិន្ទុតាមខែ» រួចរាល់។`, 'success');
 
-    // Keep table and all entered scores visible so the teacher can verify their work without anything jumping out!
     if (this.secretScoreStatusText) {
       this.secretScoreStatusText.innerHTML = `✅ <strong style="color: #15803d; font-size: 1.05rem;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!</strong> (ទិន្នន័យបាន Auto Backup រួចរាល់។ លោកគ្រូអាចត្រួតពិនិត្យពិន្ទុ ឬវាយអក្សរសម្ងាត់ថ្មីខាងលើ)`;
     }
@@ -16046,14 +16066,9 @@ class ScoreManagementApp {
       this.smoothEnsureVisible(allInputs[targetIdx]);
       return false;
     } else if (targetIdx >= allInputs.length) {
-      // Reached the end of room! Auto-save immediately without clicking Save button per user request
+      // Reached the end of room! Auto-save immediately and clear table
       this.announceVoiceEntrySuccess();
-      this.handleSaveVoiceSecretRoomScores();
-      if (allInputs.length > 0) {
-        const lastInp = allInputs[allInputs.length - 1];
-        lastInp.focus({ preventScroll: true });
-        this.highlightVoiceSecretActiveRow(lastInp);
-      }
+      this.handleSaveVoiceSecretRoomScores(true);
       return true;
     }
     return false;
@@ -16710,7 +16725,7 @@ class ScoreManagementApp {
     }
   }
 
-  handleSaveVoiceSecretRoomScores() {
+  handleSaveVoiceSecretRoomScores(clearTable = false) {
     if (!this.voiceSecretScoreInputTableBody) return;
     const _secretGradeForPeriod = this.currentVoiceSecretRoomGrade || (this.examSecretGradeSelect ? this.examSecretGradeSelect.value : 'grade_7');
     const periodKey = this.activeScorePeriod || this.getActiveScoringPeriod(_secretGradeForPeriod);
@@ -16789,8 +16804,25 @@ class ScoreManagementApp {
     this.createAutoBackup(`រក្សាទុកពិន្ទុតាមអក្សរសម្ងាត់ (សម្លេង) (${periodTitle})`);
     this.updateScoreAutoBackupBadge('saved');
     this.updateKPIOverview();
-    this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! ទិន្នន័យបាន Auto Backup និងភ្ជាប់ទៅកាន់ «បញ្ចូលពិន្ទុតាមខែ» រួចរាល់។`, 'success');
     this.announceVoiceEntrySuccess();
+
+    if (clearTable) {
+      inputs.forEach(inp => {
+        inp.style.borderColor = '#16a34a';
+        inp.style.backgroundColor = '#dcfce7';
+      });
+      setTimeout(() => {
+        this.clearVoiceSecretScoreTable(true);
+        if (this.inputSearchVoiceSecretCode) {
+          this.inputSearchVoiceSecretCode.focus();
+          this.inputSearchVoiceSecretCode.select();
+        }
+        this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! តារាងត្រូវបានសម្អាតរួចរាល់ សម្រាប់បញ្ចូលអក្សរសម្ងាត់បន្ទាប់។`, 'success');
+      }, 400);
+      return;
+    }
+
+    this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! ទិន្នន័យបាន Auto Backup និងភ្ជាប់ទៅកាន់ «បញ្ចូលពិន្ទុតាមខែ» រួចរាល់។`, 'success');
 
     // Keep table and all entered scores visible so the teacher can verify their work without anything jumping out!
     if (this.voiceSecretStatusText) {
@@ -18447,10 +18479,10 @@ class ScoreManagementApp {
 
     const nextIdx = currentIdx + 1;
     if (nextIdx >= inputs.length) {
-      // Reached the end of room! Stop listening and auto-save immediately
+      // Reached the end of room! Stop listening and auto-save immediately and clear table
       this.stopVoiceNameSecretScoreRecognition();
       this.announceVoiceEntrySuccess();
-      this.handleSaveVoiceNameSecretRoomScores();
+      this.handleSaveVoiceNameSecretRoomScores(true);
       return;
     }
 
@@ -18568,7 +18600,7 @@ class ScoreManagementApp {
     }
   }
 
-  handleSaveVoiceNameSecretRoomScores() {
+  handleSaveVoiceNameSecretRoomScores(clearTable = false) {
     if (!this.voiceNameSecretScoreInputTableBody) return;
     const _secretGradeForPeriod = this.currentVoiceNameSecretRoomGrade || (this.examSecretGradeSelect ? this.examSecretGradeSelect.value : 'grade_7');
     const periodKey = this.activeScorePeriod || this.getActiveScoringPeriod(_secretGradeForPeriod);
@@ -18632,6 +18664,23 @@ class ScoreManagementApp {
     this.createAutoBackup(`រក្សាទុកពិន្ទុតាមអក្សរសម្ងាត់ (អានឈ្មោះសិស្ស) (${periodTitle})`);
     this.updateScoreAutoBackupBadge('saved');
     this.updateKPIOverview();
+
+    if (clearTable) {
+      inputs.forEach(inp => {
+        inp.style.borderColor = '#0284c7';
+        inp.style.backgroundColor = '#f0f9ff';
+      });
+      setTimeout(() => {
+        this.clearVoiceNameSecretScoreTable(true);
+        if (this.inputSearchVoiceNameSecretCode) {
+          this.inputSearchVoiceNameSecretCode.focus();
+          this.inputSearchVoiceNameSecretCode.select();
+        }
+        this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! តារាងត្រូវបានសម្អាតរួចរាល់ សម្រាប់បញ្ចូលអក្សរសម្ងាត់បន្ទាប់។`, 'success');
+      }, 400);
+      return;
+    }
+
     this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! ទិន្នន័យបាន Auto Backup រួចរាល់។`, 'success');
 
     // Keep table and all entered scores visible so the teacher can verify their work without anything jumping out!
@@ -18925,9 +18974,9 @@ class ScoreManagementApp {
     let targetIdx = currIdx + direction;
     if (targetIdx < 0) targetIdx = 0;
     if (targetIdx >= allInputs.length) {
-      // Reached the end of room! Auto-save immediately
+      // Reached the end of room! Auto-save immediately and clear table
       this.announceVoiceEntrySuccess();
-      this.handleSaveTouchpadSecretRoomScores();
+      this.handleSaveTouchpadSecretRoomScores(true);
       return;
     }
     const target = allInputs[targetIdx];
@@ -18958,7 +19007,7 @@ class ScoreManagementApp {
     }
   }
 
-  handleSaveTouchpadSecretRoomScores() {
+  handleSaveTouchpadSecretRoomScores(clearTable = false) {
     if (!this.touchpadSecretScoreInputTableBody) return;
     const _secretGrade = this.currentTouchpadSecretRoomGrade || 'grade_7';
     const periodKey = this.activeScorePeriod || this.getActiveScoringPeriod(_secretGrade);
@@ -19005,6 +19054,23 @@ class ScoreManagementApp {
     this.createAutoBackup(`រក្សាទុកពិន្ទុ Touchpad (${periodTitle})`);
     this.updateScoreAutoBackupBadge('saved');
     this.updateKPIOverview();
+
+    if (clearTable) {
+      inputs.forEach(inp => {
+        inp.style.borderColor = '#0d9488';
+        inp.style.backgroundColor = '#f0fdfa';
+      });
+      setTimeout(() => {
+        this.clearTouchpadSecretScoreTable(true);
+        if (this.inputSearchTouchpadSecretCode) {
+          this.inputSearchTouchpadSecretCode.focus();
+          this.inputSearchTouchpadSecretCode.select();
+        }
+        this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! តារាងត្រូវបានសម្អាតរួចរាល់ សម្រាប់បញ្ចូលអក្សរសម្ងាត់បន្ទាប់។`, 'success');
+      }, 400);
+      return;
+    }
+
     this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!`, 'success');
 
     // Keep table and all entered scores visible so the teacher can verify their work without anything jumping out!
