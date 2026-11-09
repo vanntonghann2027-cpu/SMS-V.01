@@ -15973,10 +15973,22 @@ class ScoreManagementApp {
   smoothEnsureVisible(el) {
     if (!el) return;
     try {
-      const rect = el.getBoundingClientRect();
-      const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
-      if (rect.top < 130 || rect.bottom > viewportHeight - 110) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      const wrap = el.closest('.secret-score-table-wrap, .data-table-container, .exam-table-container');
+      if (wrap) {
+        const wrapRect = wrap.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        const headerHeight = 52; // height of sticky header
+        if (elRect.top < wrapRect.top + headerHeight) {
+          wrap.scrollTop -= (wrapRect.top + headerHeight - elRect.top + 10);
+        } else if (elRect.bottom > wrapRect.bottom - 10) {
+          wrap.scrollTop += (elRect.bottom - wrapRect.bottom + 12);
+        }
+      } else {
+        const rect = el.getBoundingClientRect();
+        const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
+        if (rect.top < 130 || rect.bottom > viewportHeight - 110) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
       }
     } catch (_) { }
   }

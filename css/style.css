@@ -2652,13 +2652,18 @@ input[type="number"] {
   background: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
   overflow-x: auto;
   box-shadow: var(--shadow-sm);
+  position: relative;
+  -webkit-overflow-scrolling: touch;
 }
 
 .exam-modern-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-family: var(--font-khmer);
 }
 
@@ -2668,11 +2673,18 @@ input[type="number"] {
 }
 
 .exam-modern-table th {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: #214080;
+  color: #ffffff;
   padding: 0.75rem 1rem;
   font-size: 0.92rem;
   font-weight: 600;
   text-align: left;
   white-space: nowrap;
+  border-bottom: 2px solid #183060;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
 }
 
 .exam-modern-table td {
@@ -3212,26 +3224,44 @@ input[type="number"] {
 .secret-score-table-wrap {
   width: 100%;
   max-width: 100%;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  overflow: hidden;
+  max-height: calc(100vh - 210px);
+  min-height: 360px;
+  overflow-y: auto;
+  overflow-x: auto;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
   box-shadow: var(--shadow-sm);
   background: #ffffff;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
 }
 .secret-score-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   font-family: var(--font-khmer);
 }
+.secret-score-table thead {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
 .secret-score-table thead tr {
-  background: #2563eb !important;
+  background: #1d4ed8 !important;
   color: #ffffff !important;
 }
 .secret-score-table th {
-  padding: 0.65rem 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  background: #1d4ed8 !important;
+  color: #ffffff !important;
+  padding: 0.75rem 1rem;
   font-weight: 700;
   font-size: 0.95rem;
   border-right: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 2px solid #1e40af;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.12);
 }
 .secret-score-table td {
   padding: 0.5rem 1rem;
