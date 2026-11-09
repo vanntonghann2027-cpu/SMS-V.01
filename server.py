@@ -1083,6 +1083,66 @@ class ProxyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 self.send_error(500, f"AI STT error: {e}")
             return
         
+        if parsed.path == '/api/handwriting':
+            try:
+                length = int(self.headers.get('Content-Length', 0))
+                body = self.rfile.read(length)
+                payload = json.loads(body.decode('utf-8'))
+                
+                ink = payload.get('ink', [])
+                width = int(payload.get('width', 400) or 400)
+                height = int(payload.get('height', 300) or 300)
+                lang = payload.get('language', 'en') or 'en'
+                
+                g_req = {
+                    'options': 'enable_pre_space',
+                    'requests': [{
+                        'writing_guide': {'writing_area_width': width, 'writing_area_height': height},
+                        'ink': ink,
+                        'language': lang
+                    }]
+                }
+                req_data = json.dumps(g_req).encode('utf-8')
+                g_url = 'https://www.google.com/inputtools/request?ime=handwriting&app=mobilesearch'
+                req = urllib.request.Request(g_url, data=req_data, headers={
+                    'Content-Type': 'application/json',
+                    'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)'
+                })
+                candidates = []
+                with urllib.request.urlopen(req, timeout=5) as resp:
+                    resp_data = resp.read().decode('utf-8')
+                    parsed_res = json.loads(resp_data)
+                    if isinstance(parsed_res, list) and len(parsed_res) > 1:
+                        if parsed_res[0] == 'SUCCESS' and isinstance(parsed_res[1], list) and len(parsed_res[1]) > 0:
+                            candidates = parsed_res[1][0][1]
+                
+                # If no digit found in english, try khmer
+                has_digit = any(any(c in item for c in '0123456789') for item in candidates)
+                if not has_digit:
+                    try:
+                        g_req['requests'][0]['language'] = 'km'
+                        req_data = json.dumps(g_req).encode('utf-8')
+                        req_km = urllib.request.Request(g_url, data=req_data, headers={
+                            'Content-Type': 'application/json',
+                            'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X)'
+                        })
+                        with urllib.request.urlopen(req_km, timeout=3) as resp_km:
+                            parsed_km = json.loads(resp_km.read().decode('utf-8'))
+                            if isinstance(parsed_km, list) and len(parsed_km) > 1 and parsed_km[0] == 'SUCCESS':
+                                km_candidates = parsed_km[1][0][1]
+                                for c in km_candidates:
+                                    if c not in candidates:
+                                        candidates.append(c)
+                    except Exception:
+                        pass
+                
+                self.end_cors_headers(200)
+                self.wfile.write(json.dumps({'status': 'ok', 'candidates': candidates}, ensure_ascii=False).encode('utf-8'))
+            except Exception as e:
+                self.end_cors_headers(200)
+                self.wfile.write(json.dumps({'status': 'error', 'message': str(e), 'candidates': []}).encode('utf-8'))
+            return
+
         self.send_error(404, "Not Found")
 
     def handle_sqlite_api(self):

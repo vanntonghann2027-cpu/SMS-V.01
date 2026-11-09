@@ -4360,6 +4360,47 @@ input[type="number"] {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
+.touchpad-gboard-indicator {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 15;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: rgba(15, 23, 42, 0.92);
+  color: #ffffff;
+  padding: 0.35rem 0.95rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.22);
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+  transition: all 0.2s ease-in-out;
+}
+
+.touchpad-gboard-indicator.waiting {
+  background: rgba(180, 83, 9, 0.92);
+  border: 1px solid #fde68a;
+}
+
+.touchpad-gboard-indicator.recognizing {
+  background: rgba(2, 132, 199, 0.92);
+  border: 1px solid #bae6fd;
+}
+
+.touchpad-gboard-indicator.success {
+  background: rgba(22, 163, 74, 0.92);
+  border: 1px solid #bbf7d0;
+}
+
+.touchpad-gboard-indicator.warning {
+  background: rgba(220, 38, 38, 0.92);
+  border: 1px solid #fecaca;
+}
+
 .touchpad-calc-panel {
   padding: 0.75rem 0.95rem;
   background: #f8fafc;

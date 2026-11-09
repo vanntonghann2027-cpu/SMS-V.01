@@ -4878,6 +4878,8 @@ class ScoreManagementApp {
     this.chkShowStudentInfoTouchpadSecret = document.getElementById('chkShowStudentInfoTouchpadSecret');
     this.chkTouchpadAutoAdvance = document.getElementById('chkTouchpadAutoAdvance');
     this.chkTouchpadAutoClear = document.getElementById('chkTouchpadAutoClear');
+    this.chkTouchpadGboardAuto = document.getElementById('chkTouchpadGboardAuto');
+    this.touchpadGboardIndicator = document.getElementById('touchpadGboardIndicator');
     this.touchpadSecretActiveRoomInfo = document.getElementById('touchpadSecretActiveRoomInfo');
     this.touchpadSecretScoreInputTable = document.getElementById('touchpadSecretScoreInputTable');
     this.touchpadSecretScoreInputTableBody = document.getElementById('touchpadSecretScoreInputTableBody');
@@ -4897,6 +4899,10 @@ class ScoreManagementApp {
     this._touchpadPenSize = 4;
     this._touchpadIsEraser = false;
     this._touchpadHistory = [];
+    this._touchpadStrokes = [];
+    this._currentStroke = null;
+    this._strokeStartTime = 0;
+    this._touchpadAutoRecognizeTimer = null;
     this._currentTouchpadActiveInput = null;
     this._touchpadCanvasInitialized = false;
 
@@ -15962,12 +15968,21 @@ class ScoreManagementApp {
       const inputRect = targetInput.getBoundingClientRect();
       let startX = window.innerWidth / 2;
       let startY = 160;
-      const banner = this.voiceSecretListeningBanner || document.getElementById('voiceSecretListeningBanner') || this.voiceNameSecretListeningBanner;
-      if (banner) {
-        const bRect = banner.getBoundingClientRect();
-        if (bRect.width > 0 && bRect.height > 0) {
-          startX = bRect.left + bRect.width / 2;
-          startY = bRect.top + bRect.height / 2;
+      let flyIcon = '🗣️';
+
+      if (this.touchpadCanvas && this.touchpadCanvas.offsetParent) {
+        const cRect = this.touchpadCanvas.getBoundingClientRect();
+        startX = cRect.left + cRect.width / 2;
+        startY = cRect.top + cRect.height / 2;
+        flyIcon = '✍️';
+      } else {
+        const banner = this.voiceSecretListeningBanner || document.getElementById('voiceSecretListeningBanner') || this.voiceNameSecretListeningBanner;
+        if (banner) {
+          const bRect = banner.getBoundingClientRect();
+          if (bRect.width > 0 && bRect.height > 0) {
+            startX = bRect.left + bRect.width / 2;
+            startY = bRect.top + bRect.height / 2;
+          }
         }
       }
 
@@ -15977,7 +15992,7 @@ class ScoreManagementApp {
       // Create floating particle
       const flyEl = document.createElement('div');
       flyEl.className = 'voice-fly-score-particle';
-      flyEl.innerHTML = `<span class="voice-fly-icon">🗣️</span><span class="voice-fly-num">${scoreVal}</span>`;
+      flyEl.innerHTML = `<span class="voice-fly-icon">${flyIcon}</span><span class="voice-fly-num">${scoreVal}</span>`;
       flyEl.style.left = `${startX}px`;
       flyEl.style.top = `${startY}px`;
       flyEl.style.transform = 'translate(-50%, -50%) scale(0.35)';
@@ -19060,7 +19075,16 @@ class ScoreManagementApp {
       e.preventDefault();
       try { canvas.setPointerCapture(e.pointerId); } catch (_) { }
       isDrawing = true;
-      points = [getPos(e)];
+      if (this._touchpadAutoRecognizeTimer) {
+        clearTimeout(this._touchpadAutoRecognizeTimer);
+        this._touchpadAutoRecognizeTimer = null;
+      }
+      this.hideTouchpadGboardIndicator();
+      const pt = getPos(e);
+      points = [pt];
+      this._strokeStartTime = this._strokeStartTime || Date.now();
+      const t = Date.now() - this._strokeStartTime;
+      this._currentStroke = [[Math.round(pt.x)], [Math.round(pt.y)], [t]];
     }, { passive: false });
 
     canvas.addEventListener('pointermove', (e) => {
@@ -19068,6 +19092,13 @@ class ScoreManagementApp {
       e.preventDefault();
       const pt = getPos(e);
       points.push(pt);
+
+      if (this._currentStroke) {
+        const t = Date.now() - this._strokeStartTime;
+        this._currentStroke[0].push(Math.round(pt.x));
+        this._currentStroke[1].push(Math.round(pt.y));
+        this._currentStroke[2].push(t);
+      }
 
       if (points.length < 3) {
         const b = points[0];
@@ -19110,6 +19141,17 @@ class ScoreManagementApp {
       points = [];
       try { canvas.releasePointerCapture(e.pointerId); } catch (_) { }
       saveSnapshot();
+
+      if (this._currentStroke && this._currentStroke[0].length > 0 && !this._touchpadIsEraser) {
+        if (!this._touchpadStrokes) this._touchpadStrokes = [];
+        this._touchpadStrokes.push(this._currentStroke);
+        this._currentStroke = null;
+
+        const isGboardEnabled = !this.chkTouchpadGboardAuto || this.chkTouchpadGboardAuto.checked;
+        if (isGboardEnabled) {
+          this.startTouchpadAutoRecognizeCountdown();
+        }
+      }
     };
 
     canvas.addEventListener('pointerup', stopDrawing);
@@ -19168,6 +19210,14 @@ class ScoreManagementApp {
     // Undo & Clear
     if (this.btnTouchpadUndo) {
       this.btnTouchpadUndo.addEventListener('click', () => {
+        if (this._touchpadAutoRecognizeTimer) {
+          clearTimeout(this._touchpadAutoRecognizeTimer);
+          this._touchpadAutoRecognizeTimer = null;
+        }
+        this.hideTouchpadGboardIndicator();
+        if (this._touchpadStrokes && this._touchpadStrokes.length > 0) {
+          this._touchpadStrokes.pop();
+        }
         if (this._touchpadHistory.length > 1) {
           this._touchpadHistory.pop(); // remove current
           const prev = this._touchpadHistory[this._touchpadHistory.length - 1];
@@ -19177,6 +19227,8 @@ class ScoreManagementApp {
           }
         } else {
           ctx.clearRect(0, 0, canvas.width, canvas.height);
+          this._touchpadStrokes = [];
+          this._strokeStartTime = 0;
           this.showToast('ក្តារសរសេរដៃទទេស្អាតរួចហើយ!', 'info');
         }
       });
@@ -19184,6 +19236,14 @@ class ScoreManagementApp {
 
     if (this.btnTouchpadClear) {
       this.btnTouchpadClear.addEventListener('click', () => {
+        if (this._touchpadAutoRecognizeTimer) {
+          clearTimeout(this._touchpadAutoRecognizeTimer);
+          this._touchpadAutoRecognizeTimer = null;
+        }
+        this.hideTouchpadGboardIndicator();
+        this._touchpadStrokes = [];
+        this._currentStroke = null;
+        this._strokeStartTime = 0;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         this._touchpadHistory = [];
         saveSnapshot();
@@ -19308,7 +19368,12 @@ class ScoreManagementApp {
 
   applyTouchpadScore() {
     const score = this.updateTouchpadCalculatedScore();
-    const targetInput = this._currentTouchpadActiveInput;
+    let targetInput = this._currentTouchpadActiveInput;
+    if (!targetInput && this.touchpadSecretScoreInputTableBody) {
+      const emptyInp = this.touchpadSecretScoreInputTableBody.querySelector('.touchpad-secret-score-input:not([value]), .touchpad-secret-score-input[value=""]');
+      targetInput = emptyInp || this.touchpadSecretScoreInputTableBody.querySelector('.touchpad-secret-score-input');
+      this._currentTouchpadActiveInput = targetInput;
+    }
     if (!targetInput) {
       this.showToast('សូមចុចលើប្រអប់សិស្សណាមួយក្នុងតារាងជាមុនសិន!', 'warning');
       return;
@@ -19325,6 +19390,9 @@ class ScoreManagementApp {
       const ctx = this.touchpadCanvas.getContext('2d');
       ctx.clearRect(0, 0, this.touchpadCanvas.width, this.touchpadCanvas.height);
       this._touchpadHistory = [];
+      this._touchpadStrokes = [];
+      this._currentStroke = null;
+      this._strokeStartTime = 0;
     }
 
     // Reset formula to 0 for next student
@@ -19341,30 +19409,165 @@ class ScoreManagementApp {
     }
   }
 
-  async recognizeTouchpadHandwriting() {
-    if (!this.touchpadCanvas) return;
-    const canvas = this.touchpadCanvas;
-    const ctx = canvas.getContext('2d');
-    const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = imgData.data;
+  showTouchpadGboardIndicator(html, statusCls = 'waiting') {
+    if (!this.touchpadGboardIndicator) {
+      this.touchpadGboardIndicator = document.getElementById('touchpadGboardIndicator');
+    }
+    const el = this.touchpadGboardIndicator;
+    if (!el) return;
+    el.className = `touchpad-gboard-indicator ${statusCls}`;
+    el.innerHTML = html;
+    el.style.display = 'inline-flex';
+  }
 
-    let hasInk = false;
-    for (let i = 3; i < data.length; i += 4) {
-      if (data[i] > 30) {
-        hasInk = true;
-        break;
+  hideTouchpadGboardIndicator(delay = 0) {
+    if (!this.touchpadGboardIndicator) {
+      this.touchpadGboardIndicator = document.getElementById('touchpadGboardIndicator');
+    }
+    const el = this.touchpadGboardIndicator;
+    if (!el) return;
+    if (delay > 0) {
+      setTimeout(() => {
+        if (el) el.style.display = 'none';
+      }, delay);
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
+  startTouchpadAutoRecognizeCountdown() {
+    if (this._touchpadAutoRecognizeTimer) {
+      clearTimeout(this._touchpadAutoRecognizeTimer);
+      this._touchpadAutoRecognizeTimer = null;
+    }
+    const isGboardEnabled = !this.chkTouchpadGboardAuto || this.chkTouchpadGboardAuto.checked;
+    if (!isGboardEnabled) return;
+
+    if (!this._touchpadStrokes || this._touchpadStrokes.length === 0) return;
+
+    this.showTouchpadGboardIndicator('<i class="ri-edit-line"></i> <span>កំពុងរង់ចាំសរសេរចប់...</span>', 'waiting');
+
+    // Debounce ~700ms after lifting pen/finger
+    this._touchpadAutoRecognizeTimer = setTimeout(() => {
+      this._touchpadAutoRecognizeTimer = null;
+      this.recognizeTouchpadHandwriting(true);
+    }, 700);
+  }
+
+  parseHandwritingCandidates(candidates, maxLimit = 100) {
+    if (!Array.isArray(candidates) || candidates.length === 0) return null;
+
+    const kmMap = { '០': '0', '១': '1', '២': '2', '៣': '3', '៤': '4', '៥': '5', '៦': '6', '៧': '7', '៨': '8', '៩': '9' };
+
+    for (const raw of candidates) {
+      if (!raw || typeof raw !== 'string') continue;
+      let text = raw.trim();
+
+      // Convert Khmer digits to Arabic digits
+      text = text.replace(/[០-៩]/g, d => kmMap[d] || d);
+
+      // Clean common OCR / handwriting confusions for digits and math
+      text = text.replace(/^[oO]$/g, '0');
+      text = text.replace(/(?<=\d)[oO]/g, '0').replace(/[oO](?=\d)/g, '0');
+      text = text.replace(/^[lI|]$/g, '1');
+      text = text.replace(/(?<=\d)[lI|]/g, '1').replace(/[lI|](?=\d)/g, '1');
+      text = text.replace(/,/g, '.');
+      text = text.replace(/x|×/gi, '*');
+      text = text.replace(/÷/g, '/');
+
+      // Keep only allowed math characters: digits, ., +, -, *, /, (, )
+      const cleanExpr = text.replace(/[^0-9+\-*/.()]/g, '').trim();
+      if (!cleanExpr) continue;
+
+      const evaluated = this.evaluateMathExpression(cleanExpr);
+      if (typeof evaluated === 'number' && !isNaN(evaluated) && evaluated >= 0 && evaluated <= maxLimit) {
+        return evaluated;
       }
     }
 
-    if (!hasInk) {
-      this.showToast('សូមសរសេរលេខពិន្ទុ ឬរូបមន្តលើក្តារជាមុនសិន!', 'warning');
+    // Secondary pass: look for any digit substring in candidates
+    for (const raw of candidates) {
+      if (!raw || typeof raw !== 'string') continue;
+      let text = raw.replace(/[០-៩]/g, d => kmMap[d] || d);
+      const m = text.match(/\d+(\.\d+)?/);
+      if (m) {
+        const val = parseFloat(m[0]);
+        if (!isNaN(val) && val >= 0 && val <= maxLimit) {
+          return val;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  async recognizeTouchpadHandwriting(autoApply = false) {
+    if (!this.touchpadCanvas) return;
+    const canvas = this.touchpadCanvas;
+
+    const strokes = this._touchpadStrokes;
+    if (!strokes || strokes.length === 0) {
+      if (!autoApply) {
+        this.showToast('សូមសរសេរលេខពិន្ទុ ឬរូបមន្តលើក្តារជាមុនសិន!', 'warning');
+      }
       return;
     }
 
-    this.showToast('⚡ កំពុងស្គាល់លេខសរសេរដៃ...', 'info');
+    this.showTouchpadGboardIndicator('<i class="ri-loader-4-line ri-spin"></i> <span>កំពុងស្គាល់លេខ...</span>', 'recognizing');
 
+    const maxLimit = (this.currentTouchpadSecretSubObj && this.currentTouchpadSecretSubObj.maxScore) || 100;
+    const w = canvas.width || 400;
+    const h = canvas.height || 300;
+    let recognizedScore = null;
+
+    // 1. Try local server proxy endpoint (/api/handwriting)
+    try {
+      const resp = await fetch('/api/handwriting', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ink: strokes,
+          width: w,
+          height: h,
+          language: 'en'
+        })
+      });
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data && data.status === 'ok' && Array.isArray(data.candidates) && data.candidates.length > 0) {
+          recognizedScore = this.parseHandwritingCandidates(data.candidates, maxLimit);
+        }
+      }
+    } catch (_) { }
+
+    // 2. Fallback to direct Google Input Tools if server proxy was unavailable
+    if (recognizedScore === null) {
+      try {
+        const gReq = {
+          options: 'enable_pre_space',
+          requests: [{
+            writing_guide: { writing_area_width: w, writing_area_height: h },
+            ink: strokes,
+            language: 'en'
+          }]
+        };
+        const gResp = await fetch('https://www.google.com/inputtools/request?ime=handwriting&app=mobilesearch', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(gReq)
+        });
+        if (gResp.ok) {
+          const gData = await gResp.json();
+          if (Array.isArray(gData) && gData[0] === 'SUCCESS' && gData[1]?.[0]?.[1]) {
+            recognizedScore = this.parseHandwritingCandidates(gData[1][0][1], maxLimit);
+          }
+        }
+      } catch (_) { }
+    }
+
+    // 3. Fallback to Gemini Vision if configured
     const geminiKey = localStorage.getItem('sms_gemini_api_key');
-    if (geminiKey) {
+    if (recognizedScore === null && geminiKey) {
       try {
         const base64Data = canvas.toDataURL('image/png').split(',')[1];
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiKey}`, {
@@ -19373,7 +19576,7 @@ class ScoreManagementApp {
           body: JSON.stringify({
             contents: [{
               parts: [
-                { text: "Look at the handwritten math/number on this canvas. Reply ONLY with the evaluated numeric score (e.g. 24.5 or 38). No words or explanation." },
+                { text: `Look at the handwritten math/number on this canvas. Evaluate and reply ONLY with the numeric score (e.g. 24.5 or 38, max ${maxLimit}). No words or explanation.` },
                 { inlineData: { mimeType: "image/png", data: base64Data } }
               ]
             }]
@@ -19385,29 +19588,47 @@ class ScoreManagementApp {
           const match = reply.match(/[0-9]+(\.[0-9]+)?/);
           if (match) {
             const num = parseFloat(match[0]);
-            if (!isNaN(num)) {
-              if (this.touchpadMathExprInput) {
-                this.touchpadMathExprInput.value = String(num);
-                this.updateTouchpadCalculatedScore();
-              }
-              this.showToast(`✨ AI ស្គាល់លេខ៖ ${num}!`, 'success');
-              return;
+            if (!isNaN(num) && num >= 0 && num <= maxLimit) {
+              recognizedScore = num;
             }
           }
         }
       } catch (_) { }
     }
 
-    const currentScore = this.touchpadMathExprInput ? this.touchpadMathExprInput.value : '0';
-    const entered = prompt('សូមបញ្ជាក់លេខពិន្ទុដែលអ្នកបានសរសេរ៖', currentScore);
-    if (entered !== null) {
-      const parsed = parseFloat(entered);
-      if (!isNaN(parsed)) {
-        if (this.touchpadMathExprInput) {
-          this.touchpadMathExprInput.value = String(parsed);
-          this.updateTouchpadCalculatedScore();
+    if (recognizedScore !== null) {
+      this.showTouchpadGboardIndicator(`<i class="ri-check-line"></i> <span>ស្គាល់លេខ៖ <strong>${recognizedScore}</strong></span>`, 'success');
+
+      if (this.touchpadMathExprInput) {
+        this.touchpadMathExprInput.value = String(recognizedScore);
+        this.updateTouchpadCalculatedScore();
+      }
+
+      if (autoApply) {
+        this.applyTouchpadScore();
+        this.hideTouchpadGboardIndicator(1200);
+      } else {
+        this.showToast(`✨ ស្គាល់លេខ៖ ${recognizedScore}!`, 'success');
+        this.hideTouchpadGboardIndicator(1500);
+      }
+    } else {
+      if (autoApply) {
+        this.showTouchpadGboardIndicator('<i class="ri-error-warning-line"></i> <span>មិនទាន់ច្បាស់ សូមសរសេរម្តងទៀត</span>', 'warning');
+        this.hideTouchpadGboardIndicator(2000);
+      } else {
+        this.hideTouchpadGboardIndicator();
+        const currentScore = this.touchpadMathExprInput ? this.touchpadMathExprInput.value : '0';
+        const entered = prompt('សូមបញ្ជាក់លេខពិន្ទុដែលអ្នកបានសរសេរ៖', currentScore);
+        if (entered !== null) {
+          const parsed = parseFloat(entered);
+          if (!isNaN(parsed) && parsed >= 0 && parsed <= maxLimit) {
+            if (this.touchpadMathExprInput) {
+              this.touchpadMathExprInput.value = String(parsed);
+              this.updateTouchpadCalculatedScore();
+            }
+            this.showToast(`បានកំណត់ពិន្ទុ៖ ${parsed}`, 'success');
+          }
         }
-        this.showToast(`បានកំណត់ពិន្ទុ៖ ${parsed}`, 'success');
       }
     }
   }

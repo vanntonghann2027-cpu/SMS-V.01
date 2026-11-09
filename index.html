@@ -1845,6 +1845,12 @@
                   <span><i class="ri-user-search-line"></i> បង្ហាញព័ត៌មានសិស្ស</span>
                 </label>
 
+                <label style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 700; font-size: 0.84rem; color: #047857; background: #ecfdf5; border: 1.5px solid #6ee7b7; padding: 0.45rem 0.85rem; border-radius: 6px; user-select: none;"
+                  title="សរសេរលេខរួចរត់ចូលប្រអប់ស្វ័យប្រវត្តិតាមរបៀប Gboard Google Handwriting">
+                  <input type="checkbox" id="chkTouchpadGboardAuto" checked style="cursor: pointer; width: 17px; height: 17px; accent-color: #059669;">
+                  <span><i class="ri-magic-line"></i> ស្គាល់លេខស្វ័យប្រវត្តិ (បែប Gboard)</span>
+                </label>
+
                 <label style="display: inline-flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: 600; font-size: 0.84rem; color: #334155; background: #f8fafc; border: 1px solid #cbd5e1; padding: 0.45rem 0.75rem; border-radius: 6px; user-select: none;"
                   title="ពេលបញ្ចូលពិន្ទុហើយ លោតទៅតុបន្ទាប់ដោយស្វ័យប្រវត្តិ">
                   <input type="checkbox" id="chkTouchpadAutoAdvance" checked style="cursor: pointer; width: 16px; height: 16px; accent-color: #0d9488;">
@@ -1964,6 +1970,7 @@
 
                     <!-- The Canvas Container -->
                     <div class="touchpad-canvas-container" id="touchpadCanvasContainer">
+                      <div id="touchpadGboardIndicator" class="touchpad-gboard-indicator" style="display: none;"></div>
                       <canvas id="touchpadCanvas" class="touchpad-canvas grid-math"></canvas>
                       <div class="touchpad-canvas-hint">
                         <span><i class="ri-fingerprint-line"></i> សរសេររូបមន្ត ឬលេខពិន្ទុដោយផ្ទាល់លើក្តារនេះ</span>
