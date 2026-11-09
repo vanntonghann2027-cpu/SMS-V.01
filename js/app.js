@@ -8737,6 +8737,17 @@ class ScoreManagementApp {
 
     if (this.reportsPanel) this.reportsPanel.style.display = 'none';
 
+    const isExamScore = (meta.type === 'exam_score');
+    document.body.classList.toggle('view-exam-score-active', isExamScore);
+
+    const mainHeaderBar = document.getElementById('mainHeaderBar') || document.querySelector('.main-header-bar');
+    if (mainHeaderBar) {
+      mainHeaderBar.style.display = isExamScore ? 'none' : '';
+    }
+    if (isExamScore) {
+      window.scrollTo({ top: 0, behavior: 'instant' });
+    }
+
     // Toggle Action Buttons, Header Dropdown & Filter visibility
     if (meta.type === 'curriculum_setting') {
       this.currentViewTitle.style.display = 'block';
@@ -9119,6 +9130,7 @@ class ScoreManagementApp {
       this.classSelect.value = this.activeClass;
     }
     const meta = PERIOD_DEFINITIONS[this.currentPeriod];
+    document.body.classList.toggle('view-exam-score-active', meta && meta.type === 'exam_score');
     if (meta.type === 'curriculum_setting') {
       const gradeKey = this.curriculumGradeSelect ? this.curriculumGradeSelect.value : (this.activeClass || 'grade_10');
       this.renderCurriculumConfigTable(gradeKey);
@@ -15334,7 +15346,7 @@ class ScoreManagementApp {
         this.secretScoreInputTableBody.innerHTML = errorRowHtml;
       }
       if (this.inputSearchSecretCode) {
-        this.inputSearchSecretCode.focus();
+        this.inputSearchSecretCode.focus({ preventScroll: true });
         this.inputSearchSecretCode.select();
       }
     } else if (targetTab === 'voiceSecret') {
@@ -15346,7 +15358,7 @@ class ScoreManagementApp {
         this.voiceSecretScoreInputTableBody.innerHTML = errorRowHtml;
       }
       if (this.inputSearchVoiceSecretCode) {
-        this.inputSearchVoiceSecretCode.focus();
+        this.inputSearchVoiceSecretCode.focus({ preventScroll: true });
         this.inputSearchVoiceSecretCode.select();
       }
     } else if (targetTab === 'voiceNameSecret') {
@@ -15358,7 +15370,7 @@ class ScoreManagementApp {
         this.voiceNameSecretScoreInputTableBody.innerHTML = errorRowHtml;
       }
       if (this.inputSearchVoiceNameSecretCode) {
-        this.inputSearchVoiceNameSecretCode.focus();
+        this.inputSearchVoiceNameSecretCode.focus({ preventScroll: true });
         this.inputSearchVoiceNameSecretCode.select();
       }
     } else if (targetTab === 'touchpadSecret') {
@@ -15367,7 +15379,7 @@ class ScoreManagementApp {
         this.touchpadSecretScoreInputTableBody.innerHTML = errorRowHtml;
       }
       if (this.inputSearchTouchpadSecretCode) {
-        this.inputSearchTouchpadSecretCode.focus();
+        this.inputSearchTouchpadSecretCode.focus({ preventScroll: true });
         this.inputSearchTouchpadSecretCode.select();
       }
     }
@@ -15656,7 +15668,7 @@ class ScoreManagementApp {
       setTimeout(() => {
         this.clearSecretScoreTable(true);
         if (this.inputSearchSecretCode) {
-          this.inputSearchSecretCode.focus();
+          this.inputSearchSecretCode.focus({ preventScroll: true });
           this.inputSearchSecretCode.select();
         }
         this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! តារាងត្រូវបានសម្អាតរួចរាល់ សម្រាប់បញ្ចូលអក្សរសម្ងាត់បន្ទាប់។`, 'success');
@@ -15983,6 +15995,7 @@ class ScoreManagementApp {
         } else if (elRect.bottom > wrapRect.bottom - 10) {
           wrap.scrollTop += (elRect.bottom - wrapRect.bottom + 12);
         }
+        return;
       } else {
         const rect = el.getBoundingClientRect();
         const viewportHeight = window.innerHeight || document.documentElement.clientHeight;
@@ -16826,7 +16839,7 @@ class ScoreManagementApp {
       setTimeout(() => {
         this.clearVoiceSecretScoreTable(true);
         if (this.inputSearchVoiceSecretCode) {
-          this.inputSearchVoiceSecretCode.focus();
+          this.inputSearchVoiceSecretCode.focus({ preventScroll: true });
           this.inputSearchVoiceSecretCode.select();
         }
         this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! តារាងត្រូវបានសម្អាតរួចរាល់ សម្រាប់បញ្ចូលអក្សរសម្ងាត់បន្ទាប់។`, 'success');
@@ -17049,7 +17062,7 @@ class ScoreManagementApp {
     if (workflowMode === 'system_prompt') {
       setTimeout(() => this.speakCurrentVoiceNameStudentPrompt(), 400);
     } else if (scoreInputs[0]) {
-      scoreInputs[0].focus();
+      scoreInputs[0].focus({ preventScroll: true });
       scoreInputs[0].select();
     }
 
@@ -18237,9 +18250,9 @@ class ScoreManagementApp {
     // Focus & highlight current student row
     this._suppressFocusSpeech = true;
     try {
-      inp.focus();
+      inp.focus({ preventScroll: true });
       inp.select();
-      inp.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      this.smoothEnsureVisible(inp);
     } catch (_) { }
     setTimeout(() => { this._suppressFocusSpeech = false; }, 300);
 
@@ -18685,7 +18698,7 @@ class ScoreManagementApp {
       setTimeout(() => {
         this.clearVoiceNameSecretScoreTable(true);
         if (this.inputSearchVoiceNameSecretCode) {
-          this.inputSearchVoiceNameSecretCode.focus();
+          this.inputSearchVoiceNameSecretCode.focus({ preventScroll: true });
           this.inputSearchVoiceNameSecretCode.select();
         }
         this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! តារាងត្រូវបានសម្អាតរួចរាល់ សម្រាប់បញ្ចូលអក្សរសម្ងាត់បន្ទាប់។`, 'success');
@@ -19075,7 +19088,7 @@ class ScoreManagementApp {
       setTimeout(() => {
         this.clearTouchpadSecretScoreTable(true);
         if (this.inputSearchTouchpadSecretCode) {
-          this.inputSearchTouchpadSecretCode.focus();
+          this.inputSearchTouchpadSecretCode.focus({ preventScroll: true });
           this.inputSearchTouchpadSecretCode.select();
         }
         this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! តារាងត្រូវបានសម្អាតរួចរាល់ សម្រាប់បញ្ចូលអក្សរសម្ងាត់បន្ទាប់។`, 'success');
