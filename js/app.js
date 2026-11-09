@@ -6073,6 +6073,14 @@ class ScoreManagementApp {
     if (this.btnSaveSecretRoomScores) {
       this.btnSaveSecretRoomScores.addEventListener('click', () => this.handleSaveSecretRoomScores(true));
     }
+    const btnFloatingSaveSecret = document.getElementById('btnFloatingSaveSecret');
+    if (btnFloatingSaveSecret) {
+      btnFloatingSaveSecret.addEventListener('click', () => this.handleSaveSecretRoomScores(true));
+    }
+    const btnBottomSaveSecret = document.getElementById('btnBottomSaveSecret');
+    if (btnBottomSaveSecret) {
+      btnBottomSaveSecret.addEventListener('click', () => this.handleSaveSecretRoomScores(true));
+    }
     if (this.chkShowStudentInfoSecret) {
       this.chkShowStudentInfoSecret.addEventListener('change', (e) => {
         this.toggleShowStudentInfo(e.target.checked);
@@ -6114,6 +6122,14 @@ class ScoreManagementApp {
     if (this.btnSaveVoiceSecretRoomScores) {
       this.btnSaveVoiceSecretRoomScores.addEventListener('click', () => this.handleSaveVoiceSecretRoomScores(true));
     }
+    const btnFloatingSaveVoiceSecret = document.getElementById('btnFloatingSaveVoiceSecret');
+    if (btnFloatingSaveVoiceSecret) {
+      btnFloatingSaveVoiceSecret.addEventListener('click', () => this.handleSaveVoiceSecretRoomScores(true));
+    }
+    const btnBottomSaveVoiceSecret = document.getElementById('btnBottomSaveVoiceSecret');
+    if (btnBottomSaveVoiceSecret) {
+      btnBottomSaveVoiceSecret.addEventListener('click', () => this.handleSaveVoiceSecretRoomScores(true));
+    }
     if (this.btnToggleVoiceSecretListening) {
       this.btnToggleVoiceSecretListening.addEventListener('click', () => this.toggleVoiceSecretListening());
     }
@@ -6144,6 +6160,14 @@ class ScoreManagementApp {
     }
     if (this.btnSaveVoiceNameSecretRoomScores) {
       this.btnSaveVoiceNameSecretRoomScores.addEventListener('click', () => this.handleSaveVoiceNameSecretRoomScores(true));
+    }
+    const btnFloatingSaveVoiceNameSecret = document.getElementById('btnFloatingSaveVoiceNameSecret');
+    if (btnFloatingSaveVoiceNameSecret) {
+      btnFloatingSaveVoiceNameSecret.addEventListener('click', () => this.handleSaveVoiceNameSecretRoomScores(true));
+    }
+    const btnBottomSaveVoiceNameSecret = document.getElementById('btnBottomSaveVoiceNameSecret');
+    if (btnBottomSaveVoiceNameSecret) {
+      btnBottomSaveVoiceNameSecret.addEventListener('click', () => this.handleSaveVoiceNameSecretRoomScores(true));
     }
     if (this.chkShowStudentInfoVoiceNameSecret) {
       this.chkShowStudentInfoVoiceNameSecret.addEventListener('change', (e) => {
@@ -6207,6 +6231,14 @@ class ScoreManagementApp {
     }
     if (this.btnSaveTouchpadSecretRoomScores) {
       this.btnSaveTouchpadSecretRoomScores.addEventListener('click', () => this.handleSaveTouchpadSecretRoomScores(true));
+    }
+    const btnFloatingSaveTouchpadSecret = document.getElementById('btnFloatingSaveTouchpadSecret');
+    if (btnFloatingSaveTouchpadSecret) {
+      btnFloatingSaveTouchpadSecret.addEventListener('click', () => this.handleSaveTouchpadSecretRoomScores(true));
+    }
+    const btnBottomSaveTouchpadSecret = document.getElementById('btnBottomSaveTouchpadSecret');
+    if (btnBottomSaveTouchpadSecret) {
+      btnBottomSaveTouchpadSecret.addEventListener('click', () => this.handleSaveTouchpadSecretRoomScores(true));
     }
     if (this.chkShowStudentInfoTouchpadSecret) {
       this.chkShowStudentInfoTouchpadSecret.addEventListener('change', (e) => {
@@ -15062,6 +15094,11 @@ class ScoreManagementApp {
   // TAB 4: Score Entry (Images 2 & 3: By Secret Code & By Subject Table)
   // ==========================================================================
   clearSecretScoreTable(clearInput = false) {
+    const btnFloating = document.getElementById('btnFloatingSaveSecret');
+    if (btnFloating) btnFloating.style.display = 'none';
+    const tableFoot = document.getElementById('secretScoreInputTableFoot');
+    if (tableFoot) tableFoot.style.display = 'none';
+
     if (clearInput && this.inputSearchSecretCode) {
       this.inputSearchSecretCode.value = '';
     }
@@ -15090,6 +15127,11 @@ class ScoreManagementApp {
 
   clearVoiceSecretScoreTable(clearInput = false) {
     this.stopVoiceSecretScoreRecognition();
+    const btnFloating = document.getElementById('btnFloatingSaveVoiceSecret');
+    if (btnFloating) btnFloating.style.display = 'none';
+    const tableFoot = document.getElementById('voiceSecretScoreInputTableFoot');
+    if (tableFoot) tableFoot.style.display = 'none';
+
     if (clearInput && this.inputSearchVoiceSecretCode) {
       this.inputSearchVoiceSecretCode.value = '';
     }
@@ -15126,6 +15168,11 @@ class ScoreManagementApp {
 
   clearVoiceNameSecretScoreTable(clearInput = false) {
     this.stopVoiceNameSecretScoreRecognition();
+    const btnFloating = document.getElementById('btnFloatingSaveVoiceNameSecret');
+    if (btnFloating) btnFloating.style.display = 'none';
+    const tableFoot = document.getElementById('voiceNameSecretScoreInputTableFoot');
+    if (tableFoot) tableFoot.style.display = 'none';
+
     if (clearInput && this.inputSearchVoiceNameSecretCode) {
       this.inputSearchVoiceNameSecretCode.value = '';
     }
@@ -15599,6 +15646,11 @@ class ScoreManagementApp {
     });
 
     this.resetExamScoreScrollPositions();
+    const btnFloatingSecret = document.getElementById('btnFloatingSaveSecret');
+    if (btnFloatingSecret) btnFloatingSecret.style.display = 'inline-flex';
+    const tableFootSecret = document.getElementById('secretScoreInputTableFoot');
+    if (tableFootSecret) tableFootSecret.style.display = '';
+
     if (scoreInputs[0]) {
       scoreInputs[0].focus({ preventScroll: true });
       this.selectInputNoScroll(scoreInputs[0]);
@@ -15947,6 +15999,11 @@ class ScoreManagementApp {
     });
 
     this.resetExamScoreScrollPositions();
+    const btnFloatingVoice = document.getElementById('btnFloatingSaveVoiceSecret');
+    if (btnFloatingVoice) btnFloatingVoice.style.display = 'inline-flex';
+    const tableFootVoice = document.getElementById('voiceSecretScoreInputTableFoot');
+    if (tableFootVoice) tableFootVoice.style.display = '';
+
     if (scoreInputs[0]) {
       scoreInputs[0].focus({ preventScroll: true });
       this.selectInputNoScroll(scoreInputs[0]);
@@ -17120,6 +17177,11 @@ class ScoreManagementApp {
     }
 
     this.resetExamScoreScrollPositions();
+    const btnFloatingVoiceName = document.getElementById('btnFloatingSaveVoiceNameSecret');
+    if (btnFloatingVoiceName) btnFloatingVoiceName.style.display = 'inline-flex';
+    const tableFootVoiceName = document.getElementById('voiceNameSecretScoreInputTableFoot');
+    if (tableFootVoiceName) tableFootVoiceName.style.display = '';
+
     const workflowMode = (this.voiceNameSecretWorkflowMode && this.voiceNameSecretWorkflowMode.value) || 'system_prompt';
     if (workflowMode === 'system_prompt') {
       setTimeout(() => this.speakCurrentVoiceNameStudentPrompt(), 400);
@@ -19002,6 +19064,11 @@ class ScoreManagementApp {
     });
 
     this.resetExamScoreScrollPositions();
+    const btnFloatingTouchpad = document.getElementById('btnFloatingSaveTouchpadSecret');
+    if (btnFloatingTouchpad) btnFloatingTouchpad.style.display = 'inline-flex';
+    const tableFootTouchpad = document.getElementById('touchpadSecretScoreInputTableFoot');
+    if (tableFootTouchpad) tableFootTouchpad.style.display = '';
+
     if (scoreInputs[0]) {
       scoreInputs[0].focus({ preventScroll: true });
       this.selectInputNoScroll(scoreInputs[0]);
@@ -19015,6 +19082,11 @@ class ScoreManagementApp {
   }
 
   clearTouchpadSecretScoreTable(clearInput = false) {
+    const btnFloating = document.getElementById('btnFloatingSaveTouchpadSecret');
+    if (btnFloating) btnFloating.style.display = 'none';
+    const tableFoot = document.getElementById('touchpadSecretScoreInputTableFoot');
+    if (tableFoot) tableFoot.style.display = 'none';
+
     if (clearInput && this.inputSearchTouchpadSecretCode) {
       this.inputSearchTouchpadSecretCode.value = '';
     }
