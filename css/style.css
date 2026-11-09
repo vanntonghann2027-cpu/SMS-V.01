@@ -3211,23 +3211,42 @@ input[type="number"] {
 }
 
 /* Standalone Exam Score Entry Panel - Fixed Unified Layout (នៅមួយកន្លែង) */
+html.view-exam-score-active,
 body.view-exam-score-active {
   overflow: hidden !important;
   height: 100vh !important;
   max-height: 100vh !important;
 }
 
+body.view-exam-score-active .app-layout {
+  height: 100vh !important;
+  max-height: 100vh !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+body.view-exam-score-active .app-header {
+  flex-shrink: 0 !important;
+  position: relative !important;
+  top: auto !important;
+  z-index: 50 !important;
+}
+
 body.view-exam-score-active .app-body {
-  height: calc(100vh - 65px) !important;
-  max-height: calc(100vh - 65px) !important;
+  flex: 1 !important;
+  height: auto !important;
+  max-height: none !important;
   min-height: 0 !important;
   overflow: hidden !important;
+  display: flex !important;
 }
 
 body.view-exam-score-active .app-main {
-  padding: 0.5rem 1.25rem 0.5rem 1.25rem !important;
+  padding: 0.45rem 1.25rem 0.45rem 1.25rem !important;
+  flex: 1 !important;
+  min-height: 0 !important;
   height: 100% !important;
-  max-height: 100% !important;
   overflow: hidden !important;
   display: flex !important;
   flex-direction: column !important;
@@ -3249,14 +3268,14 @@ body.view-exam-score-active .app-main {
   min-height: 0;
   display: flex;
   flex-direction: column;
-  padding: 0.65rem 1.15rem 0.5rem 1.15rem;
+  padding: 0.55rem 1.15rem 0.45rem 1.15rem;
   margin-bottom: 0;
   overflow: hidden;
 }
 
 #examScorePanel .score-entry-tabs {
   flex-shrink: 0;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.45rem;
 }
 
 .score-subview-panel {
@@ -3271,7 +3290,7 @@ body.view-exam-score-active .app-main {
 }
 
 .score-subview-panel > h3 {
-  margin: 0 0 0.45rem 0 !important;
+  margin: 0 0 0.4rem 0 !important;
   font-size: 1.05rem !important;
   flex-shrink: 0;
 }
@@ -3283,10 +3302,11 @@ body.view-exam-score-active .app-main {
   align-items: center;
   gap: 0.65rem;
   background: #ffffff;
-  padding: 0.55rem 0.95rem;
+  padding: 0.5rem 0.95rem;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-  margin-bottom: 0.45rem;
+  margin-bottom: 0.4rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 #secretScoreNoticeBanner,

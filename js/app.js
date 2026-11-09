@@ -6593,6 +6593,24 @@ class ScoreManagementApp {
 
     // Global Score Input Validation (Red highlight + Cursor Lock on over-max) & Enter Key Navigation
     this.initGlobalScoreInputValidationAndNavigation();
+
+    // Guarantee window and appMain never scroll out of view when in exam score view
+    window.addEventListener('scroll', () => {
+      if (document.body.classList.contains('view-exam-score-active')) {
+        if (window.scrollY !== 0 || window.scrollX !== 0) {
+          window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+        }
+      }
+    }, { passive: true });
+
+    const appMainEl = document.getElementById('appMain');
+    if (appMainEl) {
+      appMainEl.addEventListener('scroll', () => {
+        if (document.body.classList.contains('view-exam-score-active')) {
+          if (appMainEl.scrollTop !== 0) appMainEl.scrollTop = 0;
+        }
+      }, { passive: true });
+    }
   }
 
   // =========================================================================
@@ -15533,7 +15551,7 @@ class ScoreManagementApp {
       inp.addEventListener('focus', () => {
         this.highlightVoiceSecretActiveRow(inp);
         this.smoothEnsureVisible(inp);
-        inp.select();
+        this.selectInputNoScroll(inp);
       });
 
       inp.addEventListener('input', () => {
@@ -15560,7 +15578,7 @@ class ScoreManagementApp {
             const nextInp = scoreInputs[idx + 1];
             if (nextInp) {
               nextInp.focus({ preventScroll: true });
-              nextInp.select();
+              this.selectInputNoScroll(nextInp);
               this.highlightVoiceSecretActiveRow(nextInp);
               this.smoothEnsureVisible(nextInp);
             }
@@ -15571,7 +15589,7 @@ class ScoreManagementApp {
             const prevInp = scoreInputs[idx - 1];
             if (prevInp) {
               prevInp.focus({ preventScroll: true });
-              prevInp.select();
+              this.selectInputNoScroll(prevInp);
               this.highlightVoiceSecretActiveRow(prevInp);
               this.smoothEnsureVisible(prevInp);
             }
@@ -15580,9 +15598,10 @@ class ScoreManagementApp {
       });
     });
 
+    this.resetExamScoreScrollPositions();
     if (scoreInputs[0]) {
       scoreInputs[0].focus({ preventScroll: true });
-      scoreInputs[0].select();
+      this.selectInputNoScroll(scoreInputs[0]);
       this.highlightVoiceSecretActiveRow(scoreInputs[0]);
     }
 
@@ -15927,9 +15946,10 @@ class ScoreManagementApp {
       });
     });
 
+    this.resetExamScoreScrollPositions();
     if (scoreInputs[0]) {
       scoreInputs[0].focus({ preventScroll: true });
-      scoreInputs[0].select();
+      this.selectInputNoScroll(scoreInputs[0]);
       this.highlightVoiceSecretActiveRow(scoreInputs[0]);
     }
 
@@ -15981,10 +16001,51 @@ class ScoreManagementApp {
     }
   }
 
+  selectInputNoScroll(input) {
+    if (!input) return;
+    try {
+      if (typeof input.setSelectionRange === 'function' && input.type !== 'number') {
+        const len = input.value ? input.value.length : 0;
+        input.setSelectionRange(0, len);
+      } else {
+        // For type="number", select without scrolling ancestor window
+        const prevScrollY = window.scrollY;
+        const prevScrollX = window.scrollX;
+        input.select();
+        if (window.scrollY !== prevScrollY || window.scrollX !== prevScrollX) {
+          window.scrollTo(prevScrollX, prevScrollY);
+        }
+      }
+    } catch (_) { }
+  }
+
+  resetExamScoreScrollPositions() {
+    try {
+      if (window.scrollY !== 0 || window.scrollX !== 0) {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      }
+      if (document.documentElement && document.documentElement.scrollTop !== 0) {
+        document.documentElement.scrollTop = 0;
+      }
+      if (document.body && document.body.scrollTop !== 0) {
+        document.body.scrollTop = 0;
+      }
+      const appMain = document.getElementById('appMain');
+      if (appMain && appMain.scrollTop !== 0) appMain.scrollTop = 0;
+      const examScorePanel = document.getElementById('examScorePanel');
+      if (examScorePanel && examScorePanel.scrollTop !== 0) examScorePanel.scrollTop = 0;
+      const examCard = examScorePanel ? examScorePanel.querySelector('.exam-card') : null;
+      if (examCard && examCard.scrollTop !== 0) examCard.scrollTop = 0;
+      const subviews = document.querySelectorAll('.score-subview-panel');
+      subviews.forEach(p => { if (p.scrollTop !== 0) p.scrollTop = 0; });
+    } catch (_) { }
+  }
+
   // Jitter-free visibility: only scrolls if row is outside the comfortable view zone
   smoothEnsureVisible(el) {
     if (!el) return;
     try {
+      this.resetExamScoreScrollPositions();
       const wrap = el.closest('.secret-score-table-wrap, .data-table-container, .exam-table-container');
       if (wrap) {
         const wrapRect = wrap.getBoundingClientRect();
@@ -16086,7 +16147,7 @@ class ScoreManagementApp {
     const targetIdx = curIdx + direction;
     if (targetIdx >= 0 && targetIdx < allInputs.length) {
       allInputs[targetIdx].focus({ preventScroll: true });
-      allInputs[targetIdx].select();
+      this.selectInputNoScroll(allInputs[targetIdx]);
       this.highlightVoiceSecretActiveRow(allInputs[targetIdx]);
       this.smoothEnsureVisible(allInputs[targetIdx]);
       return false;
@@ -17058,12 +17119,13 @@ class ScoreManagementApp {
       this.startVoiceNameSecretScoreRecognition();
     }
 
+    this.resetExamScoreScrollPositions();
     const workflowMode = (this.voiceNameSecretWorkflowMode && this.voiceNameSecretWorkflowMode.value) || 'system_prompt';
     if (workflowMode === 'system_prompt') {
       setTimeout(() => this.speakCurrentVoiceNameStudentPrompt(), 400);
     } else if (scoreInputs[0]) {
       scoreInputs[0].focus({ preventScroll: true });
-      scoreInputs[0].select();
+      this.selectInputNoScroll(scoreInputs[0]);
     }
 
     this.showToast(`បានទាញយកបញ្ជីសិស្ស (${studentsInRoom.length} នាក់) រួចរាល់!`, 'success');
@@ -18939,9 +19001,10 @@ class ScoreManagementApp {
       });
     });
 
+    this.resetExamScoreScrollPositions();
     if (scoreInputs[0]) {
       scoreInputs[0].focus({ preventScroll: true });
-      scoreInputs[0].select();
+      this.selectInputNoScroll(scoreInputs[0]);
       this.highlightTouchpadActiveRow(scoreInputs[0]);
     }
 
@@ -19007,7 +19070,7 @@ class ScoreManagementApp {
     const target = allInputs[targetIdx];
     this._currentTouchpadActiveInput = target;
     target.focus({ preventScroll: true });
-    target.select();
+    this.selectInputNoScroll(target);
     this.highlightTouchpadActiveRow(target);
     this.smoothEnsureVisible(target);
   }
