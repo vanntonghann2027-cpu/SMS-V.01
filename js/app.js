@@ -14573,6 +14573,7 @@ class ScoreManagementApp {
           <table class="header-table" style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 6px;">
             <tr style="border: none;">
               <td style="border: none; width: 45%; vertical-align: top; text-align: left; padding: 0;">
+                <div style="height: 42px;"></div>
                 <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 10.5pt; line-height: 1.5;">
                   <div>មន្ទីរអប់រំ យុវជន និងកីឡា</div>
                   <div>ខេត្តសៀមរាប</div>
