@@ -941,6 +941,13 @@ button {
   font-weight: bold !important;
   text-align: center !important;
 }
+.book-lending-table.grade10-book-table {
+  font-size: 7.8pt !important;
+}
+.book-lending-table.grade10-book-table th,
+.book-lending-table.grade10-book-table td {
+  padding: 2px 1.5px !important;
+}
 .book-lending-footer-wrapper {
   margin-top: 10px;
   font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif;
