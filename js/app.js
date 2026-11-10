@@ -8670,27 +8670,27 @@ class ScoreManagementApp {
       const theadHtml = `
         <thead>
           <tr>
-            <th rowspan="2" style="width: 32px; text-align: center; vertical-align: middle;">ល.រ</th>
-            <th rowspan="2" style="width: 170px; text-align: center; vertical-align: middle;">គោត្តនាម និង នាមខ្លួន</th>
-            <th rowspan="2" style="width: 45px; text-align: center; vertical-align: middle;">ភេទ</th>
+            <th rowspan="2" style="width: 26px; text-align: center; vertical-align: middle;">ល.រ</th>
+            <th rowspan="2" style="width: 145px; text-align: center; vertical-align: middle;">គោត្តនាម និង នាមខ្លួន</th>
+            <th rowspan="2" style="width: 30px; text-align: center; vertical-align: middle;">ភេទ</th>
             <th colspan="2" style="text-align: center; vertical-align: middle;">ភាសាខ្មែរ</th>
             <th colspan="2" style="text-align: center; vertical-align: middle;">គណិតវិទ្យា</th>
             <th colspan="2" style="text-align: center; vertical-align: middle;">វិទ្យាសាស្ត្រ</th>
             <th colspan="2" style="text-align: center; vertical-align: middle;">សិក្សាសង្គម</th>
             <th colspan="2" style="text-align: center; vertical-align: middle;">អង់គ្លេស</th>
-            <th rowspan="2" style="width: 80px; text-align: center; vertical-align: middle;">ហត្ថលេខា</th>
+            <th rowspan="2" style="width: 55px; text-align: center; vertical-align: middle;">ហត្ថលេខា</th>
           </tr>
           <tr>
-            <th style="width: 42px; text-align: center; vertical-align: middle;">ចំនួន</th>
-            <th style="width: 42px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
-            <th style="width: 42px; text-align: center; vertical-align: middle;">ចំនួន</th>
-            <th style="width: 42px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
-            <th style="width: 42px; text-align: center; vertical-align: middle;">ចំនួន</th>
-            <th style="width: 42px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
-            <th style="width: 42px; text-align: center; vertical-align: middle;">ចំនួន</th>
-            <th style="width: 42px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
-            <th style="width: 42px; text-align: center; vertical-align: middle;">ចំនួន</th>
-            <th style="width: 42px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
+            <th style="width: 34px; text-align: center; vertical-align: middle;">ចំនួន</th>
+            <th style="width: 34px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
+            <th style="width: 34px; text-align: center; vertical-align: middle;">ចំនួន</th>
+            <th style="width: 34px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
+            <th style="width: 34px; text-align: center; vertical-align: middle;">ចំនួន</th>
+            <th style="width: 34px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
+            <th style="width: 34px; text-align: center; vertical-align: middle;">ចំនួន</th>
+            <th style="width: 34px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
+            <th style="width: 34px; text-align: center; vertical-align: middle;">ចំនួន</th>
+            <th style="width: 34px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
           </tr>
         </thead>`;
 
@@ -8700,7 +8700,7 @@ class ScoreManagementApp {
           <tbody>
             ${data.rows.map(r => `<tr>${r.map((c, i) => {
               const align = (i === 1) ? 'left' : 'center';
-              return `<td style="text-align:${align}; padding: 2.5px 3px;">${esc(c)}</td>`;
+              return `<td style="text-align:${align}; padding: 2.5px 2px;">${esc(c)}</td>`;
             }).join('')}</tr>`).join('')}
             <!-- 3 Summary rows as shown in user image -->
             <tr>
@@ -8838,26 +8838,31 @@ class ScoreManagementApp {
           <!-- Top Row Header: Left (School/Dept/Province) and Right (Kingdom) -->
           <table style="width: 100%; border-collapse: collapse; border: none; margin: 0 0 2px 0;">
             <tr style="border: none;">
+              <!-- Left: 3 lines of ministry info shifted down 3 lines -->
               <td style="border: none; width: 45%; padding: 0; vertical-align: top; text-align: left;">
-                <div style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 11pt; line-height: 1.5; font-weight: bold;">
+                <div style="height: 42px;"></div>
+                <div style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 10.5pt; line-height: 1.5; font-weight: bold;">
                   ខេត្ត៖ សៀមរាប
                 </div>
-                <div style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 11pt; line-height: 1.5; font-weight: bold;">
+                <div style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 10.5pt; line-height: 1.5; font-weight: bold;">
                   មន្ទីរអប់រំយុវជន និងកីឡា
                 </div>
-                <div style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 11pt; line-height: 1.5; font-weight: bold;">
+                <div style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 10.5pt; line-height: 1.5; font-weight: bold;">
                   វិទ្យាល័យ ២៨ មករា
                 </div>
               </td>
-              <td style="border: none; width: 55%; padding: 0; text-align: center; vertical-align: top;">
-                <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 11.5pt; line-height: 1.5; white-space: nowrap;">
-                  ព្រះរាជាណាចក្រកម្ពុជា
-                </div>
-                <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 11.5pt; line-height: 1.5; white-space: nowrap;">
-                  ជាតិ សាសនា ព្រះមហាក្សត្រ
-                </div>
-                <div style="text-align: center; line-height: 1; margin: 2px auto 0;">
-                  <img class="doc-divider-img" src="${this.getKhmerHeaderDivider()}" style="height: 13px; width: auto; max-width: 165px; object-fit: contain; vertical-align: middle;" alt="divider">
+              <!-- Right: National motto shifted to the right -->
+              <td style="border: none; width: 55%; padding: 0; text-align: right; vertical-align: top;">
+                <div style="display: inline-block; text-align: center; min-width: 210px;">
+                  <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 11pt; line-height: 1.5; white-space: nowrap;">
+                    ព្រះរាជាណាចក្រកម្ពុជា
+                  </div>
+                  <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 11pt; line-height: 1.5; white-space: nowrap;">
+                    ជាតិ សាសនា ព្រះមហាក្សត្រ
+                  </div>
+                  <div style="text-align: center; line-height: 1; margin: 2px auto 0;">
+                    <img class="doc-divider-img" src="${this.getKhmerHeaderDivider()}" style="height: 12px; width: auto; max-width: 145px; object-fit: contain; vertical-align: middle;" alt="divider">
+                  </div>
                 </div>
               </td>
             </tr>
@@ -9114,7 +9119,7 @@ class ScoreManagementApp {
     } catch (_) {
       lunarText = 'ថ្ងៃពុធ ១ពោច ខែកត្តិក ឆ្នាំរោង ឆស័ក ព.ស. ២៥៦៩';
     }
-    const solarText = this.formatKhmerDocSolarDate(signDateVal, 'វត្តស្វាយ');
+    const solarText = this.formatKhmerDocSolarDate(signDateVal, 'ស្រីស្នំ');
 
     return `
       <div class="book-lending-footer-wrapper" style="margin-top: 10px; page-break-inside: avoid; font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif;">
@@ -9157,8 +9162,8 @@ class ScoreManagementApp {
     const esc = v => this.escapeReportHtml(v);
     if (!card || !body) return;
 
-    // Check if landscape needed (Grade 7 is strictly Portrait A4, Book lending is Landscape A4)
-    const isLandscape = data.isGrade7 ? false : (data.isBookLending ? true : data.columns.length > 7);
+    // Grade 7 & Book Lending are strictly Portrait A4
+    const isLandscape = (data.isGrade7 || data.isBookLending) ? false : (data.columns.length > 7);
     body.className = 'pdf-a4-sheet' + (isLandscape ? ' landscape' : '');
 
     // Signatures / Footer
@@ -9249,8 +9254,8 @@ class ScoreManagementApp {
     const f = data.filters;
     const esc = v => this.escapeReportHtml(v);
 
-    // Grade 7 is strictly Portrait A4, Book lending is Landscape A4
-    const isLandscape = data.isGrade7 ? false : (data.isBookLending ? true : data.columns.length > 7);
+    // Grade 7 & Book Lending are strictly Portrait A4
+    const isLandscape = (data.isGrade7 || data.isBookLending) ? false : (data.columns.length > 7);
 
     let signHtml = '';
     if (data.isBookLending) {
@@ -9339,11 +9344,14 @@ class ScoreManagementApp {
       const signDateVal = f.signDate || new Date().toISOString().slice(0, 10);
       let lunarText = '';
       try { lunarText = this.getKhmerLunarDate(signDateVal); } catch (_) { lunarText = ''; }
-      const solarText = this.formatKhmerDocSolarDate(signDateVal, 'វត្តស្វាយ');
+      const solarText = this.formatKhmerDocSolarDate(signDateVal, 'ស្រីស្នំ');
 
       const aoa = [
-        ['ខេត្ត៖ សៀមរាប', '', '', '', '', '', '', '', '', '', '', 'ព្រះរាជាណាចក្រកម្ពុជា'],
-        ['មន្ទីរអប់រំយុវជន និងកីឡា', '', '', '', '', '', '', '', '', '', '', 'ជាតិ សាសនា ព្រះមហាក្សត្រ'],
+        ['', '', '', '', '', '', '', '', '', '', '', 'ព្រះរាជាណាចក្រកម្ពុជា'],
+        ['', '', '', '', '', '', '', '', '', '', '', 'ជាតិ សាសនា ព្រះមហាក្សត្រ'],
+        [''],
+        ['ខេត្ត៖ សៀមរាប'],
+        ['មន្ទីរអប់រំយុវជន និងកីឡា'],
         ['វិទ្យាល័យ ២៨ មករា'],
         ['', '', '', '', 'បញ្ជីរាយនាមសិស្សខ្ចីសៀវភៅថ្នាក់ទី ' + (meta.className || '')],
         ['', '', '', '', 'ឆ្នាំសិក្សា ' + (this.activeYear || '២០២៥-២០២៦')],
