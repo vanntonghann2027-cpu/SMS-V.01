@@ -489,6 +489,13 @@ const PERIOD_DEFINITIONS = {
     icon: 'ri-file-chart-2-line',
     type: 'report'
   },
+  report_library: {
+    id: 'report_library',
+    title: 'របាយការណ៍បណ្ណារក្ស',
+    desc: 'បញ្ចូលទិន្នន័យ និងស្រង់បញ្ជីសិស្សខ្ចីសៀវភៅពុម្ពតាមកម្រិតថ្នាក់',
+    icon: 'ri-book-open-line',
+    type: 'report'
+  },
   exam_prep: {
     id: 'exam_prep',
     title: 'រៀបចំការប្រឡង',
@@ -1055,6 +1062,7 @@ class ScoreManagementApp {
     if (!this.curriculumConfigs || !this.curriculumConfigs.grade_7 || this.curriculumConfigs.grade_7.length < 15) {
       this.curriculumConfigs = this.getDefaultCurriculumConfigs();
     }
+    this.bookLending = parsed.bookLending || {};
 
     // Active Class resolution & sync
     let targetGrade = parsed.activeClass;
@@ -1165,6 +1173,7 @@ class ScoreManagementApp {
         examLateStudentCounts: this.examLateStudentCounts || {},
         examGradeSettings: this.examGradeSettings || {},
         curriculumConfigs: this.curriculumConfigs || this.getDefaultCurriculumConfigs(),
+        bookLending: this.bookLending || {},
         updatedAt: new Date().toISOString()
       };
       if (this._pendingExplicitSecretMatrixSave) {
@@ -1249,6 +1258,7 @@ class ScoreManagementApp {
         classSections: this.classSections || [],
         examSubjectOrders: this.examSubjectOrders || this.getDefaultExamSubjectOrders(),
         curriculumConfigs: this.curriculumConfigs || {},
+        bookLending: this.bookLending || {},
         updatedAt: new Date().toISOString()
       }
     };
@@ -6752,6 +6762,22 @@ class ScoreManagementApp {
             ]
           }
         ]
+      },
+      report_library: {
+        title: 'របាយការណ៍បណ្ណារក្ស',
+        isLibrary: true,
+        items: [
+          {
+            key: 'book_lending_entry',
+            label: 'បញ្ចូលទិន្នន័យខ្ចីសៀវភៅតាមថ្នាក់',
+            desc: 'កត់ត្រាចំនួន និងថ្នាក់សៀវភៅដែលសិស្សបានខ្ចី'
+          },
+          {
+            key: 'book_lending_report',
+            label: 'បញ្ជីរាយនាមសិស្សខ្ចីសៀវភៅ (ថ្នាក់ទី៧, ៨, ៩)',
+            desc: 'ទម្រង់ផ្លូវការបោះពុម្ព និងនាំចេញជា Excel សម្រាប់បណ្ណារក្ស'
+          }
+        ]
       }
     };
   }
@@ -7311,9 +7337,21 @@ class ScoreManagementApp {
       gradeSel.addEventListener('change', () => {
         this.populateReportClassSelect();
         this.hideReportPreview();
+        if (this.reportState && this.reportState.group === 'report_library') {
+          this.renderReportsView();
+        }
       });
     }
-    ['reportClassSelect', 'reportProgramSelect', 'studyPeriodSelect', 'reportTeacherSelect'].forEach(id => {
+    const classSel = document.getElementById('reportClassSelect');
+    if (classSel) {
+      classSel.addEventListener('change', () => {
+        this.hideReportPreview();
+        if (this.reportState && this.reportState.group === 'report_library') {
+          this.renderReportsView();
+        }
+      });
+    }
+    ['reportProgramSelect', 'studyPeriodSelect', 'reportTeacherSelect'].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.addEventListener('change', () => this.hideReportPreview());
     });
@@ -7460,25 +7498,38 @@ class ScoreManagementApp {
     const crumb = document.getElementById('reportBreadcrumbCurrent');
     if (crumb) crumb.textContent = group.title;
 
-    // Toggle study vs generic options UI
+    // Toggle study vs generic options UI vs library UI
     const isStudy = groupKey === 'report_study';
+    const isLibrary = groupKey === 'report_library';
     const studyBlock = document.getElementById('studyReportOptionsBlock');
     const genericOptsRow = document.getElementById('reportOptionsRow');
+    const libraryBlock = document.getElementById('libraryReportOptionsBlock');
     const optionsHead = document.getElementById('reportOptionsHead');
 
     if (studyBlock) studyBlock.style.display = isStudy ? 'flex' : 'none';
-    if (genericOptsRow) genericOptsRow.style.display = isStudy ? 'none' : 'flex';
+    if (genericOptsRow) genericOptsRow.style.display = (!isStudy && !isLibrary) ? 'flex' : 'none';
+    if (libraryBlock) libraryBlock.style.display = isLibrary ? 'flex' : 'none';
     if (optionsHead) {
-      optionsHead.textContent = isStudy ? 'កំណត់រចនាសម្ព័ន្ធរបាយការណ៍' : 'កំណត់ទម្រង់នៃរបាយការណ៍';
+      optionsHead.textContent = isStudy ? 'កំណត់រចនាសម្ព័ន្ធរបាយការណ៍' : (isLibrary ? 'គ្រប់គ្រងទិន្នន័យសិស្សខ្ចីសៀវភៅពុម្ព' : 'កំណត់ទម្រង់នៃរបាយការណ៍');
     }
 
-    // Default grade filter to currently active grade the first time
+    // Default grade filter to currently active grade the first time (or grade_9 for library)
     const gradeSel = document.getElementById('reportGradeSelect');
-    if (gradeSel && !this.reportGradeInitialized) {
+    if (gradeSel && isLibrary && !['grade_7', 'grade_8', 'grade_9'].includes(gradeSel.value)) {
+      gradeSel.value = 'grade_9';
+    } else if (gradeSel && !this.reportGradeInitialized) {
       gradeSel.value = this.activeClass || 'grade_10';
       this.reportGradeInitialized = true;
     }
     this.populateReportClassSelect();
+
+    // For library, if class is ALL, auto-select first specific class if available
+    if (isLibrary) {
+      const classSel = document.getElementById('reportClassSelect');
+      if (classSel && classSel.value === 'ALL' && classSel.options.length > 1) {
+        classSel.value = classSel.options[1].value;
+      }
+    }
 
     const submenu = document.getElementById('reportSubmenu');
     if (submenu) {
@@ -7521,6 +7572,238 @@ class ScoreManagementApp {
         genericOptsRow.appendChild(label);
       });
     }
+
+    if (isLibrary) {
+      this.renderLibraryDataEntryView();
+    }
+  }
+
+  renderLibraryDataEntryView() {
+    const libraryBlock = document.getElementById('libraryReportOptionsBlock');
+    if (!libraryBlock) return;
+
+    const f = this.getReportFilters();
+    const studentsInClass = this.getReportStudents(f);
+    const clsName = (f.classVal && f.classVal !== 'ALL') ? f.classVal : ((studentsInClass[0] && studentsInClass[0].class) || '9D');
+
+    let gradeNum = '9';
+    if (f.gradeKey === 'grade_7' || clsName.includes('7') || clsName.includes('៧')) gradeNum = '7';
+    else if (f.gradeKey === 'grade_8' || clsName.includes('8') || clsName.includes('៨')) gradeNum = '8';
+    else if (f.gradeKey === 'grade_9' || clsName.includes('9') || clsName.includes('៩')) gradeNum = '9';
+
+    if (!this.bookLending) this.bookLending = {};
+
+    const isReportItem = this.reportState && this.reportState.itemKey === 'book_lending_report';
+
+    let html = `
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px;">
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: #0284c7; color: #fff; border-radius: 50%; font-size: 18px;">
+            <i class="ri-book-open-line"></i>
+          </span>
+          <div>
+            <div style="color: #0f172a; font-weight: 700; font-size: 14.5px;">ថ្នាក់ទី ${this.escapeReportHtml(clsName)} (សិស្សសរុប៖ ${this.toKhmerNum(studentsInClass.length)} នាក់)</div>
+            <div style="font-size: 12px; color: #166534;">កត់ត្រាសិស្សខ្ចីសៀវភៅពុម្ព៖ ភាសាខ្មែរ គណិតវិទ្យា វិទ្យាសាស្ត្រ សិក្សាសង្គម អង់គ្លេស</div>
+          </div>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+          <button type="button" id="btnAutoFillBookLending" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #ffffff; border: none; padding: 7px 14px; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">
+            <i class="ri-flashlight-fill" style="color: #fef08a;"></i> <span>⚡ កំណត់ស្វ័យប្រវត្ត (១ក្បាលគ្រប់មុខ)</span>
+          </button>
+          <button type="button" id="btnSaveBookLending" style="background: linear-gradient(135deg, #16a34a, #15803d); color: #ffffff; border: none; padding: 7px 14px; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(22,163,74,0.3);">
+            <i class="ri-save-line"></i> <span>💾 រក្សាទុកទិន្នន័យ</span>
+          </button>
+          <button type="button" id="btnClearClassBookLending" style="background: #fff1f2; color: #e11d48; border: 1px solid #fecdd3; padding: 7px 12px; border-radius: 6px; font-size: 12.5px; font-weight: 600; cursor: pointer;" title="សម្អាតទិន្នន័យខ្ចីទាំងអស់ក្នុងថ្នាក់នេះ">
+            <i class="ri-delete-bin-line"></i> <span>សម្អាតថ្នាក់នេះ</span>
+          </button>
+        </div>
+      </div>
+    `;
+
+    if (studentsInClass.length === 0) {
+      html += `
+        <div style="text-align: center; padding: 2rem; color: #64748b; background: #fff; border: 1px dashed #cbd5e1; border-radius: 8px;">
+          <i class="ri-user-search-line" style="font-size: 2rem; display: block; margin-bottom: 6px;"></i>
+          មិនមានទិន្នន័យសិស្សសម្រាប់ថ្នាក់ដែលបានជ្រើសរើសឡើយ។ សូមជ្រើសរើសកម្រិតថ្នាក់ ឬថ្នាក់ផ្សេង។
+        </div>
+      `;
+      libraryBlock.innerHTML = html;
+      return;
+    }
+
+    html += `
+      <div style="overflow-x: auto; max-height: 480px; border: 1px solid #cbd5e1; border-radius: 8px; margin-top: 8px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+        <table style="width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: center; white-space: nowrap;">
+          <thead style="position: sticky; top: 0; background: #f8fafc; z-index: 2; border-bottom: 2px solid #cbd5e1;">
+            <tr>
+              <th rowspan="2" style="width: 38px; padding: 6px 4px; border-right: 1px solid #e2e8f0;">ល.រ</th>
+              <th rowspan="2" style="width: 170px; padding: 6px 8px; text-align: left; border-right: 1px solid #e2e8f0;">គោត្តនាម និង នាមខ្លួន</th>
+              <th rowspan="2" style="width: 48px; padding: 6px 4px; border-right: 1px solid #e2e8f0;">ភេទ</th>
+              <th colspan="2" style="padding: 4px; border-right: 1px solid #e2e8f0; background: #e0f2fe; color: #0369a1; font-weight: 700;">ភាសាខ្មែរ</th>
+              <th colspan="2" style="padding: 4px; border-right: 1px solid #e2e8f0; background: #fef3c7; color: #b45309; font-weight: 700;">គណិតវិទ្យា</th>
+              <th colspan="2" style="padding: 4px; border-right: 1px solid #e2e8f0; background: #dcfce7; color: #15803d; font-weight: 700;">វិទ្យាសាស្ត្រ</th>
+              <th colspan="2" style="padding: 4px; border-right: 1px solid #e2e8f0; background: #ffedd5; color: #c2410c; font-weight: 700;">សិក្សាសង្គម</th>
+              <th colspan="2" style="padding: 4px; border-right: 1px solid #e2e8f0; background: #f3e8ff; color: #7e22ce; font-weight: 700;">អង់គ្លេស</th>
+              <th rowspan="2" style="width: 80px; padding: 6px 4px;">ស្ថានភាព</th>
+            </tr>
+            <tr style="font-size: 11.5px; border-bottom: 1px solid #cbd5e1;">
+              <th style="padding: 3px; width: 48px; border-right: 1px solid #e2e8f0; background: #f0f9ff; color: #0369a1;">ចំនួន</th>
+              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #f0f9ff; color: #0369a1;">ថ្នាក់</th>
+              <th style="padding: 3px; width: 48px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309;">ចំនួន</th>
+              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309;">ថ្នាក់</th>
+              <th style="padding: 3px; width: 48px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ចំនួន</th>
+              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ថ្នាក់</th>
+              <th style="padding: 3px; width: 48px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c;">ចំនួន</th>
+              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c;">ថ្នាក់</th>
+              <th style="padding: 3px; width: 48px; border-right: 1px solid #e2e8f0; background: #faf5ff; color: #7e22ce;">ចំនួន</th>
+              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #faf5ff; color: #7e22ce;">ថ្នាក់</th>
+            </tr>
+          </thead>
+          <tbody>
+    `;
+
+    const esc = v => this.escapeReportHtml(v);
+
+    studentsInClass.forEach((s, idx) => {
+      const lend = (this.bookLending[s.id] || this.bookLending[s.id + '_' + (s.class || clsName)]) || {};
+      const khQty = lend.kh_qty !== undefined && lend.kh_qty !== null ? lend.kh_qty : '';
+      const khG = lend.kh_grade || (khQty !== '' ? gradeNum : '');
+      const mathQty = lend.math_qty !== undefined && lend.math_qty !== null ? lend.math_qty : '';
+      const mathG = lend.math_grade || (mathQty !== '' ? gradeNum : '');
+      const sciQty = lend.sci_qty !== undefined && lend.sci_qty !== null ? lend.sci_qty : '';
+      const sciG = lend.sci_grade || (sciQty !== '' ? gradeNum : '');
+      const socQty = lend.soc_qty !== undefined && lend.soc_qty !== null ? lend.soc_qty : '';
+      const socG = lend.soc_grade || (socQty !== '' ? gradeNum : '');
+      const engQty = lend.eng_qty !== undefined && lend.eng_qty !== null ? lend.eng_qty : '';
+      const engG = lend.eng_grade || (engQty !== '' ? gradeNum : '');
+
+      const isComplete = (khQty !== '' && mathQty !== '' && sciQty !== '' && socQty !== '' && engQty !== '');
+
+      const makeInput = (field, val, isGrade = false) => {
+        const w = isGrade ? '38px' : '42px';
+        const type = isGrade ? 'text' : 'number';
+        const maxAttr = isGrade ? 'maxlength="3"' : 'min="0" max="10"';
+        return `<input type="${type}" ${maxAttr} class="book-len-input" data-stu="${esc(s.id)}" data-field="${field}" value="${esc(val)}" style="width:${w}; text-align:center; padding:3px 2px; border:1px solid #cbd5e1; border-radius:4px; font-size:12px; font-weight:600; outline:none; transition:border-color 0.15s;">`;
+      };
+
+      html += `
+        <tr style="border-bottom: 1px solid #f1f5f9; background: ${idx % 2 === 0 ? '#ffffff' : '#fafafa'};">
+          <td style="padding: 4px; border-right: 1px solid #f1f5f9; color: #64748b;">${this.toKhmerNum(idx + 1)}</td>
+          <td style="padding: 4px 8px; text-align: left; border-right: 1px solid #f1f5f9; font-weight: 600; color: #1e293b;">${esc(s.khmerName || '')}</td>
+          <td style="padding: 4px; border-right: 1px solid #f1f5f9; color: ${s.gender === 'ស្រី' ? '#e11d48' : '#2563eb'}; font-weight: 500;">${esc(s.gender || '')}</td>
+          <td style="padding: 3px 2px; border-right: 1px solid #f1f5f9;">${makeInput('kh_qty', khQty)}</td>
+          <td style="padding: 3px 2px; border-right: 1px solid #f1f5f9;">${makeInput('kh_grade', khG, true)}</td>
+          <td style="padding: 3px 2px; border-right: 1px solid #f1f5f9;">${makeInput('math_qty', mathQty)}</td>
+          <td style="padding: 3px 2px; border-right: 1px solid #f1f5f9;">${makeInput('math_grade', mathG, true)}</td>
+          <td style="padding: 3px 2px; border-right: 1px solid #f1f5f9;">${makeInput('sci_qty', sciQty)}</td>
+          <td style="padding: 3px 2px; border-right: 1px solid #f1f5f9;">${makeInput('sci_grade', sciG, true)}</td>
+          <td style="padding: 3px 2px; border-right: 1px solid #f1f5f9;">${makeInput('soc_qty', socQty)}</td>
+          <td style="padding: 3px 2px; border-right: 1px solid #f1f5f9;">${makeInput('soc_grade', socG, true)}</td>
+          <td style="padding: 3px 2px; border-right: 1px solid #f1f5f9;">${makeInput('eng_qty', engQty)}</td>
+          <td style="padding: 3px 2px; border-right: 1px solid #f1f5f9;">${makeInput('eng_grade', engG, true)}</td>
+          <td style="padding: 4px;">
+            <span class="badge-status" style="display:inline-block; padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: 600; ${isComplete ? 'background:#dcfce7; color:#15803d;' : 'background:#f1f5f9; color:#64748b;'}">
+              ${isComplete ? 'គ្រប់' : 'មិនទាន់'}
+            </span>
+          </td>
+        </tr>
+      `;
+    });
+
+    html += `
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    libraryBlock.innerHTML = html;
+
+    // Attach Event Listeners
+    // 1. Auto-fill button:
+    const btnAuto = document.getElementById('btnAutoFillBookLending');
+    if (btnAuto) {
+      btnAuto.addEventListener('click', () => {
+        studentsInClass.forEach(s => {
+          this.bookLending[s.id] = {
+            kh_qty: 1, kh_grade: gradeNum,
+            math_qty: 1, math_grade: gradeNum,
+            sci_qty: 1, sci_grade: gradeNum,
+            soc_qty: 1, soc_grade: gradeNum,
+            eng_qty: 1, eng_grade: gradeNum
+          };
+        });
+        this.saveState(true);
+        this.showToast(`បានកំណត់ស្វ័យប្រវត្តិ ១ក្បាលគ្រប់មុខសម្រាប់សិស្សទាំង ${this.toKhmerNum(studentsInClass.length)} នាក់ក្នុងថ្នាក់ ${clsName}!`, 'success');
+        this.renderLibraryDataEntryView();
+        this.hideReportPreview();
+      });
+    }
+
+    // 2. Save button:
+    const btnSave = document.getElementById('btnSaveBookLending');
+    if (btnSave) {
+      btnSave.addEventListener('click', () => {
+        this.collectBookLendingInputsFromTable();
+        this.saveState(true);
+        this.showToast('បានរក្សាទុកទិន្នន័យសិស្សខ្ចីសៀវភៅដោយជោគជ័យ!', 'success');
+        this.renderLibraryDataEntryView();
+      });
+    }
+
+    // 3. Clear button:
+    const btnClear = document.getElementById('btnClearClassBookLending');
+    if (btnClear) {
+      btnClear.addEventListener('click', () => {
+        if (!confirm(`តើអ្នកពិតជាចង់សម្អាតទិន្នន័យខ្ចីសៀវភៅរបស់ថ្នាក់ ${clsName} ទាំងអស់មែនទេ?`)) return;
+        studentsInClass.forEach(s => {
+          delete this.bookLending[s.id];
+          delete this.bookLending[s.id + '_' + (s.class || clsName)];
+        });
+        this.saveState(true);
+        this.showToast(`បានសម្អាតទិន្នន័យថ្នាក់ ${clsName} រួចរាល់!`, 'info');
+        this.renderLibraryDataEntryView();
+        this.hideReportPreview();
+      });
+    }
+
+    // 4. Live inputs changes (focus highlight + auto update):
+    libraryBlock.querySelectorAll('.book-len-input').forEach(inp => {
+      inp.addEventListener('focus', () => {
+        inp.style.borderColor = '#0284c7';
+        inp.style.boxShadow = '0 0 0 2px rgba(2,132,199,0.2)';
+      });
+      inp.addEventListener('blur', () => {
+        inp.style.borderColor = '#cbd5e1';
+        inp.style.boxShadow = 'none';
+      });
+      inp.addEventListener('change', () => {
+        const stuId = inp.getAttribute('data-stu');
+        const field = inp.getAttribute('data-field');
+        if (!this.bookLending[stuId]) this.bookLending[stuId] = {};
+        this.bookLending[stuId][field] = inp.value.trim();
+        this.saveState(false, 1500);
+      });
+    });
+
+    // If report tab is active, also trigger preview automatically
+    if (isReportItem) {
+      this.previewReport();
+    }
+  }
+
+  collectBookLendingInputsFromTable() {
+    const libraryBlock = document.getElementById('libraryReportOptionsBlock');
+    if (!libraryBlock) return;
+    if (!this.bookLending) this.bookLending = {};
+
+    libraryBlock.querySelectorAll('.book-len-input').forEach(inp => {
+      const stuId = inp.getAttribute('data-stu');
+      const field = inp.getAttribute('data-field');
+      if (stuId && field) {
+        if (!this.bookLending[stuId]) this.bookLending[stuId] = {};
+        this.bookLending[stuId][field] = inp.value.trim();
+      }
+    });
   }
 
   populateReportClassSelect() {
@@ -8198,6 +8481,89 @@ class ScoreManagementApp {
         });
         break;
       }
+      case 'book_lending_entry':
+      case 'book_lending_report': {
+        const list = this.getReportStudents(f);
+        data.isBookLending = true;
+        const totalFemale = list.filter(isF).length;
+
+        // Determine grade number (7, 8, or 9)
+        let gradeNum = '9';
+        const clsName = (f.classVal && f.classVal !== 'ALL') ? f.classVal : ((list[0] && list[0].class) || '9D');
+        if (f.gradeKey === 'grade_7' || clsName.includes('7') || clsName.includes('៧')) gradeNum = '7';
+        else if (f.gradeKey === 'grade_8' || clsName.includes('8') || clsName.includes('៨')) gradeNum = '8';
+        else if (f.gradeKey === 'grade_9' || clsName.includes('9') || clsName.includes('៩')) gradeNum = '9';
+
+        data.title = `បញ្ជីរាយនាមសិស្សខ្ចីសៀវភៅថ្នាក់ទី ${clsName}`;
+        data.subtitle = `ឆ្នាំសិក្សា ${this.toKhmerNum(this.activeYear || '2025-2026')}`;
+        data.bookLendingMeta = {
+          className: clsName,
+          gradeNum: gradeNum,
+          total: list.length,
+          female: totalFemale
+        };
+
+        data.columns = [
+          'ល.រ', 'គោត្តនាម និង នាមខ្លួន', 'ភេទ',
+          'ភាសាខ្មែរ (ចំនួន)', 'ភាសាខ្មែរ (ថ្នាក់)',
+          'គណិតវិទ្យា (ចំនួន)', 'គណិតវិទ្យា (ថ្នាក់)',
+          'វិទ្យាសាស្ត្រ (ចំនួន)', 'វិទ្យាសាស្ត្រ (ថ្នាក់)',
+          'សិក្សាសង្គម (ចំនួន)', 'សិក្សាសង្គម (ថ្នាក់)',
+          'អង់គ្លេស (ចំនួន)', 'អង់គ្លេស (ថ្នាក់)',
+          'ហត្ថលេខា'
+        ];
+
+        let sumKh = 0, sumMath = 0, sumSci = 0, sumSoc = 0, sumEng = 0;
+
+        data.rows = list.map((s, idx) => {
+          const lend = (this.bookLending && (this.bookLending[s.id] || this.bookLending[s.id + '_' + (s.class || clsName)])) || {};
+          const khQty = lend.kh_qty !== undefined && lend.kh_qty !== null && lend.kh_qty !== '' ? Number(lend.kh_qty) : '';
+          const khG = lend.kh_grade || (khQty !== '' ? gradeNum : '');
+          const mathQty = lend.math_qty !== undefined && lend.math_qty !== null && lend.math_qty !== '' ? Number(lend.math_qty) : '';
+          const mathG = lend.math_grade || (mathQty !== '' ? gradeNum : '');
+          const sciQty = lend.sci_qty !== undefined && lend.sci_qty !== null && lend.sci_qty !== '' ? Number(lend.sci_qty) : '';
+          const sciG = lend.sci_grade || (sciQty !== '' ? gradeNum : '');
+          const socQty = lend.soc_qty !== undefined && lend.soc_qty !== null && lend.soc_qty !== '' ? Number(lend.soc_qty) : '';
+          const socG = lend.soc_grade || (socQty !== '' ? gradeNum : '');
+          const engQty = lend.eng_qty !== undefined && lend.eng_qty !== null && lend.eng_qty !== '' ? Number(lend.eng_qty) : '';
+          const engG = lend.eng_grade || (engQty !== '' ? gradeNum : '');
+
+          if (khQty !== '') sumKh += khQty;
+          if (mathQty !== '') sumMath += mathQty;
+          if (sciQty !== '') sumSci += sciQty;
+          if (socQty !== '') sumSoc += socQty;
+          if (engQty !== '') sumEng += engQty;
+
+          return [
+            this.toKhmerNum(idx + 1),
+            s.khmerName || '',
+            s.gender || '',
+            khQty !== '' ? this.toKhmerNum(khQty) : '',
+            khG !== '' ? this.toKhmerNum(khG) : '',
+            mathQty !== '' ? this.toKhmerNum(mathQty) : '',
+            mathG !== '' ? this.toKhmerNum(mathG) : '',
+            sciQty !== '' ? this.toKhmerNum(sciQty) : '',
+            sciG !== '' ? this.toKhmerNum(sciG) : '',
+            socQty !== '' ? this.toKhmerNum(socQty) : '',
+            socG !== '' ? this.toKhmerNum(socG) : '',
+            engQty !== '' ? this.toKhmerNum(engQty) : '',
+            engG !== '' ? this.toKhmerNum(engG) : '',
+            '' // ហត្ថលេខា
+          ];
+        });
+
+        // Blank rows if empty
+        if (list.length === 0) {
+          for (let b = 1; b <= 10; b++) {
+            data.rows.push([this.toKhmerNum(b), '', '', '', '', '', '', '', '', '', '', '', '', '']);
+          }
+        }
+
+        data.bookLendingTotals = {
+          sumKh, sumMath, sumSci, sumSoc, sumEng
+        };
+        break;
+      }
       default:
         break;
     }
@@ -8217,6 +8583,86 @@ class ScoreManagementApp {
     const esc = v => this.escapeReportHtml(v);
     if (!data.rows.length) {
       return `<div style="text-align:center; padding:2rem; color:#64748b;">${esc(data.emptyText || 'មិនមានទិន្នន័យត្រូវនឹងលក្ខខណ្ឌដែលបានជ្រើសរើសឡើយ')}</div>`;
+    }
+
+    if (data.isBookLending) {
+      const totals = data.bookLendingTotals || { sumKh: 0, sumMath: 0, sumSci: 0, sumSoc: 0, sumEng: 0 };
+      const khSum = totals.sumKh ? this.toKhmerNum(totals.sumKh) : '';
+      const mathSum = totals.sumMath ? this.toKhmerNum(totals.sumMath) : '';
+      const sciSum = totals.sumSci ? this.toKhmerNum(totals.sumSci) : '';
+      const socSum = totals.sumSoc ? this.toKhmerNum(totals.sumSoc) : '';
+      const engSum = totals.sumEng ? this.toKhmerNum(totals.sumEng) : '';
+
+      const theadHtml = `
+        <thead>
+          <tr>
+            <th rowspan="2" style="width: 32px; text-align: center; vertical-align: middle;">ល.រ</th>
+            <th rowspan="2" style="width: 170px; text-align: center; vertical-align: middle;">គោត្តនាម និង នាមខ្លួន</th>
+            <th rowspan="2" style="width: 45px; text-align: center; vertical-align: middle;">ភេទ</th>
+            <th colspan="2" style="text-align: center; vertical-align: middle;">ភាសាខ្មែរ</th>
+            <th colspan="2" style="text-align: center; vertical-align: middle;">គណិតវិទ្យា</th>
+            <th colspan="2" style="text-align: center; vertical-align: middle;">វិទ្យាសាស្ត្រ</th>
+            <th colspan="2" style="text-align: center; vertical-align: middle;">សិក្សាសង្គម</th>
+            <th colspan="2" style="text-align: center; vertical-align: middle;">អង់គ្លេស</th>
+            <th rowspan="2" style="width: 80px; text-align: center; vertical-align: middle;">ហត្ថលេខា</th>
+          </tr>
+          <tr>
+            <th style="width: 42px; text-align: center; vertical-align: middle;">ចំនួន</th>
+            <th style="width: 42px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
+            <th style="width: 42px; text-align: center; vertical-align: middle;">ចំនួន</th>
+            <th style="width: 42px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
+            <th style="width: 42px; text-align: center; vertical-align: middle;">ចំនួន</th>
+            <th style="width: 42px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
+            <th style="width: 42px; text-align: center; vertical-align: middle;">ចំនួន</th>
+            <th style="width: 42px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
+            <th style="width: 42px; text-align: center; vertical-align: middle;">ចំនួន</th>
+            <th style="width: 42px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
+          </tr>
+        </thead>`;
+
+      return `
+        <table class="doc-table grade7-table book-lending-table" style="font-size: 8.5pt;">
+          ${theadHtml}
+          <tbody>
+            ${data.rows.map(r => `<tr>${r.map((c, i) => {
+              const align = (i === 1) ? 'left' : 'center';
+              return `<td style="text-align:${align}; padding: 2.5px 3px;">${esc(c)}</td>`;
+            }).join('')}</tr>`).join('')}
+            <!-- 3 Summary rows as shown in user image -->
+            <tr>
+              <td colspan="3" style="text-align: center; font-weight: bold; padding: 3px;">សរុប</td>
+              <td style="text-align: center; font-weight: bold;">${esc(khSum)}</td>
+              <td></td>
+              <td style="text-align: center; font-weight: bold;">${esc(mathSum)}</td>
+              <td></td>
+              <td style="text-align: center; font-weight: bold;">${esc(sciSum)}</td>
+              <td></td>
+              <td style="text-align: center; font-weight: bold;">${esc(socSum)}</td>
+              <td></td>
+              <td style="text-align: center; font-weight: bold;">${esc(engSum)}</td>
+              <td></td>
+              <td></td>
+            </tr>
+            <tr>
+              <td colspan="3" style="text-align: center; font-weight: bold; padding: 3px;">ខូច និងបាត់</td>
+              <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
+            </tr>
+            <tr>
+              <td colspan="3" style="text-align: center; font-weight: bold; padding: 3px;">ប្រើប្រាស់កើត</td>
+              <td style="text-align: center; font-weight: bold;">${esc(khSum)}</td>
+              <td></td>
+              <td style="text-align: center; font-weight: bold;">${esc(mathSum)}</td>
+              <td></td>
+              <td style="text-align: center; font-weight: bold;">${esc(sciSum)}</td>
+              <td></td>
+              <td style="text-align: center; font-weight: bold;">${esc(socSum)}</td>
+              <td></td>
+              <td style="text-align: center; font-weight: bold;">${esc(engSum)}</td>
+              <td></td>
+              <td></td>
+            </tr>
+          </tbody>
+        </table>`;
     }
     const isG7 = !!data.isGrade7;
     const tableClass = isG7 ? 'doc-table grade7-table' : 'doc-table';
@@ -8308,6 +8754,53 @@ class ScoreManagementApp {
 
   buildReportHeaderHtml(data) {
     const esc = v => this.escapeReportHtml(v);
+    if (data.isBookLending) {
+      const meta = data.bookLendingMeta || {};
+      const clsName = meta.className || (data.filters && data.filters.classVal !== 'ALL' ? data.filters.classVal : '9D');
+      const yearKh = this.toKhmerNum(this.activeYear || '2025-2026');
+
+      return `
+        <div class="book-lending-header-wrapper" style="margin-bottom: 8px;">
+          <!-- Top Row Header: Left (School/Dept/Province) and Right (Kingdom) -->
+          <table style="width: 100%; border-collapse: collapse; border: none; margin: 0 0 2px 0;">
+            <tr style="border: none;">
+              <td style="border: none; width: 45%; padding: 0; vertical-align: top; text-align: left;">
+                <div style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 11pt; line-height: 1.5; font-weight: bold;">
+                  ខេត្ត៖ សៀមរាប
+                </div>
+                <div style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 11pt; line-height: 1.5; font-weight: bold;">
+                  មន្ទីរអប់រំយុវជន និងកីឡា
+                </div>
+                <div style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 11pt; line-height: 1.5; font-weight: bold;">
+                  វិទ្យាល័យ ២៨ មករា
+                </div>
+              </td>
+              <td style="border: none; width: 55%; padding: 0; text-align: center; vertical-align: top;">
+                <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 11.5pt; line-height: 1.5; white-space: nowrap;">
+                  ព្រះរាជាណាចក្រកម្ពុជា
+                </div>
+                <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 11.5pt; line-height: 1.5; white-space: nowrap;">
+                  ជាតិ សាសនា ព្រះមហាក្សត្រ
+                </div>
+                <div style="text-align: center; line-height: 1; margin: 2px auto 0;">
+                  <img class="doc-divider-img" src="${this.getKhmerHeaderDivider()}" style="height: 13px; width: auto; max-width: 165px; object-fit: contain; vertical-align: middle;" alt="divider">
+                </div>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Center Title -->
+          <div style="text-align: center; margin: 6px 0 6px 0;">
+            <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 12.5pt; line-height: 1.4;">
+              បញ្ជីរាយនាមសិស្សខ្ចីសៀវភៅថ្នាក់ទី ${esc(clsName)}
+            </div>
+            <div style="font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 10.5pt; line-height: 1.4; margin-top: 2px;">
+              ឆ្នាំសិក្សា ${esc(yearKh)}
+            </div>
+          </div>
+        </div>
+      `;
+    }
     if (data.isGrade7) {
       const g7 = data.grade7Meta || {};
       let defaultCls = '៧';
@@ -8533,6 +9026,53 @@ class ScoreManagementApp {
     `;
   }
 
+  buildBookLendingFooterHtml(data) {
+    const f = data.filters || {};
+    const esc = v => this.escapeReportHtml(v);
+    const meta = data.bookLendingMeta || {};
+    const totalKh = meta.total ? this.toKhmerNum(meta.total) : '០';
+    const femaleKh = meta.female ? this.toKhmerNum(meta.female) : '០';
+
+    const signDateVal = f.signDate || new Date().toISOString().slice(0, 10);
+    let lunarText = '';
+    try {
+      lunarText = this.getKhmerLunarDate(signDateVal);
+    } catch (_) {
+      lunarText = 'ថ្ងៃពុធ ១៣កើត ខែកត្តិក ឆ្នាំរោង ឆស័ក ពុទ្ធសករាជ ២៥៦៩';
+    }
+    const solarText = this.getKhmerDate(signDateVal, 'សៀមរាប');
+
+    return `
+      <div class="book-lending-footer-wrapper" style="margin-top: 10px; page-break-inside: avoid; font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif;">
+        <div style="font-size: 10.5pt; font-weight: bold; margin-bottom: 12px; text-align: left;">
+          បញ្ឈប់បញ្ជីត្រឹមលេខរៀង ${esc(totalKh)} ស្រី ${esc(femaleKh)} នាក់
+        </div>
+
+        <table style="width: 100%; border-collapse: collapse; border: none; font-size: 10pt; line-height: 1.5;">
+          <tr style="border: none;">
+            <td style="border: none; width: 45%; padding: 0 4px; text-align: left; vertical-align: top;">
+            </td>
+            <td style="border: none; width: 55%; padding: 0 4px; text-align: center; vertical-align: top;">
+              <div style="font-size: 9.5pt; white-space: nowrap;">${esc(lunarText)}</div>
+              <div style="font-size: 9.5pt; white-space: nowrap; margin-top: 2px;">${esc(solarText)}</div>
+              <div style="font-size: 10.5pt; font-weight: bold; margin-top: 4px;">គ្រូទទួលបន្ទុកថ្នាក់</div>
+              <div style="height: 55px;"></div>
+            </td>
+          </tr>
+
+          <tr style="border: none;">
+            <td style="border: none; width: 45%; padding: 0 4px; text-align: center; vertical-align: top;">
+              <div style="font-size: 10pt; font-weight: 500;">បានឃើញ និង ឯកភាព</div>
+              <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 10.5pt; margin-top: 3px;">នាយកសាលា</div>
+              <div style="height: 55px;"></div>
+            </td>
+            <td style="border: none; width: 55%; padding: 0 4px;"></td>
+          </tr>
+        </table>
+      </div>
+    `;
+  }
+
   previewReport() {
     const data = this.buildReportData();
     const card = document.getElementById('reportPreviewCard');
@@ -8541,13 +9081,15 @@ class ScoreManagementApp {
     const esc = v => this.escapeReportHtml(v);
     if (!card || !body) return;
 
-    // Check if landscape needed (Grade 7 is strictly Portrait A4)
-    const isLandscape = data.isGrade7 ? false : (data.columns.length > 7);
+    // Check if landscape needed (Grade 7 is strictly Portrait A4, Book lending is Landscape A4)
+    const isLandscape = data.isGrade7 ? false : (data.isBookLending ? true : data.columns.length > 7);
     body.className = 'pdf-a4-sheet' + (isLandscape ? ' landscape' : '');
 
     // Signatures / Footer
     let signHtml = '';
-    if (data.isGrade7) {
+    if (data.isBookLending) {
+      signHtml = this.buildBookLendingFooterHtml(data);
+    } else if (data.isGrade7) {
       signHtml = this.buildGrade7FooterHtml(data);
     } else if (f.showDate || f.showPrincipal || f.signTeacher) {
       let lunar = '';
@@ -8631,11 +9173,13 @@ class ScoreManagementApp {
     const f = data.filters;
     const esc = v => this.escapeReportHtml(v);
 
-    // Grade 7 is strictly Portrait A4
-    const isLandscape = data.isGrade7 ? false : (data.columns.length > 7);
+    // Grade 7 is strictly Portrait A4, Book lending is Landscape A4
+    const isLandscape = data.isGrade7 ? false : (data.isBookLending ? true : data.columns.length > 7);
 
     let signHtml = '';
-    if (data.isGrade7) {
+    if (data.isBookLending) {
+      signHtml = this.buildBookLendingFooterHtml(data);
+    } else if (data.isGrade7) {
       signHtml = this.buildGrade7FooterHtml(data);
     } else if (f.showDate || f.showPrincipal || f.signTeacher) {
       let lunar = '';
@@ -8711,6 +9255,146 @@ class ScoreManagementApp {
 
   exportReportExcel() {
     const data = this.buildReportData();
+
+    if (data.isBookLending) {
+      const meta = data.bookLendingMeta || {};
+      const totals = data.bookLendingTotals || { sumKh: 0, sumMath: 0, sumSci: 0, sumSoc: 0, sumEng: 0 };
+      const f = data.filters || {};
+      const signDateVal = f.signDate || new Date().toISOString().slice(0, 10);
+      let lunarText = '';
+      try { lunarText = this.getKhmerLunarDate(signDateVal); } catch (_) { lunarText = ''; }
+      const solarText = this.getKhmerDate(signDateVal, 'សៀមរាប');
+
+      const aoa = [
+        ['ខេត្ត៖ សៀមរាប', '', '', '', '', '', '', '', '', '', '', 'ព្រះរាជាណាចក្រកម្ពុជា'],
+        ['មន្ទីរអប់រំយុវជន និងកីឡា', '', '', '', '', '', '', '', '', '', '', 'ជាតិ សាសនា ព្រះមហាក្សត្រ'],
+        ['វិទ្យាល័យ ២៨ មករា'],
+        ['', '', '', '', 'បញ្ជីរាយនាមសិស្សខ្ចីសៀវភៅថ្នាក់ទី ' + (meta.className || '')],
+        ['', '', '', '', 'ឆ្នាំសិក្សា ' + (this.activeYear || '២០២៥-២០២៦')],
+        [
+          'ល.រ', 'គោត្តនាម និង នាមខ្លួន', 'ភេទ',
+          'ភាសាខ្មែរ', '',
+          'គណិតវិទ្យា', '',
+          'វិទ្យាសាស្ត្រ', '',
+          'សិក្សាសង្គម', '',
+          'អង់គ្លេស', '',
+          'ហត្ថលេខា'
+        ],
+        [
+          '', '', '',
+          'ចំនួន', 'ថ្នាក់',
+          'ចំនួន', 'ថ្នាក់',
+          'ចំនួន', 'ថ្នាក់',
+          'ចំនួន', 'ថ្នាក់',
+          'ចំនួន', 'ថ្នាក់',
+          ''
+        ],
+        ...data.rows,
+        [
+          'សរុប', '', '',
+          totals.sumKh || '', '',
+          totals.sumMath || '', '',
+          totals.sumSci || '', '',
+          totals.sumSoc || '', '',
+          totals.sumEng || '', '',
+          ''
+        ],
+        [
+          'ខូច និងបាត់', '', '',
+          '', '', '', '', '', '', '', '', '', '', ''
+        ],
+        [
+          'ប្រើប្រាស់កើត', '', '',
+          totals.sumKh || '', '',
+          totals.sumMath || '', '',
+          totals.sumSci || '', '',
+          totals.sumSoc || '', '',
+          totals.sumEng || '', '',
+          ''
+        ],
+        [],
+        [
+          `បញ្ឈប់បញ្ជីត្រឹមលេខរៀង ${meta.total} ស្រី ${meta.female} នាក់`, '', '', '', '', '', '', '', '',
+          lunarText
+        ],
+        [
+          '', '', '', '', '', '', '', '', '',
+          solarText
+        ],
+        [
+          '', '', '', '', '', '', '', '', '',
+          'គ្រូទទួលបន្ទុកថ្នាក់'
+        ],
+        [],
+        [
+          'បានឃើញ និង ឯកភាព'
+        ],
+        [
+          'នាយកសាលា'
+        ]
+      ];
+
+      const safeName = String(data.title).replace(/[\\/:*?"<>|]/g, '_');
+      const fileBase = `${safeName}_${new Date().toISOString().slice(0, 10)}`;
+
+      if (typeof XLSX !== 'undefined') {
+        const ws = XLSX.utils.aoa_to_sheet(aoa);
+        const dataEndRow = 7 + data.rows.length;
+
+        ws['!merges'] = [
+          // Kingdom header merges
+          { s: { r: 0, c: 11 }, e: { r: 0, c: 13 } },
+          { s: { r: 1, c: 11 }, e: { r: 1, c: 13 } },
+          // Title merges
+          { s: { r: 3, c: 3 }, e: { r: 3, c: 10 } },
+          { s: { r: 4, c: 3 }, e: { r: 4, c: 10 } },
+          // Header 2-row merges
+          { s: { r: 5, c: 0 }, e: { r: 6, c: 0 } }, // ល.រ
+          { s: { r: 5, c: 1 }, e: { r: 6, c: 1 } }, // គោត្តនាម និង នាមខ្លួន
+          { s: { r: 5, c: 2 }, e: { r: 6, c: 2 } }, // ភេទ
+          { s: { r: 5, c: 3 }, e: { r: 5, c: 4 } }, // ភាសាខ្មែរ
+          { s: { r: 5, c: 5 }, e: { r: 5, c: 6 } }, // គណិតវិទ្យា
+          { s: { r: 5, c: 7 }, e: { r: 5, c: 8 } }, // វិទ្យាសាស្ត្រ
+          { s: { r: 5, c: 9 }, e: { r: 5, c: 10 } }, // សិក្សាសង្គម
+          { s: { r: 5, c: 11 }, e: { r: 5, c: 12 } }, // អង់គ្លេស
+          { s: { r: 5, c: 13 }, e: { r: 6, c: 13 } }, // ហត្ថលេខា
+          // Summary rows merges
+          { s: { r: dataEndRow, c: 0 }, e: { r: dataEndRow, c: 2 } },
+          { s: { r: dataEndRow + 1, c: 0 }, e: { r: dataEndRow + 1, c: 2 } },
+          { s: { r: dataEndRow + 2, c: 0 }, e: { r: dataEndRow + 2, c: 2 } }
+        ];
+
+        ws['!cols'] = [
+          { wch: 6 },  // ល.រ
+          { wch: 22 }, // គោត្តនាម និង នាមខ្លួន
+          { wch: 8 },  // ភេទ
+          { wch: 8 }, { wch: 8 },  // ខ្មែរ
+          { wch: 8 }, { wch: 8 },  // គណិត
+          { wch: 8 }, { wch: 8 },  // វិទ្យា
+          { wch: 8 }, { wch: 8 },  // សង្គម
+          { wch: 8 }, { wch: 8 },  // អង់គ្លេស
+          { wch: 14 }  // ហត្ថលេខា
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'សិស្សខ្ចីសៀវភៅ');
+        XLSX.writeFile(wb, `${fileBase}.xlsx`);
+      } else {
+        const csv = '\uFEFF' + aoa.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = `${fileBase}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          document.body.removeChild(a);
+          URL.revokeObjectURL(a.href);
+        }, 100);
+      }
+      this.showToast('បាននាំចេញតារាងសិស្សខ្ចីសៀវភៅជា Excel ដោយជោគជ័យ!', 'success');
+      return;
+    }
     const aoa = [[data.title], [`${data.subtitle || ''} | ឆ្នាំសិក្សា៖ ${this.activeYear || ''}`], [], data.columns, ...data.rows];
     if (data.footer) aoa.push(data.footer);
     if (data.summary) aoa.push([], [data.summary]);
