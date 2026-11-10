@@ -9288,7 +9288,7 @@ class ScoreManagementApp {
           </thead>`;
 
         return `
-          <table class="doc-table book-lending-table grade11-12-book-table" style="font-size: 7.2pt; width: 100%; border-collapse: collapse;">
+          <table class="doc-table book-lending-table grade11-12-book-table" style="font-size: 11pt; width: 100%; border-collapse: collapse;">
             ${theadHtml}
             <tbody>
               ${data.rows.map(r => `<tr>${r.map((c, i) => {
@@ -9296,48 +9296,48 @@ class ScoreManagementApp {
                   return `<td class="book-student-name" style="text-align: left; padding: 1.5px 3px; font-size: 11pt !important; font-weight: 600 !important; white-space: nowrap !important;">${esc(c)}</td>`;
                 }
                 const align = 'center';
-                return `<td style="text-align:${align}; padding: 1.5px 1px;">${esc(c)}</td>`;
+                return `<td style="text-align:${align}; padding: 1.5px 1px; font-size: 11pt !important;">${esc(c)}</td>`;
               }).join('')}</tr>`).join('')}
               <!-- 3 Summary rows as shown in user image -->
               <tr>
-                <td colspan="3" style="text-align: center; font-weight: bold; padding: 2px;">សរុប</td>
-                <td style="text-align: center; font-weight: bold;">${esc(khSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(math1Sum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(math2Sum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(phySum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(chemSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(bioSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(earthSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(geoSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(hisSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(civSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(engSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(ictSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(econSum)}</td><td></td>
+                <td colspan="3" style="text-align: center; font-weight: bold; padding: 2px; font-size: 11pt;">សរុប</td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(khSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(math1Sum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(math2Sum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(phySum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(chemSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(bioSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(earthSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(geoSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(hisSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(civSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(engSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(ictSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(econSum)}</td><td></td>
                 <td></td>
               </tr>
               <tr>
-                <td colspan="3" style="text-align: center; font-weight: bold; padding: 2px;">ខូច និងបាត់</td>
+                <td colspan="3" style="text-align: center; font-weight: bold; padding: 2px; font-size: 11pt;">ខូច និងបាត់</td>
                 <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
                 <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
                 <td></td><td></td><td></td><td></td><td></td><td></td>
                 <td></td>
               </tr>
               <tr>
-                <td colspan="3" style="text-align: center; font-weight: bold; padding: 2px;">ប្រើប្រាស់កើត</td>
-                <td style="text-align: center; font-weight: bold;">${esc(khSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(math1Sum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(math2Sum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(phySum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(chemSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(bioSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(earthSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(geoSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(hisSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(civSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(engSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(ictSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(econSum)}</td><td></td>
+                <td colspan="3" style="text-align: center; font-weight: bold; padding: 2px; font-size: 11pt;">ប្រើប្រាស់កើត</td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(khSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(math1Sum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(math2Sum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(phySum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(chemSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(bioSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(earthSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(geoSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(hisSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(civSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(engSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(ictSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(econSum)}</td><td></td>
                 <td></td>
               </tr>
             </tbody>
@@ -9400,7 +9400,7 @@ class ScoreManagementApp {
           </thead>`;
 
         return `
-          <table class="doc-table book-lending-table grade10-book-table" style="font-size: 7.8pt; width: 100%; border-collapse: collapse;">
+          <table class="doc-table book-lending-table grade10-book-table" style="font-size: 11pt; width: 100%; border-collapse: collapse;">
             ${theadHtml}
             <tbody>
               ${data.rows.map(r => `<tr>${r.map((c, i) => {
@@ -9408,41 +9408,41 @@ class ScoreManagementApp {
                   return `<td class="book-student-name" style="text-align: left; padding: 2px 3px; font-size: 11pt !important; font-weight: 600 !important; white-space: nowrap !important;">${esc(c)}</td>`;
                 }
                 const align = 'center';
-                return `<td style="text-align:${align}; padding: 2px 1.5px;">${esc(c)}</td>`;
+                return `<td style="text-align:${align}; padding: 2px 1.5px; font-size: 11pt !important;">${esc(c)}</td>`;
               }).join('')}</tr>`).join('')}
               <!-- 3 Summary rows as shown in user image -->
               <tr>
-                <td colspan="3" style="text-align: center; font-weight: bold; padding: 2.5px;">សរុប</td>
-                <td style="text-align: center; font-weight: bold;">${esc(khSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(math1Sum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(math2Sum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(phySum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(chemSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(bioSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(earthSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(socSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(engSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(ictSum)}</td><td></td>
+                <td colspan="3" style="text-align: center; font-weight: bold; padding: 2.5px; font-size: 11pt;">សរុប</td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(khSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(math1Sum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(math2Sum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(phySum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(chemSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(bioSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(earthSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(socSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(engSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(ictSum)}</td><td></td>
                 <td></td>
               </tr>
               <tr>
-                <td colspan="3" style="text-align: center; font-weight: bold; padding: 2.5px;">ខូច និងបាត់</td>
+                <td colspan="3" style="text-align: center; font-weight: bold; padding: 2.5px; font-size: 11pt;">ខូច និងបាត់</td>
                 <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
                 <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
                 <td></td>
               </tr>
               <tr>
-                <td colspan="3" style="text-align: center; font-weight: bold; padding: 2.5px;">ប្រើប្រាស់កើត</td>
-                <td style="text-align: center; font-weight: bold;">${esc(khSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(math1Sum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(math2Sum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(phySum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(chemSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(bioSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(earthSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(socSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(engSum)}</td><td></td>
-                <td style="text-align: center; font-weight: bold;">${esc(ictSum)}</td><td></td>
+                <td colspan="3" style="text-align: center; font-weight: bold; padding: 2.5px; font-size: 11pt;">ប្រើប្រាស់កើត</td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(khSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(math1Sum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(math2Sum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(phySum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(chemSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(bioSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(earthSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(socSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(engSum)}</td><td></td>
+                <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(ictSum)}</td><td></td>
                 <td></td>
               </tr>
             </tbody>
@@ -9484,7 +9484,7 @@ class ScoreManagementApp {
         </thead>`;
 
       return `
-        <table class="doc-table grade7-table book-lending-table" style="font-size: 8.5pt;">
+        <table class="doc-table grade7-table book-lending-table" style="font-size: 11pt; width: 100%; border-collapse: collapse;">
           ${theadHtml}
           <tbody>
             ${data.rows.map(r => `<tr>${r.map((c, i) => {
@@ -9492,38 +9492,38 @@ class ScoreManagementApp {
                 return `<td class="book-student-name" style="text-align: left; padding: 2.5px 3px; font-size: 11pt !important; font-weight: 600 !important; white-space: nowrap !important;">${esc(c)}</td>`;
               }
               const align = 'center';
-              return `<td style="text-align:${align}; padding: 2.5px 2px;">${esc(c)}</td>`;
+              return `<td style="text-align:${align}; padding: 2.5px 2px; font-size: 11pt !important;">${esc(c)}</td>`;
             }).join('')}</tr>`).join('')}
             <!-- 3 Summary rows as shown in user image -->
             <tr>
-              <td colspan="3" style="text-align: center; font-weight: bold; padding: 3px;">សរុប</td>
-              <td style="text-align: center; font-weight: bold;">${esc(khSum)}</td>
+              <td colspan="3" style="text-align: center; font-weight: bold; padding: 3px; font-size: 11pt;">សរុប</td>
+              <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(khSum)}</td>
               <td></td>
-              <td style="text-align: center; font-weight: bold;">${esc(mathSum)}</td>
+              <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(mathSum)}</td>
               <td></td>
-              <td style="text-align: center; font-weight: bold;">${esc(sciSum)}</td>
+              <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(sciSum)}</td>
               <td></td>
-              <td style="text-align: center; font-weight: bold;">${esc(socSum)}</td>
+              <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(socSum)}</td>
               <td></td>
-              <td style="text-align: center; font-weight: bold;">${esc(engSum)}</td>
+              <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(engSum)}</td>
               <td></td>
               <td></td>
             </tr>
             <tr>
-              <td colspan="3" style="text-align: center; font-weight: bold; padding: 3px;">ខូច និងបាត់</td>
+              <td colspan="3" style="text-align: center; font-weight: bold; padding: 3px; font-size: 11pt;">ខូច និងបាត់</td>
               <td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td>
             </tr>
             <tr>
-              <td colspan="3" style="text-align: center; font-weight: bold; padding: 3px;">ប្រើប្រាស់កើត</td>
-              <td style="text-align: center; font-weight: bold;">${esc(khSum)}</td>
+              <td colspan="3" style="text-align: center; font-weight: bold; padding: 3px; font-size: 11pt;">ប្រើប្រាស់កើត</td>
+              <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(khSum)}</td>
               <td></td>
-              <td style="text-align: center; font-weight: bold;">${esc(mathSum)}</td>
+              <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(mathSum)}</td>
               <td></td>
-              <td style="text-align: center; font-weight: bold;">${esc(sciSum)}</td>
+              <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(sciSum)}</td>
               <td></td>
-              <td style="text-align: center; font-weight: bold;">${esc(socSum)}</td>
+              <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(socSum)}</td>
               <td></td>
-              <td style="text-align: center; font-weight: bold;">${esc(engSum)}</td>
+              <td style="text-align: center; font-weight: bold; font-size: 11pt;">${esc(engSum)}</td>
               <td></td>
               <td></td>
             </tr>
@@ -14045,13 +14045,11 @@ class ScoreManagementApp {
 
     const evaluated = gradeStudents.map(stu => {
       const res = resultMap.get(stu.id);
-      const originalClass = stu.oldClass || stu.initialClass || stu.class || '';
       return {
         studentId: stu.id,
         khmerName: stu.khmerName || '',
         gender: stu.gender || '',
-        oldClass: originalClass,
-        currentClass: stu.class || '',
+        oldClass: stu.class || '',
         total: res ? res.total : 0,
         average: res ? res.average : 0,
         rank: res ? res.rank : 1,
@@ -14559,7 +14557,7 @@ class ScoreManagementApp {
           <tr>
             <td style="text-align:center;">${idx + 1}</td>
             <td style="text-align:center; font-weight:700;">${stu.studentId}</td>
-            <td style="font-weight:600;">${stu.khmerName}</td>
+            <td style="font-weight:600; text-align:left;">${stu.khmerName}</td>
             <td style="text-align:center;">${stu.gender}</td>
             <td style="text-align:center;">${stu.average.toFixed(2)}</td>
             <td style="text-align:center;">${stu.rank}</td>
@@ -14571,33 +14569,76 @@ class ScoreManagementApp {
 
       pagesHtml += `
         <div class="sheet" style="${pageIdx > 0 ? 'page-break-before: always;' : ''}">
-          <div style="text-align:center; font-family:'Khmer OS Muol Light','Moul',serif; font-size:13pt; line-height:1.6;">
-            ព្រះរាជាណាចក្រកម្ពុជា<br>ជាតិ សាសនា ព្រះមហាក្សត្រ
+          <!-- Header Table: School meta on left, Kingdom motto on right like official student lists -->
+          <table class="header-table" style="width: 100%; border-collapse: collapse; border: none; margin-bottom: 6px;">
+            <tr style="border: none;">
+              <td style="border: none; width: 45%; vertical-align: top; text-align: left; padding: 0;">
+                <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 10.5pt; line-height: 1.5;">
+                  <div>មន្ទីរអប់រំ យុវជន និងកីឡា</div>
+                  <div>ខេត្តសៀមរាប</div>
+                  <div>វិទ្យាល័យ ២៨ មករា</div>
+                </div>
+              </td>
+              <td style="border: none; width: 10%; padding: 0;"></td>
+              <td style="border: none; width: 45%; vertical-align: top; text-align: center; padding: 0;">
+                <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 11pt; line-height: 1.5;">
+                  <div>ព្រះរាជាណាចក្រកម្ពុជា</div>
+                  <div>ជាតិ សាសនា ព្រះមហាក្សត្រ</div>
+                  <div style="margin-top: 3px; line-height: 1;">
+                    <img src="${this.getKhmerHeaderDivider()}" style="height: 12px; width: auto; max-width: 145px; object-fit: contain; vertical-align: middle;" alt="divider">
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </table>
+
+          <!-- Center Title -->
+          <div style="text-align: center; margin: 8px 0 6px 0;">
+            <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 12.5pt; line-height: 1.4;">
+              បញ្ជីរាយនាមសិស្សបែងចែកថ្នាក់ថ្មី - ថ្នាក់ទី ${clsName} (${gradeLabel})
+            </div>
+            <div style="font-size: 10.5pt; margin-top: 3px; color: #1e293b;">
+              ដំណាក់កាល៖ <strong>${stageTitle}</strong> | ឆ្នាំសិក្សា៖ <strong>${this.activeYear}</strong>
+            </div>
           </div>
-          <div style="text-align:center; font-family:'Khmer OS Muol Light','Moul',serif; font-size:12pt; margin: 10px 0 4px;">
-            បញ្ជីរាយនាមសិស្សបែងចែកថ្នាក់ថ្មី - ថ្នាក់ទី ${clsName} (${gradeLabel})
-          </div>
-          <div style="text-align:center; font-size:10.5pt; margin-bottom:10px;">
-            ដំណាក់កាល៖ ${stageTitle} | ឆ្នាំសិក្សា៖ ${this.activeYear}
-          </div>
-          <table>
+
+          <!-- Main Student Table -->
+          <table class="report-table">
             <thead>
               <tr>
-                <th style="width:45px;">ល.រ</th>
-                <th style="width:95px;">អត្តលេខ</th>
+                <th style="width: 40px;">ល.រ</th>
+                <th style="width: 90px;">អត្តលេខ</th>
                 <th>គោត្តនាម និងនាមខ្លួន</th>
-                <th style="width:60px;">ភេទ</th>
-                <th style="width:85px;">មធ្យមភាគ</th>
-                <th style="width:85px;">ចំណាត់ថ្នាក់</th>
-                <th style="width:85px;">ថ្នាក់ចាស់</th>
-                <th style="width:85px;">ថ្នាក់ថ្មី</th>
+                <th style="width: 50px;">ភេទ</th>
+                <th style="width: 75px;">មធ្យមភាគ</th>
+                <th style="width: 75px;">ចំណាត់ថ្នាក់</th>
+                <th style="width: 75px;">ថ្នាក់ចាស់</th>
+                <th style="width: 75px;">ថ្នាក់ថ្មី</th>
               </tr>
             </thead>
             <tbody>${rowsHtml}</tbody>
           </table>
-          <div style="margin-top:10px; font-weight:700; font-size:10.5pt;">
-            បិទបញ្ចប់បញ្ជីត្រឹមសិស្សសរុបចំនួន៖ ${clsStudents.length} នាក់ (ស្រី៖ ${femaleCount} នាក់)
+
+          <!-- Footer: Stop line and official 2-column signature blocks like student lists -->
+          <div style="margin-top: 10px; font-weight: 700; font-size: 10.5pt; font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif;">
+            បានបញ្ឈប់ត្រឹមលេខរៀងទី ${clsStudents.length} ស្រី ${femaleCount} នាក់
           </div>
+
+          <table class="footer-table" style="width: 100%; border-collapse: collapse; border: none; margin-top: 14px; font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif; font-size: 10pt; line-height: 1.5; page-break-inside: avoid;">
+            <tr style="border: none;">
+              <td style="border: none; width: 50%; padding: 0 4px; text-align: center; vertical-align: top;">
+                <div style="font-size: 10pt;">បានឃើញ និង ឯកភាព</div>
+                <div style="font-size: 9.5pt; margin-top: 2px;">ថ្ងៃ.............. ខែ........ ឆ្នាំ២០.....</div>
+                <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 10.5pt; margin-top: 4px;">នាយកសាលា</div>
+                <div style="height: 60px;"></div>
+              </td>
+              <td style="border: none; width: 50%; padding: 0 4px; text-align: center; vertical-align: top;">
+                <div style="font-size: 9.5pt;">ស្រីស្នំ, ថ្ងៃទី........ ខែ........ ឆ្នាំ២០.....</div>
+                <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 10.5pt; margin-top: 4px;">អ្នករៀបចំ</div>
+                <div style="height: 60px;"></div>
+              </td>
+            </tr>
+          </table>
         </div>
       `;
     });
@@ -14610,11 +14651,18 @@ class ScoreManagementApp {
         <title>បញ្ជីបែងចែកថ្នាក់ថ្មី - ${gradeLabel}</title>
         <link href="https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;600;700&family=Moul&display=swap" rel="stylesheet">
         <style>
-          body { font-family: 'Khmer OS Siemreap', 'Kantumruy Pro', sans-serif; margin: 12mm; color: #000; }
-          table { width: 100%; border-collapse: collapse; font-size: 10.5pt; }
-          th, td { border: 1px solid #000; padding: 5px 8px; }
-          th { background: #f1f5f9; text-align: center; font-weight: 700; }
-          @media print { body { margin: 8mm; } }
+          @page { size: A4 portrait; margin: 10mm 12mm 10mm 12mm; }
+          body { font-family: 'Khmer OS Siemreap', 'Kantumruy Pro', sans-serif; margin: 0; color: #000; font-size: 10.5pt; }
+          .sheet { padding: 4mm 0; }
+          .header-table td, .footer-table td { border: none !important; }
+          table.report-table { width: 100%; border-collapse: collapse; font-size: 10.5pt; margin-top: 6px; }
+          table.report-table th, table.report-table td { border: 1px solid #000; padding: 4px 6px; }
+          table.report-table th { background: #f8fafc; text-align: center; font-weight: 700; }
+          @media print {
+            body { margin: 0; }
+            .sheet { page-break-after: always; }
+            .sheet:last-child { page-break-after: auto; }
+          }
         </style>
       </head>
       <body>

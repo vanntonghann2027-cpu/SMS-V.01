@@ -926,7 +926,7 @@ button {
   border: 1px solid #000000;
 }
 .book-lending-table {
-  font-size: 8.5pt !important;
+  font-size: 11pt !important;
   font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif !important;
   width: 100% !important;
 }
@@ -935,31 +935,32 @@ button {
   border: 1px solid #000000 !important;
   padding: 2.5px 3px !important;
   color: #000000 !important;
+  font-size: 11pt !important;
 }
 .book-lending-table th {
   background-color: #f8fafc !important;
   font-weight: bold !important;
   text-align: center !important;
-}
-.book-lending-table.grade10-book-table {
-  font-size: 7.8pt !important;
+  font-size: 10.5pt !important;
 }
 .book-lending-table.grade10-book-table th,
 .book-lending-table.grade10-book-table td {
   padding: 2px 1.5px !important;
-}
-.book-lending-table.grade11-12-book-table {
-  font-size: 7.2pt !important;
+  font-size: 11pt !important;
 }
 .book-lending-table.grade11-12-book-table th,
 .book-lending-table.grade11-12-book-table td {
   padding: 1.5px 1px !important;
+  font-size: 11pt !important;
 }
 .book-lending-table td.book-student-name,
 .book-lending-table tbody td:nth-child(2) {
   font-size: 11pt !important;
   font-weight: 600 !important;
   white-space: nowrap !important;
+}
+.book-lending-table tbody td {
+  font-size: 11pt !important;
 }
 .book-lending-footer-wrapper {
   margin-top: 10px;
