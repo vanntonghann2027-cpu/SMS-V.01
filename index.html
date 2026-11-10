@@ -378,8 +378,9 @@
                   style="color: #7c3aed; border-color: #c4b5fd; background: #f5f3ff; font-weight: 700;">
                   <i class="ri-mic-line" style="color: #8b5cf6;"></i> <span>បញ្ចូលដោយសម្លេង</span>
                 </button>
-                <button id="btnExportPeriodExcel" class="btn btn-outline" title="នាំចេញតារាងពិន្ទុជាឯកសារ Excel">
-                  <i class="ri-file-excel-line"></i> <span>នាំចេញតារាងពិន្ទុ</span>
+                <button id="btnExportPeriodExcel" class="btn btn-outline" title="នាំចេញតារាងពិន្ទុជាឯកសារ Excel (.xlsx)"
+                  style="color: #047857; border-color: #6ee7b7; background: #ecfdf5; font-weight: 700;">
+                  <i class="ri-file-excel-2-line" style="color: #10b981;"></i> <span>នាំចេញជា Excel (.xlsx)</span>
                 </button>
                 <button id="btnOpenScoreTransferQuick" class="btn btn-outline"
                   title="ផ្ទេរ ឬចម្លងពិន្ទុរវាងខែ ឬសម័យប្រឡង"
@@ -638,10 +639,18 @@
               ប្រព័ន្ធត្រូវបានកំណត់ឱ្យបញ្ចូលពិន្ទុតែខែ «...» ប៉ុណ្ណោះ។</span>
           </div>
 
-          <div class="period-helper-banner" id="periodHelperBanner">
-            <i class="ri-information-line"></i>
-            <span id="periodHelperText">សូមបញ្ចូលពិន្ទុតាមមុខវិជ្ជានីមួយៗ។ ប្រព័ន្ធនឹងគណនាពិន្ទុសរុប មធ្យមភាគ
-              ចំណាត់ថ្នាក់ និងនិទ្ទេសដោយស្វ័យប្រវត្តិ។</span>
+          <div class="period-helper-banner" id="periodHelperBanner"
+            style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; flex: 1; min-width: 250px;">
+              <i class="ri-information-line"></i>
+              <span id="periodHelperText">សូមបញ្ចូលពិន្ទុតាមមុខវិជ្ជានីមួយៗ។ ប្រព័ន្ធនឹងគណនាពិន្ទុសរុប មធ្យមភាគ
+                ចំណាត់ថ្នាក់ និងនិទ្ទេសដោយស្វ័យប្រវត្តិ។</span>
+            </div>
+            <button id="btnExportPeriodExcelQuick" class="btn btn-sm btn-outline"
+              title="នាំចេញតារាងពិន្ទុខែ/សម័យនេះជា Excel (.xlsx) ភ្លាមៗ"
+              style="color: #047857; border-color: #6ee7b7; background: #ffffff; font-weight: 700; white-space: nowrap; display: inline-flex; align-items: center; gap: 0.35rem; box-shadow: 0 1px 2px rgba(0,0,0,0.05); cursor: pointer; padding: 0.35rem 0.75rem; border-radius: 6px;">
+              <i class="ri-file-excel-2-line" style="color: #10b981;"></i> <span>នាំចេញ Excel</span>
+            </button>
           </div>
 
           <div class="data-table-container score-table-container">

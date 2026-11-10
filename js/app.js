@@ -5600,9 +5600,18 @@ class ScoreManagementApp {
         this.openExportStudentModal();
       });
     }
-    document.getElementById('btnExportPeriodExcel').addEventListener('click', () => {
-      this.exportPeriodScoresCSV();
-    });
+    const btnExportPeriodExcel = document.getElementById('btnExportPeriodExcel');
+    if (btnExportPeriodExcel) {
+      btnExportPeriodExcel.addEventListener('click', () => {
+        this.exportPeriodScoresExcel();
+      });
+    }
+    const btnExportPeriodExcelQuick = document.getElementById('btnExportPeriodExcelQuick');
+    if (btnExportPeriodExcelQuick) {
+      btnExportPeriodExcelQuick.addEventListener('click', () => {
+        this.exportPeriodScoresExcel();
+      });
+    }
 
     // Reset Prompt
     document.getElementById('btnResetDataPrompt').addEventListener('click', async () => {
@@ -6974,17 +6983,20 @@ class ScoreManagementApp {
       coef = 0;
     }
 
-    if (isBonus && isNationalExamGrade && isForeignLang) {
-      // MoEYS Cambodia Rule for Grade 9 & 12 national exam bonus language:
-      // Score - 25, whatever remains > 0 is added to total. (If score <= 25 => 0 bonus).
+    if (isBonus || (isNationalExamGrade && isForeignLang)) {
+      // MoEYS Cambodia Rule for Grade 9 & 12 national exam language:
+      // Foreign language does NOT have a coefficient (coef = 0).
+      // Points added = Math.max(0, val - 25).
       const bonusPoints = Math.max(0, val - 25);
       return { weighted: bonusPoints, coef: 0, isBonus: true };
     } else if (isBonus) {
-      // General bonus rule if enabled for any other subject: added directly with 0 coef
+      // General bonus rule: added directly with 0 coef
       return { weighted: val, coef: 0, isBonus: true };
     }
 
-    return { weighted: val * coef, coef: coef, isBonus: false };
+    // Direct score contribution: in Cambodian schools, test scores already reflect the scale (50 * coef).
+    // Coef is counted into total coefficients divisor when score > 0 per user requirement.
+    return { weighted: val, coef: (val > 0 ? coef : 0), isBonus: false };
   }
 
   renderCurriculumScoreSelect(currentVal, className) {
@@ -9575,22 +9587,6 @@ class ScoreManagementApp {
     const isGrade789 = ['grade_7', 'grade_8', 'grade_9'].includes(matchedGradeKey) || /^grade_[789]/.test(matchedGradeKey);
     const hasKhmer = activeSubjects.some(s => s.code === 'kh');
 
-    let totalMaxCoef = 0;
-    let totalPossibleRaw = 0;
-
-    activeSubjects.forEach(s => {
-      if (s.scoreType === 'none') return;
-      // In Grade 7, 8, 9, Khmer = Dictation + Essay, and Khmer (100 * 2) is the parent subject.
-      // Dictation and Essay are subcomponents that feed into Khmer, so avoid double-counting in grand total.
-      if (isGrade789 && hasKhmer && (s.code === 'kh_dict' || s.code === 'kh_essay')) return;
-      totalMaxCoef += s.coef;
-      if (!s.isBonus) {
-        totalPossibleRaw += (s.maxScore * s.coef);
-      } else {
-        totalPossibleRaw += Math.max(0, s.maxScore - 25);
-      }
-    });
-
     const results = this.students
       .filter(stu => this.studentMatchesGrade(stu, this.activeClass) && !this.isIncompleteLateStudent(stu))
       .map(stu => {
@@ -9602,13 +9598,18 @@ class ScoreManagementApp {
           studentScores = (this.scores[stu.id] && (this.scores[stu.id]['test_early'] || this.scores[stu.id]['year_start_test'])) || {};
         }
         let totalWeighted = 0;
+        let totalCoef = 0;
+        let totalMaxPossible = 0;
 
-        // Auto-compute Khmer for Grade 7, 8, 9
+        // Auto-compute Khmer for Grade 7, 8, 9:
+        // Khmer (100) = Dictation (40) + Essay (60)
         if (isGrade789 && hasKhmer) {
-          const dictVal = this.getSubjectScore(studentScores, 'kh_dict');
-          const essayVal = this.getSubjectScore(studentScores, 'kh_essay');
-          if (dictVal !== undefined || essayVal !== undefined) {
-            const khSum = (dictVal || 0) + (essayVal || 0);
+          const dictRaw = this.getSubjectScore(studentScores, 'kh_dict');
+          const essayRaw = this.getSubjectScore(studentScores, 'kh_essay');
+          if (dictRaw !== undefined || essayRaw !== undefined) {
+            const dictVal = parseFloat(dictRaw) || 0;
+            const essayVal = parseFloat(essayRaw) || 0;
+            const khSum = Math.round((dictVal + essayVal) * 100) / 100;
             studentScores['kh'] = khSum;
             studentScores['K'] = khSum;
             if (this.scores[stu.id] && this.scores[stu.id][period]) {
@@ -9620,21 +9621,36 @@ class ScoreManagementApp {
 
         activeSubjects.forEach(sub => {
           if (sub.scoreType === 'none') return;
-          if (isGrade789 && hasKhmer && (sub.code === 'kh_dict' || sub.code === 'kh_essay')) return;
-          const val = this.getSubjectScore(studentScores, sub.code);
-          if (val !== undefined && val !== null && val !== '') {
-            const contrib = this.computeSubjectScoreContribution(val, sub, matchedGradeKey, isSemester);
+
+          // Rule for Grade 7, 8, 9:
+          // Do NOT add Dictation, Essay, or Reading Speed into Total Score.
+          // Sum starts from Khmer Language ('kh') to the last subject.
+          if (isGrade789 && (sub.code === 'kh_dict' || sub.code === 'kh_essay' || sub.code === 'reading_speed')) {
+            return;
+          }
+
+          const rawVal = this.getSubjectScore(studentScores, sub.code);
+          if (rawVal !== undefined && rawVal !== null && rawVal !== '' && !isNaN(parseFloat(rawVal))) {
+            const contrib = this.computeSubjectScoreContribution(rawVal, sub, matchedGradeKey, isSemester);
             totalWeighted += contrib.weighted;
+            totalCoef += contrib.coef;
+            if (contrib.coef > 0) {
+              totalMaxPossible += (sub.maxScore || (contrib.coef * 50));
+            } else if (contrib.isBonus) {
+              totalMaxPossible += Math.max(0, (sub.maxScore || 50) - 25);
+            }
           }
         });
 
-        // Percentage out of 100%
-        const percentage = totalPossibleRaw > 0 ? (totalWeighted / totalPossibleRaw) * 100 : 0;
-
         // Standard Cambodian Average: Total weighted divided by total coefficients
-        const average = totalMaxCoef > 0 ? (totalWeighted / totalMaxCoef) : 0;
+        const average = totalCoef > 0 ? (totalWeighted / totalCoef) : 0;
 
-        // Cambodian MoEYS Mention System
+        // Percentage out of 100% (based on base of 50 or totalMaxPossible)
+        const percentage = totalMaxPossible > 0
+          ? (totalWeighted / totalMaxPossible) * 100
+          : (totalCoef > 0 ? (average / 50) * 100 : 0);
+
+        // Cambodian MoEYS Mention System (Passing is average >= 25, percentage >= 50%)
         let mention = 'F';
         let mentionKhmer = 'ខ្សោយ';
         if (percentage >= 85) { mention = 'A'; mentionKhmer = 'ល្អប្រសើរ'; }
@@ -9648,9 +9664,9 @@ class ScoreManagementApp {
 
         return {
           student: stu,
-          total: totalWeighted,
-          average: average,
-          percentage: percentage,
+          total: Math.round(totalWeighted * 100) / 100,
+          average: Math.round(average * 100) / 100,
+          percentage: Math.round(percentage * 100) / 100,
           mention: mention,
           mentionKhmer: mentionKhmer,
           isPassed: isPassed
@@ -13197,36 +13213,150 @@ class ScoreManagementApp {
   }
 
   exportPeriodScoresCSV() {
+    this.exportPeriodScoresExcel();
+  }
+
+  exportPeriodScoresExcel() {
     const period = this.currentPeriod;
-    const periodMeta = PERIOD_DEFINITIONS[period];
+    const periodMeta = PERIOD_DEFINITIONS[period] || { title: period };
     const activeSubjects = this.subjects.filter(s => s.enabled);
     const results = this.calculatePeriodResults(period);
+    const matchedGradeKey = this.detectCurriculumGradeKey(this.activeClass);
+    const isGrade789 = ['grade_7', 'grade_8', 'grade_9'].includes(matchedGradeKey) || /^grade_[789]/.test(matchedGradeKey);
+    const classLabel = typeof this.getClassLabel === 'function' ? this.getClassLabel(this.activeClass) : (this.activeClass || 'ថ្នាក់');
 
-    let csv = '\uFEFF'; // UTF-8 BOM
-    csv += `ចំណាត់ថ្នាក់,អត្តលេខ,គោត្តនាមនិងនាម,ភេទ,`;
+    const titleRow1 = ['ព្រះរាជាណាចក្រកម្ពុជា ជាតិ សាសនា ព្រះមហាក្សត្រ'];
+    const titleRow2 = [`តារាងពិន្ទុ និងចំណាត់ថ្នាក់សិស្ស - ${periodMeta.title || period}`];
+    const titleRow3 = [`កម្រិតថ្នាក់៖ ${classLabel} | ឆ្នាំសិក្សា៖ ${this.academicYear || '២០២៥ - ២០២៦'} | ចំនួនសិស្សសរុប៖ ${results.length} នាក់ | កាលបរិច្ឆេទនាំចេញ៖ ${new Date().toLocaleDateString('km-KH')}`];
+    const emptyRow = [];
+
+    // Header row
+    const headerRow = [
+      'ចំណាត់ថ្នាក់',
+      'អត្តលេខ',
+      'គោត្តនាម-នាម',
+      'ភេទ'
+    ];
+
     activeSubjects.forEach(s => {
-      csv += `"${s.name} (${s.maxScore}x${s.coef})",`;
+      let subInfo = s.name;
+      if (s.scoreType === 'none') {
+        subInfo += ' (មិនយកពិន្ទុ)';
+      } else if (s.isBonus) {
+        subInfo += ' (ពិន្ទុបន្ថែម)';
+      } else {
+        subInfo += ` (${s.maxScore}×${s.coef})`;
+      }
+      headerRow.push(subInfo);
     });
-    csv += 'ពិន្ទុសរុប,មធ្យមភាគ,និទ្ទេស,លទ្ធផល\n';
 
-    results.forEach(item => {
+    headerRow.push('ពិន្ទុសរុប', 'មធ្យមភាគ', 'ភាគរយ', 'និទ្ទេស', 'លទ្ធផល');
+
+    // Data rows
+    const dataRows = results.map(item => {
       const stu = item.student;
-      csv += `"${item.rank}","${stu.id}","${stu.khmerName}","${stu.gender}",`;
+      let stuScores = {};
+      if (this.scores[stu.id]) {
+        stuScores = this.scores[stu.id][period] || {};
+        if (period === 'test_early' && !this.scores[stu.id]['test_early'] && this.scores[stu.id]['year_start_test']) {
+          stuScores = this.scores[stu.id]['year_start_test'] || {};
+        }
+      }
+
+      const row = [
+        item.rank,
+        stu.id,
+        stu.khmerName || '',
+        stu.gender || ''
+      ];
+
       activeSubjects.forEach(s => {
-        const val = this.scores[stu.id]?.[period]?.[s.code] || 0;
-        csv += `"${val}",`;
+        let val = this.getSubjectScore(stuScores, s.code);
+        if (isGrade789 && s.code === 'kh') {
+          const dictRaw = this.getSubjectScore(stuScores, 'kh_dict');
+          const essayRaw = this.getSubjectScore(stuScores, 'kh_essay');
+          if (dictRaw !== undefined || essayRaw !== undefined) {
+            val = (parseFloat(dictRaw) || 0) + (parseFloat(essayRaw) || 0);
+          }
+        }
+        if (val !== undefined && val !== null && val !== '' && !isNaN(parseFloat(val))) {
+          row.push(parseFloat(val));
+        } else {
+          row.push('');
+        }
       });
-      csv += `"${item.total.toFixed(1)}","${item.average.toFixed(2)}","${item.mention}","${item.isPassed ? 'ជាប់' : 'ធ្លាក់'}"\n`;
+
+      row.push(
+        item.total,
+        item.average,
+        `${item.percentage}%`,
+        item.mentionKhmer || item.mention,
+        item.isPassed ? 'ជាប់' : 'ធ្លាក់'
+      );
+
+      return row;
     });
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `ពិន្ទុ_${periodMeta.title.replace(/[\/\s()]/g, '_')}_${this.activeClass}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    this.showToast('បានទាញយកតារាងពិន្ទុរួចរាល់!', 'success');
+    // Statistics / Summary rows
+    const totalCount = results.length;
+    const femaleCount = results.filter(r => r.student.gender === 'ស្រី' || r.student.gender === 'F').length;
+    const passedCount = results.filter(r => r.isPassed).length;
+    const passedRate = totalCount > 0 ? ((passedCount / totalCount) * 100).toFixed(1) : '0';
+    const failedCount = totalCount - passedCount;
+    const failedRate = totalCount > 0 ? ((failedCount / totalCount) * 100).toFixed(1) : '0';
+    const classAvg = totalCount > 0 ? (results.reduce((acc, r) => acc + (r.average || 0), 0) / totalCount).toFixed(2) : '0.00';
+
+    const statRows = [
+      [],
+      ['--- ស្ថិតិសង្ខេបប្រចាំថ្នាក់ ---'],
+      [`សិស្សសរុប៖ ${totalCount} នាក់ (ស្រី ${femaleCount} នាក់)`],
+      [`សិស្សជាប់មធ្យមភាគ (>= 50%)៖ ${passedCount} នាក់ (${passedRate}%)`],
+      [`សិស្សក្រោមមធ្យមភាគ (< 50%)៖ ${failedCount} នាក់ (${failedRate}%)`],
+      [`មធ្យមភាគថ្នាក់សរុប៖ ${classAvg}`]
+    ];
+
+    const allRows = [
+      titleRow1,
+      titleRow2,
+      titleRow3,
+      emptyRow,
+      headerRow,
+      ...dataRows,
+      ...statRows
+    ];
+
+    const safePeriodTitle = (periodMeta.title || period).replace(/[\\/:*?"<>|]/g, '_');
+    const safeClass = String(this.activeClass || 'grade').replace(/[\\/:*?"<>|]/g, '_');
+    const filename = `តារាងពិន្ទុ_${safePeriodTitle}_${safeClass}_${new Date().toISOString().slice(0, 10)}`;
+
+    if (typeof XLSX !== 'undefined') {
+      const ws = XLSX.utils.aoa_to_sheet(allRows);
+
+      // Auto column widths
+      ws['!cols'] = headerRow.map((c, i) => {
+        let maxLen = String(c).length;
+        dataRows.forEach(r => {
+          const l = String(r[i] ?? '').length;
+          if (l > maxLen) maxLen = l;
+        });
+        return { wch: Math.min(40, Math.max(8, maxLen + 3)) };
+      });
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, safePeriodTitle.slice(0, 30));
+      XLSX.writeFile(wb, `${filename}.xlsx`);
+      this.showToast('បាននាំចេញតារាងពិន្ទុជាឯកសារ Excel (.xlsx) ដោយជោគជ័យ!', 'success');
+    } else {
+      // Fallback CSV
+      const csv = '\uFEFF' + allRows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `${filename}.csv`;
+      a.click();
+      URL.revokeObjectURL(a.href);
+      this.showToast('បាននាំចេញតារាងពិន្ទុជាឯកសារ CSV ដោយជោគជ័យ!', 'success');
+    }
   }
 
   // ==========================================================================
