@@ -6086,6 +6086,10 @@ class ScoreManagementApp {
         this.toggleShowStudentInfo(e.target.checked);
       });
     }
+    const btnFillEmptySecretScores = document.getElementById('btnFillEmptySecretScores');
+    if (btnFillEmptySecretScores) {
+      btnFillEmptySecretScores.addEventListener('click', () => this.fillEmptyScoreInputsWithZero('secret'));
+    }
 
     // Sub-view: By Secret Code with Voice (បញ្ចូលតាមអក្សរសម្ងាត់ ដោយប្រើសម្លេង)
     if (this.btnFetchVoiceSecretRoomScores) {
@@ -6108,6 +6112,10 @@ class ScoreManagementApp {
       this.chkShowStudentInfoVoiceSecret.addEventListener('change', (e) => {
         this.toggleShowStudentInfo(e.target.checked);
       });
+    }
+    const btnFillEmptyVoiceSecretScores = document.getElementById('btnFillEmptyVoiceSecretScores');
+    if (btnFillEmptyVoiceSecretScores) {
+      btnFillEmptyVoiceSecretScores.addEventListener('click', () => this.fillEmptyScoreInputsWithZero('voiceSecret'));
     }
     if (this.voiceSecretScorePeriodSelect) {
       this.voiceSecretScorePeriodSelect.addEventListener('change', (e) => {
@@ -6173,6 +6181,10 @@ class ScoreManagementApp {
       this.chkShowStudentInfoVoiceNameSecret.addEventListener('change', (e) => {
         this.toggleShowStudentInfo(e.target.checked);
       });
+    }
+    const btnFillEmptyVoiceNameSecretScores = document.getElementById('btnFillEmptyVoiceNameSecretScores');
+    if (btnFillEmptyVoiceNameSecretScores) {
+      btnFillEmptyVoiceNameSecretScores.addEventListener('click', () => this.fillEmptyScoreInputsWithZero('voiceNameSecret'));
     }
     if (this.btnToggleVoiceNameSecretListening) {
       this.btnToggleVoiceNameSecretListening.addEventListener('click', () => this.toggleVoiceNameSecretListening());
@@ -6244,6 +6256,10 @@ class ScoreManagementApp {
       this.chkShowStudentInfoTouchpadSecret.addEventListener('change', (e) => {
         this.toggleShowStudentInfo(e.target.checked);
       });
+    }
+    const btnFillEmptyTouchpadSecretScores = document.getElementById('btnFillEmptyTouchpadSecretScores');
+    if (btnFillEmptyTouchpadSecretScores) {
+      btnFillEmptyTouchpadSecretScores.addEventListener('click', () => this.fillEmptyScoreInputsWithZero('touchpadSecret'));
     }
     if (this.touchpadSecretScorePeriodSelect) {
       this.touchpadSecretScorePeriodSelect.addEventListener('change', (e) => {
@@ -15660,6 +15676,66 @@ class ScoreManagementApp {
     this.showToast(`បានទាញយកបញ្ជីសិស្ស (${studentsInRoom.length} នាក់) សម្រាប់ ${periodTitle} រួចរាល់!`, 'success');
   }
 
+  // Persist one secret-code-entered score into app state
+  saveSecretInputValue(input, num) {
+    if (!input) return;
+    const sId = input.getAttribute('data-stuid');
+    const subKey = input.getAttribute('data-subkey');
+    const subCode = input.getAttribute('data-subcode');
+    const pKey = this.activeScorePeriod || this.getActiveScoringPeriod(this.currentSecretRoomGrade || 'grade_7');
+    this.setSubjectScore(sId, pKey, subKey, num);
+    if (subCode) this.setSubjectScore(sId, pKey, subCode, num);
+    this.saveState(false, 1800);
+  }
+
+  // Quick fill all empty score inputs with 0 across any secret score subview
+  fillEmptyScoreInputsWithZero(subviewType = 'secret') {
+    let selector = '.secret-score-input-fast';
+    let container = this.secretScoreInputTableBody;
+    let saveFn = (inp, num) => this.saveSecretInputValue(inp, num);
+
+    if (subviewType === 'voiceSecret') {
+      selector = '.voice-secret-score-input';
+      container = this.voiceSecretScoreInputTableBody;
+      saveFn = (inp, num) => this.saveVoiceSecretInputValue(inp, num);
+    } else if (subviewType === 'voiceNameSecret') {
+      selector = '.voice-name-secret-score-input';
+      container = this.voiceNameSecretScoreInputTableBody;
+      saveFn = (inp, num) => this.saveVoiceNameSecretInputValue(inp, num);
+    } else if (subviewType === 'touchpadSecret') {
+      selector = '.touchpad-secret-score-input';
+      container = this.touchpadSecretScoreInputTableBody;
+      saveFn = (inp, num) => this.saveTouchpadSecretInputValue(inp, num);
+    }
+
+    if (!container) return;
+    const inputs = container.querySelectorAll(selector);
+    if (!inputs || inputs.length === 0) {
+      this.showToast('មិនទាន់មានតារាងពិន្ទុឡើយ! សូមទាញយកបញ្ជីតាមអក្សរសម្ងាត់ជាមុនសិន។', 'warning');
+      return;
+    }
+
+    let filledCount = 0;
+    inputs.forEach(inp => {
+      if (inp.disabled) return;
+      const val = inp.value.trim();
+      if (val === '') {
+        inp.value = '0';
+        inp.classList.remove('score-input-invalid');
+        inp.classList.add('score-input-autofilled');
+        saveFn(inp, 0);
+        filledCount++;
+      }
+    });
+
+    if (filledCount > 0) {
+      this.playAudioChime(660, 0.12);
+      this.showToast(`⚡ បានបំពេញពិន្ទុ 0 លើប្រអប់ទទេចំនួន ${filledCount} រួចរាល់! (សិស្សអវត្តមាន)`, 'success');
+    } else {
+      this.showToast('គ្មានប្រអប់ទទេក្នុងតារាងនេះទេ! គ្រប់ប្រអប់សុទ្ធតែមានពិន្ទុរួចហើយ។', 'info');
+    }
+  }
+
   handleSaveSecretRoomScores(clearTable = false) {
     if (!this.secretScoreInputTableBody) return;
     // Determine grade from currently displayed room info
@@ -15685,12 +15761,22 @@ class ScoreManagementApp {
     }
 
     let savedCount = 0;
+    const chkAutoZero = document.getElementById('chkAutoFillEmptyZeroSecret');
+    const autoFillZero = chkAutoZero ? chkAutoZero.checked : true;
+    let autoZeroCount = 0;
 
     inputs.forEach(inp => {
       const sId = inp.getAttribute('data-stuid');
       const subKey = inp.getAttribute('data-subkey');
       const subCode = inp.getAttribute('data-subcode');
-      const val = inp.value.trim();
+      let val = inp.value.trim();
+
+      if (val === '' && autoFillZero) {
+        val = '0';
+        inp.value = '0';
+        inp.classList.add('score-input-autofilled');
+        autoZeroCount++;
+      }
 
       if (val !== '') {
         let numVal = parseFloat(val) || 0;
@@ -15731,6 +15817,8 @@ class ScoreManagementApp {
     this.updateScoreAutoBackupBadge('saved');
     this.updateKPIOverview();
 
+    const autoZeroText = autoZeroCount > 0 ? ` (កំណត់ 0 ស្វ័យប្រវត្តិចំនួន ${autoZeroCount} លើប្រអប់ទទេ)` : '';
+
     if (clearTable) {
       inputs.forEach(inp => {
         inp.style.borderColor = '#16a34a';
@@ -15742,15 +15830,15 @@ class ScoreManagementApp {
           this.inputSearchSecretCode.focus({ preventScroll: true });
           this.inputSearchSecretCode.select();
         }
-        this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! តារាងត្រូវបានសម្អាតរួចរាល់ សម្រាប់បញ្ចូលអក្សរសម្ងាត់បន្ទាប់។`, 'success');
+        this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle})${autoZeroText} ដោយជោគជ័យ! តារាងត្រូវបានសម្អាតរួចរាល់ សម្រាប់បញ្ចូលអក្សរសម្ងាត់បន្ទាប់។`, 'success');
       }, 400);
       return;
     }
 
-    this.showToast(`បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! ទិន្នន័យបាន Auto Backup និងភ្ជាប់ទៅកាន់ «បញ្ចូលពិន្ទុតាមខែ» រួចរាល់។`, 'success');
+    this.showToast(`បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle})${autoZeroText} ដោយជោគជ័យ! ទិន្នន័យបាន Auto Backup និងភ្ជាប់ទៅកាន់ «បញ្ចូលពិន្ទុតាមខែ» រួចរាល់។`, 'success');
 
     if (this.secretScoreStatusText) {
-      this.secretScoreStatusText.innerHTML = `✅ <strong style="color: #15803d; font-size: 1.05rem;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!</strong> (ទិន្នន័យបាន Auto Backup រួចរាល់។ លោកគ្រូអាចត្រួតពិនិត្យពិន្ទុ ឬវាយអក្សរសម្ងាត់ថ្មីខាងលើ)`;
+      this.secretScoreStatusText.innerHTML = `✅ <strong style="color: #15803d; font-size: 1.05rem;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle})${autoZeroText} ដោយជោគជ័យ!</strong> (ទិន្នន័យបាន Auto Backup រួចរាល់។ លោកគ្រូអាចត្រួតពិនិត្យពិន្ទុ ឬវាយអក្សរសម្ងាត់ថ្មីខាងលើ)`;
     }
 
     // Flash inputs with calm green highlight to visually confirm the save
@@ -16899,11 +16987,22 @@ class ScoreManagementApp {
     }
 
     let savedCount = 0;
+    const chkAutoZero = document.getElementById('chkAutoFillEmptyZeroVoiceSecret');
+    const autoFillZero = chkAutoZero ? chkAutoZero.checked : true;
+    let autoZeroCount = 0;
+
     inputs.forEach(inp => {
       const sId = inp.getAttribute('data-stuid');
       const subKey = inp.getAttribute('data-subkey');
       const subCode = inp.getAttribute('data-subcode');
-      const val = inp.value.trim();
+      let val = inp.value.trim();
+
+      if (val === '' && autoFillZero) {
+        val = '0';
+        inp.value = '0';
+        inp.classList.add('score-input-autofilled');
+        autoZeroCount++;
+      }
 
       if (val !== '') {
         let numVal = parseFloat(val) || 0;
@@ -16949,6 +17048,8 @@ class ScoreManagementApp {
     this.updateKPIOverview();
     this.announceVoiceEntrySuccess();
 
+    const autoZeroText = autoZeroCount > 0 ? ` (កំណត់ 0 ស្វ័យប្រវត្តិចំនួន ${autoZeroCount} លើប្រអប់ទទេ)` : '';
+
     if (clearTable) {
       inputs.forEach(inp => {
         inp.style.borderColor = '#16a34a';
@@ -16960,16 +17061,16 @@ class ScoreManagementApp {
           this.inputSearchVoiceSecretCode.focus({ preventScroll: true });
           this.inputSearchVoiceSecretCode.select();
         }
-        this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! តារាងត្រូវបានសម្អាតរួចរាល់ សម្រាប់បញ្ចូលអក្សរសម្ងាត់បន្ទាប់។`, 'success');
+        this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle})${autoZeroText} ដោយជោគជ័យ! តារាងត្រូវបានសម្អាតរួចរាល់ សម្រាប់បញ្ចូលអក្សរសម្ងាត់បន្ទាប់។`, 'success');
       }, 400);
       return;
     }
 
-    this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! ទិន្នន័យបាន Auto Backup និងភ្ជាប់ទៅកាន់ «បញ្ចូលពិន្ទុតាមខែ» រួចរាល់។`, 'success');
+    this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle})${autoZeroText} ដោយជោគជ័យ! ទិន្នន័យបាន Auto Backup និងភ្ជាប់ទៅកាន់ «បញ្ចូលពិន្ទុតាមខែ» រួចរាល់។`, 'success');
 
     // Keep table and all entered scores visible so the teacher can verify their work without anything jumping out!
     if (this.voiceSecretStatusText) {
-      this.voiceSecretStatusText.innerHTML = `✅ <strong style="color: #15803d; font-size: 1.05rem;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!</strong> (ទិន្នន័យបាន Auto Backup រួចរាល់។ លោកគ្រូអាចត្រួតពិនិត្យពិន្ទុ ឬវាយអក្សរសម្ងាត់ថ្មីខាងលើ)`;
+      this.voiceSecretStatusText.innerHTML = `✅ <strong style="color: #15803d; font-size: 1.05rem;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle})${autoZeroText} ដោយជោគជ័យ!</strong> (ទិន្នន័យបាន Auto Backup រួចរាល់។ លោកគ្រូអាចត្រួតពិនិត្យពិន្ទុ ឬវាយអក្សរសម្ងាត់ថ្មីខាងលើ)`;
     }
 
     // Flash inputs with calm green highlight to visually confirm the save
@@ -18779,17 +18880,31 @@ class ScoreManagementApp {
     }
 
     let savedCount = 0;
+    const chkAutoZero = document.getElementById('chkAutoFillEmptyZeroVoiceNameSecret');
+    const autoFillZero = chkAutoZero ? chkAutoZero.checked : true;
+    let autoZeroCount = 0;
+
     inputs.forEach(inp => {
       const sId = inp.getAttribute('data-stuid');
       const subKey = inp.getAttribute('data-subkey');
       const subCode = inp.getAttribute('data-subcode');
-      const val = inp.value.trim();
+      let val = inp.value.trim();
+
+      if (val === '' && autoFillZero) {
+        val = '0';
+        inp.value = '0';
+        inp.classList.add('score-input-autofilled');
+        autoZeroCount++;
+      }
 
       if (val !== '') {
         let numVal = parseFloat(val) || 0;
         this.setSubjectScore(sId, periodKey, subKey, numVal);
         if (subCode) this.setSubjectScore(sId, periodKey, subCode, numVal);
         savedCount++;
+      } else {
+        this.setSubjectScore(sId, periodKey, subKey, null);
+        if (subCode) this.setSubjectScore(sId, periodKey, subCode, null);
       }
     });
 
@@ -18814,6 +18929,8 @@ class ScoreManagementApp {
     this.updateScoreAutoBackupBadge('saved');
     this.updateKPIOverview();
 
+    const autoZeroText = autoZeroCount > 0 ? ` (កំណត់ 0 ស្វ័យប្រវត្តិចំនួន ${autoZeroCount} លើប្រអប់ទទេ)` : '';
+
     if (clearTable) {
       inputs.forEach(inp => {
         inp.style.borderColor = '#0284c7';
@@ -18825,16 +18942,16 @@ class ScoreManagementApp {
           this.inputSearchVoiceNameSecretCode.focus({ preventScroll: true });
           this.inputSearchVoiceNameSecretCode.select();
         }
-        this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! តារាងត្រូវបានសម្អាតរួចរាល់ សម្រាប់បញ្ចូលអក្សរសម្ងាត់បន្ទាប់។`, 'success');
+        this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle})${autoZeroText} ដោយជោគជ័យ! តារាងត្រូវបានសម្អាតរួចរាល់ សម្រាប់បញ្ចូលអក្សរសម្ងាត់បន្ទាប់។`, 'success');
       }, 400);
       return;
     }
 
-    this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! ទិន្នន័យបាន Auto Backup រួចរាល់។`, 'success');
+    this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle})${autoZeroText} ដោយជោគជ័យ! ទិន្នន័យបាន Auto Backup រួចរាល់។`, 'success');
 
     // Keep table and all entered scores visible so the teacher can verify their work without anything jumping out!
     if (this.voiceNameSecretStatusText) {
-      this.voiceNameSecretStatusText.innerHTML = `✅ <strong style="color: #0284c7; font-size: 1.05rem;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!</strong> (ទិន្នន័យបាន Auto Backup រួចរាល់។ លោកគ្រូអាចត្រួតពិនិត្យពិន្ទុ ឬវាយអក្សរសម្ងាត់ថ្មីខាងលើ)`;
+      this.voiceNameSecretStatusText.innerHTML = `✅ <strong style="color: #0284c7; font-size: 1.05rem;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle})${autoZeroText} ដោយជោគជ័យ!</strong> (ទិន្នន័យបាន Auto Backup រួចរាល់។ លោកគ្រូអាចត្រួតពិនិត្យពិន្ទុ ឬវាយអក្សរសម្ងាត់ថ្មីខាងលើ)`;
     }
 
     // Flash inputs with calm highlight to visually confirm the save
@@ -19178,8 +19295,18 @@ class ScoreManagementApp {
 
     const inputs = this.touchpadSecretScoreInputTableBody.querySelectorAll('.touchpad-secret-score-input');
     let savedCount = 0;
+    const chkAutoZero = document.getElementById('chkAutoFillEmptyZeroTouchpadSecret');
+    const autoFillZero = chkAutoZero ? chkAutoZero.checked : true;
+    let autoZeroCount = 0;
+
     inputs.forEach(inp => {
-      const val = inp.value.trim();
+      let val = inp.value.trim();
+      if (val === '' && autoFillZero) {
+        val = '0';
+        inp.value = '0';
+        inp.classList.add('score-input-autofilled');
+        autoZeroCount++;
+      }
       if (val !== '') {
         const num = parseFloat(val);
         if (!isNaN(num)) {
@@ -19215,6 +19342,8 @@ class ScoreManagementApp {
     this.updateScoreAutoBackupBadge('saved');
     this.updateKPIOverview();
 
+    const autoZeroText = autoZeroCount > 0 ? ` (កំណត់ 0 ស្វ័យប្រវត្តិចំនួន ${autoZeroCount} លើប្រអប់ទទេ)` : '';
+
     if (clearTable) {
       inputs.forEach(inp => {
         inp.style.borderColor = '#0d9488';
@@ -19226,16 +19355,16 @@ class ScoreManagementApp {
           this.inputSearchTouchpadSecretCode.focus({ preventScroll: true });
           this.inputSearchTouchpadSecretCode.select();
         }
-        this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ! តារាងត្រូវបានសម្អាតរួចរាល់ សម្រាប់បញ្ចូលអក្សរសម្ងាត់បន្ទាប់។`, 'success');
+        this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle})${autoZeroText} ដោយជោគជ័យ! តារាងត្រូវបានសម្អាតរួចរាល់ សម្រាប់បញ្ចូលអក្សរសម្ងាត់បន្ទាប់។`, 'success');
       }, 400);
       return;
     }
 
-    this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!`, 'success');
+    this.showToast(`🎉 បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle})${autoZeroText} ដោយជោគជ័យ!`, 'success');
 
     // Keep table and all entered scores visible so the teacher can verify their work without anything jumping out!
     if (this.touchpadSecretStatusText) {
-      this.touchpadSecretStatusText.innerHTML = `✅ <strong style="color: #0d9488; font-size: 1.05rem;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle}) ដោយជោគជ័យ!</strong> (ទិន្នន័យបាន Auto Backup រួចរាល់។ លោកគ្រូអាចត្រួតពិនិត្យពិន្ទុ ឬវាយអក្សរសម្ងាត់ថ្មីខាងលើ)`;
+      this.touchpadSecretStatusText.innerHTML = `✅ <strong style="color: #0d9488; font-size: 1.05rem;">បានរក្សាទុកពិន្ទុ ${savedCount} នាក់ (${periodTitle})${autoZeroText} ដោយជោគជ័យ!</strong> (ទិន្នន័យបាន Auto Backup រួចរាល់។ លោកគ្រូអាចត្រួតពិនិត្យពិន្ទុ ឬវាយអក្សរសម្ងាត់ថ្មីខាងលើ)`;
     }
 
     // Flash inputs with calm highlight to visually confirm the save

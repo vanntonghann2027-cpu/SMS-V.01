@@ -4373,6 +4373,38 @@ body.view-exam-score-active .app-main {
   }
 }
 
+/* Auto-filled 0 for absent student */
+.score-input-autofilled {
+  background-color: #ecfdf5 !important;
+  border-color: #10b981 !important;
+  color: #047857 !important;
+  font-weight: 700 !important;
+  animation: autofillPulse 0.5s ease-out;
+  transition: background-color 0.6s ease, border-color 0.6s ease;
+}
+
+[data-theme="dark"] .score-input-autofilled {
+  background-color: rgba(16, 185, 129, 0.15) !important;
+  border-color: #10b981 !important;
+  color: #34d399 !important;
+}
+
+@keyframes autofillPulse {
+  0% {
+    transform: scale(0.95);
+    background-color: #a7f3d0;
+  }
+  50% {
+    transform: scale(1.08);
+    background-color: #6ee7b7;
+    box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.3);
+  }
+  100% {
+    transform: scale(1);
+    background-color: #ecfdf5;
+  }
+}
+
 /* ==========================================================================
    TOUCHPAD & HANDWRITING MATH SCORE ENTRY WORKSPACE
    ========================================================================== */
