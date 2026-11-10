@@ -7733,7 +7733,7 @@ class ScoreManagementApp {
     }
 
     const makeInput = (field, val, isYear = false) => {
-      const w = isYear ? '44px' : '38px';
+      const w = isYear ? '48px' : '30px';
       const type = isYear ? 'text' : 'number';
       const maxAttr = isYear ? 'maxlength="6" placeholder="ឆ្នាំ"' : 'min="0" max="10"';
       return `<input type="${type}" ${maxAttr} class="book-len-input" data-stu="${esc(s.id)}" data-field="${field}" value="${esc(val)}" style="width:${w}; text-align:center; padding:3px 2px; border:1px solid #cbd5e1; border-radius:4px; font-size:12px; font-weight:600; outline:none; transition:border-color 0.15s;">`;
@@ -7762,33 +7762,33 @@ class ScoreManagementApp {
               <th colspan="2" style="padding: 4px; border-right: 1px solid #e2e8f0; background: #fef9c3; color: #854d0e; font-weight: 700;">សេដ្ឋកិច្ច</th>
               <th rowspan="2" style="width: 75px; padding: 6px 4px;">ស្ថានភាព</th>
             </tr>
-            <tr style="font-size: 11.5px; border-bottom: 1px solid #cbd5e1;">
-              <th style="padding: 3px; width: 38px; border-right: 1px solid #e2e8f0; background: #f0f9ff; color: #0369a1;">ចំនួន</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #f0f9ff; color: #0369a1;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 38px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309;">ចំនួន</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 38px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309;">ចំនួន</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 38px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ចំនួន</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 38px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ចំនួន</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 38px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ចំនួន</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 38px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ចំនួន</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 38px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c;">ចំនួន</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 38px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c;">ចំនួន</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 38px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c;">ចំនួន</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 38px; border-right: 1px solid #e2e8f0; background: #faf5ff; color: #7e22ce;">ចំនួន</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #faf5ff; color: #7e22ce;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 38px; border-right: 1px solid #e2e8f0; background: #f0fdfa; color: #0891b2;">ចំនួន</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #f0fdfa; color: #0891b2;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 38px; border-right: 1px solid #e2e8f0; background: #fefce8; color: #854d0e;">ចំនួន</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #fefce8; color: #854d0e;">ឆ្នាំ</th>
+            <tr style="font-size: 11.5px; height: 38px; border-bottom: 1px solid #cbd5e1;">
+              <th style="padding: 2px 0; width: 22px; border-right: 1px solid #e2e8f0; background: #f0f9ff; color: #0369a1; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 48px; border-right: 1px solid #e2e8f0; background: #f0f9ff; color: #0369a1; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 22px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 48px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 22px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 48px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 22px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 48px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 22px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 48px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 22px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 48px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 22px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 48px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 22px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 48px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 22px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 48px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 22px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 48px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 22px; border-right: 1px solid #e2e8f0; background: #faf5ff; color: #7e22ce; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 48px; border-right: 1px solid #e2e8f0; background: #faf5ff; color: #7e22ce; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 22px; border-right: 1px solid #e2e8f0; background: #f0fdfa; color: #0891b2; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 48px; border-right: 1px solid #e2e8f0; background: #f0fdfa; color: #0891b2; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 22px; border-right: 1px solid #e2e8f0; background: #fefce8; color: #854d0e; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 48px; border-right: 1px solid #e2e8f0; background: #fefce8; color: #854d0e; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
             </tr>
           </thead>`;
     } else if (isGrade10) {
@@ -7810,27 +7810,27 @@ class ScoreManagementApp {
               <th colspan="2" style="padding: 4px; border-right: 1px solid #e2e8f0; background: #f0fdfa; color: #0891b2; font-weight: 700;">ICT</th>
               <th rowspan="2" style="width: 75px; padding: 6px 4px;">ស្ថានភាព</th>
             </tr>
-            <tr style="font-size: 11.5px; border-bottom: 1px solid #cbd5e1;">
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #f0f9ff; color: #0369a1;">ចំនួន</th>
-              <th style="padding: 3px; width: 42px; border-right: 1px solid #e2e8f0; background: #f0f9ff; color: #0369a1;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309;">ចំនួន</th>
-              <th style="padding: 3px; width: 42px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309;">ចំនួន</th>
-              <th style="padding: 3px; width: 42px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ចំនួន</th>
-              <th style="padding: 3px; width: 42px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ចំនួន</th>
-              <th style="padding: 3px; width: 42px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ចំនួន</th>
-              <th style="padding: 3px; width: 42px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ចំនួន</th>
-              <th style="padding: 3px; width: 42px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c;">ចំនួន</th>
-              <th style="padding: 3px; width: 42px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #faf5ff; color: #7e22ce;">ចំនួន</th>
-              <th style="padding: 3px; width: 42px; border-right: 1px solid #e2e8f0; background: #faf5ff; color: #7e22ce;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 40px; border-right: 1px solid #e2e8f0; background: #f0fdfa; color: #0891b2;">ចំនួន</th>
-              <th style="padding: 3px; width: 42px; border-right: 1px solid #e2e8f0; background: #f0fdfa; color: #0891b2;">ឆ្នាំ</th>
+            <tr style="font-size: 11.5px; height: 38px; border-bottom: 1px solid #cbd5e1;">
+              <th style="padding: 2px 0; width: 24px; border-right: 1px solid #e2e8f0; background: #f0f9ff; color: #0369a1; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 50px; border-right: 1px solid #e2e8f0; background: #f0f9ff; color: #0369a1; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 24px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 50px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 24px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 50px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 24px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 50px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 24px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 50px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 24px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 50px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 24px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 50px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 24px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 50px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 24px; border-right: 1px solid #e2e8f0; background: #faf5ff; color: #7e22ce; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 50px; border-right: 1px solid #e2e8f0; background: #faf5ff; color: #7e22ce; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 24px; border-right: 1px solid #e2e8f0; background: #f0fdfa; color: #0891b2; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 50px; border-right: 1px solid #e2e8f0; background: #f0fdfa; color: #0891b2; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
             </tr>
           </thead>`;
     } else {
@@ -7847,17 +7847,17 @@ class ScoreManagementApp {
               <th colspan="2" style="padding: 4px; border-right: 1px solid #e2e8f0; background: #f3e8ff; color: #7e22ce; font-weight: 700;">អង់គ្លេស</th>
               <th rowspan="2" style="width: 80px; padding: 6px 4px;">ស្ថានភាព</th>
             </tr>
-            <tr style="font-size: 11.5px; border-bottom: 1px solid #cbd5e1;">
-              <th style="padding: 3px; width: 48px; border-right: 1px solid #e2e8f0; background: #f0f9ff; color: #0369a1;">ចំនួន</th>
-              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #f0f9ff; color: #0369a1;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 48px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309;">ចំនួន</th>
-              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 48px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ចំនួន</th>
-              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 48px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c;">ចំនួន</th>
-              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c;">ឆ្នាំ</th>
-              <th style="padding: 3px; width: 48px; border-right: 1px solid #e2e8f0; background: #faf5ff; color: #7e22ce;">ចំនួន</th>
-              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #faf5ff; color: #7e22ce;">ឆ្នាំ</th>
+            <tr style="font-size: 11.5px; height: 38px; border-bottom: 1px solid #cbd5e1;">
+              <th style="padding: 2px 0; width: 26px; border-right: 1px solid #e2e8f0; background: #f0f9ff; color: #0369a1; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 52px; border-right: 1px solid #e2e8f0; background: #f0f9ff; color: #0369a1; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 26px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 52px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 26px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 52px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 26px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 52px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+              <th style="padding: 2px 0; width: 26px; border-right: 1px solid #e2e8f0; background: #faf5ff; color: #7e22ce; text-align: center; vertical-align: middle;"><span class="rotate-qty-text" style="font-size: 11px;">ចំនួន</span></th>
+              <th style="padding: 2px; width: 52px; border-right: 1px solid #e2e8f0; background: #faf5ff; color: #7e22ce; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
             </tr>
           </thead>`;
     }
@@ -9257,33 +9257,33 @@ class ScoreManagementApp {
               <th colspan="2" style="text-align: center; vertical-align: middle;">សេដ្ឋកិច្ច</th>
               <th rowspan="2" style="width: 44px; text-align: center; vertical-align: middle;">ហត្ថលេខា</th>
             </tr>
-            <tr>
-              <th style="width: 22px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 24px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 22px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 24px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 22px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 24px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 22px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 24px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 22px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 24px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 22px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 24px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 22px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 24px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 22px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 24px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 22px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 24px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 22px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 24px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 22px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 24px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 22px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 24px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 22px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 24px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+            <tr style="height: 44px;">
+              <th class="book-th-qty" style="width: 18px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 38px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 18px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 38px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 18px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 38px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 18px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 38px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 18px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 38px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 18px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 38px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 18px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 38px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 18px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 38px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 18px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 38px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 18px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 38px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 18px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 38px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 18px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 38px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 18px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 38px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
             </tr>
           </thead>`;
 
@@ -9375,27 +9375,27 @@ class ScoreManagementApp {
               <th colspan="2" style="text-align: center; vertical-align: middle;">ICT</th>
               <th rowspan="2" style="width: 48px; text-align: center; vertical-align: middle;">ហត្ថលេខា</th>
             </tr>
-            <tr>
-              <th style="width: 25px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 27px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 25px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 27px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 25px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 27px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 25px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 27px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 25px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 27px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 25px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 27px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 25px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 27px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 25px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 27px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 25px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 27px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-              <th style="width: 25px; text-align: center; vertical-align: middle;">ចំនួន</th>
-              <th style="width: 27px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+            <tr style="height: 44px;">
+              <th class="book-th-qty" style="width: 20px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 44px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 20px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 44px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 20px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 44px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 20px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 44px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 20px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 44px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 20px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 44px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 20px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 44px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 20px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 44px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 20px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 44px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+              <th class="book-th-qty" style="width: 20px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+              <th class="book-th-year" style="width: 44px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
             </tr>
           </thead>`;
 
@@ -9469,17 +9469,17 @@ class ScoreManagementApp {
             <th colspan="2" style="text-align: center; vertical-align: middle;">អង់គ្លេស</th>
             <th rowspan="2" style="width: 55px; text-align: center; vertical-align: middle;">ហត្ថលេខា</th>
           </tr>
-          <tr>
-            <th style="width: 34px; text-align: center; vertical-align: middle;">ចំនួន</th>
-            <th style="width: 34px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-            <th style="width: 34px; text-align: center; vertical-align: middle;">ចំនួន</th>
-            <th style="width: 34px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-            <th style="width: 34px; text-align: center; vertical-align: middle;">ចំនួន</th>
-            <th style="width: 34px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-            <th style="width: 34px; text-align: center; vertical-align: middle;">ចំនួន</th>
-            <th style="width: 34px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
-            <th style="width: 34px; text-align: center; vertical-align: middle;">ចំនួន</th>
-            <th style="width: 34px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
+          <tr style="height: 44px;">
+            <th class="book-th-qty" style="width: 22px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+            <th class="book-th-year" style="width: 46px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+            <th class="book-th-qty" style="width: 22px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+            <th class="book-th-year" style="width: 46px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+            <th class="book-th-qty" style="width: 22px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+            <th class="book-th-year" style="width: 46px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+            <th class="book-th-qty" style="width: 22px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+            <th class="book-th-year" style="width: 46px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
+            <th class="book-th-qty" style="width: 22px; text-align: center; vertical-align: middle; padding: 1px 0;"><span class="rotate-qty-text">ចំនួន</span></th>
+            <th class="book-th-year" style="width: 46px; text-align: center; vertical-align: middle; padding: 1px 2px;">ឆ្នាំ</th>
           </tr>
         </thead>`;
 
@@ -10108,6 +10108,26 @@ class ScoreManagementApp {
         .grade7-table { font-size: 8.5pt; }
         .grade7-table thead { display: table-row-group; }
         .grade7-table th, .grade7-table td { border: 1px solid #000; padding: 2.5px 3px; }
+        .rotate-qty-text {
+          display: inline-block;
+          writing-mode: vertical-rl;
+          transform: rotate(180deg);
+          white-space: nowrap;
+          font-size: 10.5pt !important;
+          line-height: 1;
+        }
+        .book-lending-table { font-size: 11pt !important; width: 100% !important; border-collapse: collapse !important; }
+        .book-lending-table th, .book-lending-table td { border: 1px solid #000 !important; color: #000 !important; }
+        .book-lending-table th { background: #f8fafc !important; font-weight: 700 !important; text-align: center !important; font-size: 10.5pt !important; }
+        .book-lending-table td { font-size: 11pt !important; white-space: nowrap !important; }
+        .book-lending-table th.book-th-qty { width: 18px !important; min-width: 18px !important; max-width: 22px !important; padding: 1px 0 !important; }
+        .book-lending-table th.book-th-year { width: 38px !important; min-width: 36px !important; padding: 1px 2px !important; }
+        .book-lending-table.grade10-book-table th.book-th-qty { width: 20px !important; min-width: 20px !important; }
+        .book-lending-table.grade10-book-table th.book-th-year { width: 44px !important; min-width: 42px !important; }
+        .book-lending-table.grade7-table th.book-th-qty { width: 22px !important; min-width: 22px !important; }
+        .book-lending-table.grade7-table th.book-th-year { width: 46px !important; min-width: 44px !important; }
+        .book-lending-table.grade10-book-table th, .book-lending-table.grade10-book-table td { padding: 2px 1.5px !important; }
+        .book-lending-table.grade11-12-book-table th, .book-lending-table.grade11-12-book-table td { padding: 1.5px 1px !important; }
         .summary { margin-top: 8px; font-weight: 700; }
         .report-student-cards { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .report-id-card { border: 1.5px solid #1e5a96; border-radius: 10px; padding: 10px; display: flex; gap: 10px; page-break-inside: avoid; }
@@ -10283,19 +10303,19 @@ class ScoreManagementApp {
           { wch: 5 },  // ល.រ
           { wch: 22 }, // គោត្តនាម និង នាម
           { wch: 6 },  // ភេទ
-          { wch: 5 }, { wch: 6 }, // ខ្មែរ
-          { wch: 5 }, { wch: 6 }, // គណិត១
-          { wch: 5 }, { wch: 6 }, // គណិត២
-          { wch: 5 }, { wch: 6 }, // រូប
-          { wch: 5 }, { wch: 6 }, // គីមី
-          { wch: 5 }, { wch: 6 }, // ជីវៈ
-          { wch: 5 }, { wch: 6 }, // ផែនដី
-          { wch: 5 }, { wch: 6 }, // ភូមិ
-          { wch: 5 }, { wch: 6 }, // ប្រវត្តិ
-          { wch: 5 }, { wch: 6 }, // សីលធម៌
-          { wch: 5 }, { wch: 6 }, // អង់គ្លេស
-          { wch: 5 }, { wch: 6 }, // ICT
-          { wch: 5 }, { wch: 6 }, // សេដ្ឋកិច្ច
+          { wch: 4 }, { wch: 8 }, // ខ្មែរ (ចំនួន, ឆ្នាំ)
+          { wch: 4 }, { wch: 8 }, // គណិត១
+          { wch: 4 }, { wch: 8 }, // គណិត២
+          { wch: 4 }, { wch: 8 }, // រូប
+          { wch: 4 }, { wch: 8 }, // គីមី
+          { wch: 4 }, { wch: 8 }, // ជីវៈ
+          { wch: 4 }, { wch: 8 }, // ផែនដី
+          { wch: 4 }, { wch: 8 }, // ភូមិ
+          { wch: 4 }, { wch: 8 }, // ប្រវត្តិ
+          { wch: 4 }, { wch: 8 }, // សីលធម៌
+          { wch: 4 }, { wch: 8 }, // អង់គ្លេស
+          { wch: 4 }, { wch: 8 }, // ICT
+          { wch: 4 }, { wch: 8 }, // សេដ្ឋកិច្ច
           { wch: 9 }   // ហត្ថលេខា
         ];
       } else if (data.isGrade10) {
@@ -10423,16 +10443,16 @@ class ScoreManagementApp {
           { wch: 5 },  // ល.រ
           { wch: 22 }, // គោត្តនាម និង នាម
           { wch: 6 },  // ភេទ
-          { wch: 6 }, { wch: 7 }, // ខ្មែរ
-          { wch: 6 }, { wch: 7 }, // គណិត១
-          { wch: 6 }, { wch: 7 }, // គណិត២
-          { wch: 6 }, { wch: 7 }, // រូប
-          { wch: 6 }, { wch: 7 }, // គីមី
-          { wch: 6 }, { wch: 7 }, // ជីវៈ
-          { wch: 6 }, { wch: 7 }, // ផែនដី
-          { wch: 6 }, { wch: 7 }, // សង្គម
-          { wch: 6 }, { wch: 7 }, // អង់គ្លេស
-          { wch: 6 }, { wch: 7 }, // ICT
+          { wch: 4 }, { wch: 8 }, // ខ្មែរ (ចំនួន, ឆ្នាំ)
+          { wch: 4 }, { wch: 8 }, // គណិត១
+          { wch: 4 }, { wch: 8 }, // គណិត២
+          { wch: 4 }, { wch: 8 }, // រូប
+          { wch: 4 }, { wch: 8 }, // គីមី
+          { wch: 4 }, { wch: 8 }, // ជីវៈ
+          { wch: 4 }, { wch: 8 }, // ផែនដី
+          { wch: 4 }, { wch: 8 }, // សង្គម
+          { wch: 4 }, { wch: 8 }, // អង់គ្លេស
+          { wch: 4 }, { wch: 8 }, // ICT
           { wch: 10 }  // ហត្ថលេខា
         ];
       } else {

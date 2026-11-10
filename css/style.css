@@ -943,6 +943,46 @@ button {
   text-align: center !important;
   font-size: 10.5pt !important;
 }
+.rotate-qty-text {
+  display: inline-block;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+  white-space: nowrap;
+  font-size: 10.5pt !important;
+  line-height: 1;
+}
+.book-lending-table th.book-th-qty {
+  width: 18px !important;
+  min-width: 18px !important;
+  max-width: 22px !important;
+  padding: 1px 0 !important;
+  vertical-align: middle !important;
+  text-align: center !important;
+}
+.book-lending-table th.book-th-year {
+  width: 38px !important;
+  min-width: 36px !important;
+  padding: 1px 2px !important;
+  vertical-align: middle !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+}
+.book-lending-table.grade10-book-table th.book-th-qty {
+  width: 20px !important;
+  min-width: 20px !important;
+}
+.book-lending-table.grade10-book-table th.book-th-year {
+  width: 44px !important;
+  min-width: 42px !important;
+}
+.book-lending-table.grade7-table th.book-th-qty {
+  width: 22px !important;
+  min-width: 22px !important;
+}
+.book-lending-table.grade7-table th.book-th-year {
+  width: 46px !important;
+  min-width: 44px !important;
+}
 .book-lending-table.grade10-book-table th,
 .book-lending-table.grade10-book-table td {
   padding: 2px 1.5px !important;
@@ -952,6 +992,9 @@ button {
 .book-lending-table.grade11-12-book-table td {
   padding: 1.5px 1px !important;
   font-size: 11pt !important;
+}
+.book-lending-table td {
+  white-space: nowrap !important;
 }
 .book-lending-table td.book-student-name,
 .book-lending-table tbody td:nth-child(2) {
