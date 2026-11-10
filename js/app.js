@@ -961,7 +961,42 @@ class ScoreManagementApp {
 
   cleanStudentName(name) {
     if (!name) return '';
-    return String(name).replace(/\./g, ' ').replace(/\s+/g, ' ').trim();
+    return String(name)
+      .replace(/[\u200B\u200C\u200D\uFEFF\u00A0]/g, ' ')
+      .replace(/\./g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
+
+  isSameStudent(s1, s2) {
+    if (!s1 || !s2) return false;
+    const id1 = String(s1.id || s1.studentId || '').trim().toLowerCase();
+    const id2 = String(s2.id || s2.studentId || '').trim().toLowerCase();
+    if (id1 && id2 && id1 === id2) return true;
+
+    const g1 = String(s1.geipId || '').trim();
+    const g2 = String(s2.geipId || '').trim();
+    if (g1 && g2 && g1 === g2) return true;
+
+    const n1 = this.cleanStudentName(s1.khmerName || s1.name);
+    const n2 = this.cleanStudentName(s2.khmerName || s2.name);
+    if (n1 && n2) {
+      if (n1 === n2) return true;
+      const noSpace1 = n1.replace(/\s+/g, '');
+      const noSpace2 = n2.replace(/\s+/g, '');
+      if (noSpace1.length >= 3 && noSpace1 === noSpace2) return true;
+    }
+    return false;
+  }
+
+  findExistingStudent(candidate) {
+    if (!candidate || !this.students) return null;
+    return this.students.find(s => this.isSameStudent(s, candidate)) || null;
+  }
+
+  findExistingStudentIndex(candidate) {
+    if (!candidate || !this.students) return -1;
+    return this.students.findIndex(s => this.isSameStudent(s, candidate));
   }
 
   applyParsedState(parsed) {
@@ -24568,10 +24603,10 @@ class ScoreManagementApp {
     const currentVal = this.importDefaultClass.value;
     this.importDefaultClass.innerHTML = '';
 
-    // Option 1: Keep Existing Class (for Update / Merge)
+    // Option 1: Keep Existing Preserved Assigned Class (for Update / Merge)
     const optKeep = document.createElement('option');
     optKeep.value = '__KEEP_EXISTING__';
-    optKeep.textContent = '⚡ រក្សាទុកថ្នាក់ដែលមានស្រាប់ (សម្រាប់ Update សិស្សចាស់)';
+    optKeep.textContent = '⚡ រក្សាទុកថ្នាក់ថ្មីដែលបានបែងចែក (កែប្រែតែថ្នាក់ចាស់)';
     this.importDefaultClass.appendChild(optKeep);
 
     const allGradeGroups = [
@@ -24600,19 +24635,11 @@ class ScoreManagementApp {
       this.importDefaultClass.appendChild(optGroup);
     });
 
-    // Auto-select preferred section matching active view
-    let preferredClass = '';
-    if (this.activeSection) {
-      preferredClass = this.formatSectionClassName(this.activeClass, this.activeSection);
-    } else {
-      const activeClasses = this.getClassListForGradeKey(this.activeClass);
-      if (activeClasses.length > 0) preferredClass = activeClasses[0];
-    }
-
-    if (currentVal && Array.from(this.importDefaultClass.options).some(o => o.value === currentVal)) {
+    // Default to __KEEP_EXISTING__ to preserve assigned new classes unless user explicitly changes it
+    if (currentVal && currentVal !== '__KEEP_EXISTING__' && Array.from(this.importDefaultClass.options).some(o => o.value === currentVal)) {
       this.importDefaultClass.value = currentVal;
-    } else if (preferredClass && Array.from(this.importDefaultClass.options).some(o => o.value === preferredClass)) {
-      this.importDefaultClass.value = preferredClass;
+    } else {
+      this.importDefaultClass.value = '__KEEP_EXISTING__';
     }
 
     this.syncImportClassTypeWithSelectedClass();
@@ -24648,6 +24675,7 @@ class ScoreManagementApp {
     if (this.importFileStatus) this.importFileStatus.innerHTML = '';
     if (this.importPreviewContainer) this.importPreviewContainer.style.display = 'none';
     if (this.btnConfirmImportStudents) this.btnConfirmImportStudents.disabled = true;
+    if (this.importDefaultClass) this.importDefaultClass.value = '__KEEP_EXISTING__';
     this.populateImportClassDropdown();
     if (this.importStudentModal) this.importStudentModal.classList.add('open');
   }
@@ -25072,17 +25100,17 @@ class ScoreManagementApp {
     let updated = 0;
     let added = 0;
     importedStudents.forEach(newStu => {
-      const existingIdx = this.students.findIndex(s =>
-        (s.id && newStu.id && s.id.toLowerCase() === newStu.id.toLowerCase()) ||
-        (s.geipId && newStu.geipId && s.geipId === newStu.geipId) ||
-        (this.cleanStudentName(s.khmerName) === this.cleanStudentName(newStu.khmerName))
-      );
+      const existingIdx = this.findExistingStudentIndex(newStu);
 
       if (existingIdx !== -1) {
+        const current = this.students[existingIdx];
         this.students[existingIdx] = {
-          ...this.students[existingIdx],
+          ...current,
           ...newStu,
-          id: this.students[existingIdx].id || newStu.id
+          id: current.id, // Preserve original ID so scores stay connected
+          class: current.class, // Preserve assigned class
+          newClass: current.newClass || current.class,
+          oldClass: newStu.oldClass || (newStu.class && newStu.class !== current.class ? newStu.class : current.oldClass) || current.oldClass || ''
         };
         updated++;
       } else {
@@ -25117,7 +25145,7 @@ class ScoreManagementApp {
       return this.processGeipImportRows(rawRows);
     }
 
-    const defaultGrade = this.importDefaultGrade ? this.importDefaultGrade.value : 'ថ្នាក់ទី១២';
+    const defaultGrade = this.importDefaultGrade ? this.importDefaultGrade.value : '__KEEP_EXISTING__';
     const defaultClassType = this.importDefaultClassType ? this.importDefaultClassType.value : 'ទូទៅ';
 
     let startIndex = 0;
@@ -25129,6 +25157,8 @@ class ScoreManagementApp {
       femaleCol: -1,
       maleCol: -1,
       dob: -1,
+      oldClass: -1,
+      newClass: -1,
       class: -1,
       classType: -1,
       phone: -1,
@@ -25170,6 +25200,10 @@ class ScoreManagementApp {
             headerMap.maleCol = idx;
           } else if (cell.includes('កំណើត') || cell.includes('dob') || cell.includes('birth') || cell.includes('ថ្ងៃខែ')) {
             headerMap.dob = idx;
+          } else if (cell.includes('ថ្នាក់ចាស់') || cell.includes('ថ្នាក់ដើម') || cell.includes('ថ្នាក់មុន') || cell.includes('oldclass') || cell.includes('old_class')) {
+            headerMap.oldClass = idx;
+          } else if (cell.includes('ថ្នាក់ថ្មី') || cell.includes('ថ្នាក់បែងចែក') || cell.includes('newclass') || cell.includes('new_class')) {
+            headerMap.newClass = idx;
           } else if (cell.includes('ឡើងពីថ្នាក់') || cell.includes('ពីថ្នាក់') || cell.includes('fromclass') || cell.includes('from_class')) {
             headerMap.fromClass = idx;
           } else if (cell.includes('មកពីសាលា') || cell.includes('បឋមសិក្សា') || cell.includes('សាលាបឋម') || cell.includes('primaryschool')) {
@@ -25192,7 +25226,7 @@ class ScoreManagementApp {
             headerMap.classType = idx;
           } else if (cell === 'ថ្នាក់' || cell === 'ថ្នាក់រៀន' || cell === 'បន្ទប់រៀន' || cell === 'class' || cell === 'grade' || cell === 'section' || cell === 'ថ្នាក់បច្ចុប្បន្ន') {
             headerMap.class = idx;
-          } else if (cell.includes('ថ្នាក់') && !cell.includes('ឡើង') && !cell.includes('ពី') && !cell.includes('ត្រួត') && !cell.includes('ប្រភេទ') && !cell.includes('ចាស់')) {
+          } else if (cell.includes('ថ្នាក់') && !cell.includes('ឡើង') && !cell.includes('ពី') && !cell.includes('ត្រួត') && !cell.includes('ប្រភេទ') && !cell.includes('ចាស់') && !cell.includes('ដើម') && !cell.includes('មុន') && !cell.includes('ថ្មី')) {
             headerMap.class = idx;
           } else if (cell.includes('ទូរស័ព្ទ') || cell.includes('phone') || cell.includes('tel')) {
             headerMap.phone = idx;
@@ -25263,23 +25297,24 @@ class ScoreManagementApp {
         }
       }
 
-      // Check existing student match in system (by ID or cleaned Khmer name)
-      let existingStu = null;
-      if (id) {
-        existingStu = this.students.find(s => s.id && s.id.toLowerCase() === id.toLowerCase());
-      }
-      if (!existingStu && name) {
-        const cleanN = this.cleanStudentName(name);
-        existingStu = this.students.find(s => this.cleanStudentName(s.khmerName) === cleanN);
+      // Check existing student match in system (by ID, GEIP ID, or cleaned Khmer name)
+      const candidateStu = { id, khmerName: name };
+      const existingStu = this.findExistingStudent(candidateStu);
+      if (existingStu) {
+        // ALWAYS retain the existing student's actual ID so scores in this.scores are never lost!
+        id = existingStu.id;
       }
 
-      // 1. Read class from row if present
+      // 1. Read class fields from row if present
+      let rawOldClassInRow = headerMap.oldClass !== -1 ? String(row[headerMap.oldClass] || '').trim() : '';
+      let rawNewClassInRow = headerMap.newClass !== -1 ? String(row[headerMap.newClass] || '').trim() : '';
       let rawClassInRow = headerMap.class !== -1 ? String(row[headerMap.class] || '').trim() : '';
       let hasSpecificClassInRow = false;
 
       // Scan row cells for specific section pattern (e.g. 7A, 7B, 11A, 12D) if header was missing or generic
       if (!rawClassInRow || rawClassInRow.match(/^ថ្នាក់ទី\s*(៧|៨|៩|១០|១១|១២|\d+)$/)) {
         for (let c = 0; c < row.length; c++) {
+          if (c === headerMap.oldClass || c === headerMap.fromClass) continue;
           const val = String(row[c] || '').trim();
           if (/^(7|8|9|10|11|12|[៧៨៩]|១០|១១|១២)[A-Za-z]$/i.test(val) ||
             /^(7|8|9|10|11|12|[៧៨៩]|១០|១១|១២)\s*[\-\_\.]\s*[A-Za-z]$/i.test(val)) {
@@ -25292,24 +25327,45 @@ class ScoreManagementApp {
         hasSpecificClassInRow = true;
       }
 
-      // 2. Resolve Final Class:
+      // 2. Resolve Old Class and New Class:
       let stuClass = '';
+      let stuOldClass = '';
+      let stuNewClass = '';
+
       if (existingStu) {
-        // For existing student:
-        // If file had a specific class (like 7B), use it;
-        // OTHERWISE, PRESERVE existing student's class (e.g. 7A, 7B)!
-        if (hasSpecificClassInRow && !rawClassInRow.match(/^ថ្នាក់ទី\s*(៧|៨|៩|១០|១១|១២|\d+)$/)) {
-          stuClass = rawClassInRow;
+        // CRITICAL REQUIREMENT:
+        // PRESERVE newly assigned class (stu.class / stu.newClass), ONLY update old class (stu.oldClass)!
+        stuClass = existingStu.class || (defaultGrade !== '__KEEP_EXISTING__' ? defaultGrade : '7A');
+        stuNewClass = existingStu.newClass || existingStu.class || stuClass;
+
+        if (rawOldClassInRow) {
+          stuOldClass = rawOldClassInRow;
+        } else if (fromClass) {
+          stuOldClass = fromClass;
+        } else if (rawClassInRow && rawClassInRow !== stuClass && !rawClassInRow.match(/^ថ្នាក់ទី\s*(៧|៨|៩|១០|១១|១២|\d+)$/)) {
+          // Row specifies a class (e.g. 7A) that is different from their assigned new class (e.g. 7D)
+          // -> This is their old class!
+          stuOldClass = rawClassInRow;
         } else {
-          stuClass = existingStu.class || (defaultGrade !== '__KEEP_EXISTING__' ? defaultGrade : '7A');
+          stuOldClass = existingStu.oldClass || '';
+        }
+
+        // If file explicitly provided a new class column value:
+        if (rawNewClassInRow && !rawNewClassInRow.match(/^ថ្នាក់ទី\s*(៧|៨|៩|១០|១១|១២|\d+)$/)) {
+          stuClass = rawNewClassInRow;
+          stuNewClass = rawNewClassInRow;
         }
       } else {
         // For new student:
-        if (hasSpecificClassInRow && rawClassInRow && !rawClassInRow.match(/^ថ្នាក់ទី\s*(៧|៨|៩|១០|១១|១២|\d+)$/)) {
+        if (rawNewClassInRow && !rawNewClassInRow.match(/^ថ្នាក់ទី\s*(៧|៨|៩|១០|១១|១២|\d+)$/)) {
+          stuClass = rawNewClassInRow;
+        } else if (hasSpecificClassInRow && rawClassInRow && !rawClassInRow.match(/^ថ្នាក់ទី\s*(៧|៨|៩|១០|១១|១២|\d+)$/)) {
           stuClass = rawClassInRow;
         } else {
           stuClass = (defaultGrade !== '__KEEP_EXISTING__' ? defaultGrade : (this.activeSection ? this.formatSectionClassName(this.activeClass, this.activeSection) : '7A'));
         }
+        stuNewClass = stuClass;
+        stuOldClass = rawOldClassInRow || fromClass || '';
       }
 
       // 3. Resolve Final Class Type (ប្រភេទថ្នាក់):
@@ -25430,12 +25486,14 @@ class ScoreManagementApp {
         gender,
         dob,
         class: stuClass,
+        oldClass: stuOldClass,
+        newClass: stuNewClass,
         classType: stuClassType,
         phone,
         guardian,
         address,
-        avatar: '',
-        fromClass,
+        avatar: (existingStu && existingStu.avatar) ? existingStu.avatar : '',
+        fromClass: fromClass || stuOldClass,
         primarySchool,
         repeatGrade,
         transferFrom,
@@ -25466,10 +25524,7 @@ class ScoreManagementApp {
 
     let matchedCount = 0;
     students.forEach(stu => {
-      const match = this.students.find(s =>
-        (stu.id && s.id && s.id.toLowerCase() === stu.id.toLowerCase()) ||
-        (stu.khmerName && s.khmerName && this.cleanStudentName(s.khmerName) === this.cleanStudentName(stu.khmerName))
-      );
+      const match = this.findExistingStudent(stu);
       if (match) matchedCount++;
     });
 
@@ -25482,10 +25537,7 @@ class ScoreManagementApp {
       const tr = document.createElement('tr');
       const genderBadgeClass = stu.gender === 'ស្រី' ? 'gender-female' : 'gender-male';
 
-      const match = this.students.find(s =>
-        (stu.id && s.id && s.id.toLowerCase() === stu.id.toLowerCase()) ||
-        (stu.khmerName && s.khmerName && this.cleanStudentName(s.khmerName) === this.cleanStudentName(stu.khmerName))
-      );
+      const match = this.findExistingStudent(stu);
 
       const statusBadge = match
         ? `<span style="background: #e0f2fe; color: #0284c7; padding: 2px 7px; border-radius: 4px; font-weight: 700; font-size: 0.75rem;"><i class="ri-refresh-line"></i> Update</span>`
@@ -25500,6 +25552,10 @@ class ScoreManagementApp {
       } else {
         classTypeBadge = `<span class="badge-class-type" style="background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-weight: 600; padding: 2px 7px; border-radius: 4px; font-size: 0.76rem;">ទូទៅ</span>`;
       }
+
+      // Old & New Class Display
+      const oldClassDisplay = stu.oldClass || (match ? (match.oldClass || match.fromClass || '-') : (stu.fromClass || '-'));
+      const newClassDisplay = stu.class || stu.newClass || (match ? (match.newClass || match.class) : '-');
 
       // Extra grade-level info tags
       const extras = [];
@@ -25534,7 +25590,8 @@ class ScoreManagementApp {
         </td>
         <td style="text-align: center;"><span class="gender-badge ${genderBadgeClass}">${stu.gender}</span></td>
         <td>${stu.dob || '-'}</td>
-        <td style="text-align: center;"><span class="badge-room-tag">${stu.class}</span></td>
+        <td style="text-align: center;"><span style="display: inline-block; padding: 0.15rem 0.45rem; border-radius: 4px; background: #fef3c7; color: #92400e; font-weight: 700; font-size: 0.78rem;">${oldClassDisplay}</span></td>
+        <td style="text-align: center;"><span class="badge-room-tag" style="font-weight: 700;">${newClassDisplay}</span></td>
         <td style="text-align: center;">${classTypeBadge}</td>
         <td style="text-align: center;">${statusBadge}</td>
         <td style="font-size: 0.8rem;">${extrasHtml}</td>
@@ -25565,10 +25622,17 @@ class ScoreManagementApp {
     let updated = 0;
 
     if (importMode === 'replace') {
-      if (!confirm(`តើអ្នកពិតជាចង់ជំនួសបញ្ជីសិស្សទាំងអស់ដែលមានស្រាប់ ដោយសិស្សថ្មីចំនួន ${this.parsedImportStudents.length} នាក់មែនទេ?`)) {
+      if (!confirm(`តើអ្នកពិតជាចង់ជំនួសបញ្ជីសិស្សទាំងអស់ដែលមានស្រាប់ ដោយសិស្សថ្មីចំនួន ${this.parsedImportStudents.length} នាក់មែនទេ?\n(ពិន្ទុសិស្សចាស់ដែលមានឈ្មោះដូចគ្នា នឹងត្រូវបានរក្សាទុកដោយស្វ័យប្រវត្តិ)`)) {
         return;
       }
       this.students = this.parsedImportStudents.map(s => {
+        // If matching existing student by ID or name, retain existing ID to preserve scores!
+        const existing = this.findExistingStudent(s);
+        if (existing) {
+          s.id = existing.id;
+          if (existing.class && !s.newClass) s.newClass = existing.class;
+          if (existing.oldClass && !s.oldClass) s.oldClass = existing.oldClass;
+        }
         if (/^(ថ្នាក់ទី\s*)?(7|8|9|10|[៧៨៩]|១០)/i.test(s.class)) {
           s.classType = 'ទូទៅ';
         }
@@ -25578,11 +25642,7 @@ class ScoreManagementApp {
     } else if (importMode === 'update') {
       // Smart Update / Merge Mode:
       this.parsedImportStudents.forEach(newStu => {
-        let existingIdx = this.students.findIndex(s => s.id && newStu.id && s.id.toLowerCase() === newStu.id.toLowerCase());
-        if (existingIdx === -1 && newStu.khmerName) {
-          const cleanName = this.cleanStudentName(newStu.khmerName);
-          existingIdx = this.students.findIndex(s => this.cleanStudentName(s.khmerName) === cleanName);
-        }
+        let existingIdx = this.findExistingStudentIndex(newStu);
 
         if (existingIdx !== -1) {
           const current = this.students[existingIdx];
@@ -25611,19 +25671,32 @@ class ScoreManagementApp {
           updateIfVal('guardian', newStu.guardian);
           updateIfVal('address', newStu.address);
 
-          // Class updates:
-          // NEVER downgrade a specific section (e.g. 7A, 7B) to a generic grade (e.g. ថ្នាក់ទី៧)
-          // or __KEEP_EXISTING__!
-          if (newStu.class && newStu.class !== '__KEEP_EXISTING__') {
-            const isGenericNew = /^ថ្នាក់ទី\s*(៧|៨|៩|១០|១១|១២|\d+)$/.test(newStu.class);
-            const isSpecificCurrent = current.class && !/^ថ្នាក់ទី\s*(៧|៨|៩|១០|១១|១២|\d+)$/.test(current.class);
-            if (!isGenericNew || !isSpecificCurrent) {
-              current.class = newStu.class;
-            }
+          // CRITICAL: ID MUST NEVER BE OVERWRITTEN (this.scores is keyed by current.id)
+
+          // 1. Update Old Class (ថ្នាក់ចាស់):
+          if (newStu.oldClass && newStu.oldClass.trim() !== '') {
+            current.oldClass = newStu.oldClass.trim();
+          } else if (newStu.fromClass && newStu.fromClass.trim() !== '') {
+            current.oldClass = newStu.fromClass.trim();
+          } else if (newStu.class && newStu.class !== '__KEEP_EXISTING__' && newStu.class !== current.class) {
+            current.oldClass = newStu.class.trim();
+          }
+
+          // 2. PRESERVE New Class (ថ្នាក់ថ្មី):
+          // Always keep the student's assigned new class!
+          if (current.newClass) {
+            current.class = current.newClass;
+          } else if (current.class) {
+            current.newClass = current.class;
+          } else if (newStu.newClass && newStu.newClass !== '__KEEP_EXISTING__') {
+            current.class = newStu.newClass;
+            current.newClass = newStu.newClass;
+          } else if (newStu.class && newStu.class !== '__KEEP_EXISTING__') {
+            current.class = newStu.class;
+            current.newClass = newStu.class;
           }
 
           // Class type updates:
-          // Grades 7, 8, 9, 10 are strictly "ទូទៅ"
           if (/^(ថ្នាក់ទី\s*)?(7|8|9|10|[៧៨៩]|១០)/i.test(current.class)) {
             current.classType = 'ទូទៅ';
           } else if (newStu.classType && (newStu.classType === 'វិទ្យាសាស្ត្រ' || newStu.classType === 'វិទ្យាសាស្ត្រសង្គម' || newStu.classType === 'ទូទៅ')) {
@@ -25635,8 +25708,12 @@ class ScoreManagementApp {
           this.students[existingIdx] = { ...current };
           updated++;
         } else {
+          // New student
           if (/^(ថ្នាក់ទី\s*)?(7|8|9|10|[៧៨៩]|១០)/i.test(newStu.class)) {
             newStu.classType = 'ទូទៅ';
+          }
+          if (newStu.class && !newStu.newClass) {
+            newStu.newClass = newStu.class;
           }
           this.students.push(newStu);
           added++;
@@ -25645,23 +25722,21 @@ class ScoreManagementApp {
     } else {
       // Append mode
       this.parsedImportStudents.forEach(newStu => {
-        let existingIdx = this.students.findIndex(s => s.id && newStu.id && s.id.toLowerCase() === newStu.id.toLowerCase());
-        if (existingIdx === -1 && newStu.khmerName) {
-          const cleanName = this.cleanStudentName(newStu.khmerName);
-          existingIdx = this.students.findIndex(s => this.cleanStudentName(s.khmerName) === cleanName);
-        }
+        let existingIdx = this.findExistingStudentIndex(newStu);
 
         if (existingIdx !== -1) {
           const current = this.students[existingIdx];
+          const preservedId = current.id;
+          const preservedClass = current.class;
+          const preservedNewClass = current.newClass || current.class;
           const merged = {
             ...current,
-            ...newStu
+            ...newStu,
+            id: preservedId, // NEVER CHANGE ID
+            class: preservedClass, // PRESERVE ASSIGNED NEW CLASS
+            newClass: preservedNewClass,
+            oldClass: newStu.oldClass || (newStu.class !== preservedClass && newStu.class !== '__KEEP_EXISTING__' ? newStu.class : current.oldClass) || current.oldClass || ''
           };
-          if (current.class && !/^ថ្នាក់ទី\s*(៧|៨|៩|១០|១១|១២|\d+)$/.test(current.class)) {
-            if (!newStu.class || /^ថ្នាក់ទី\s*(៧|៨|៩|១០|១១|១២|\d+)$/.test(newStu.class) || newStu.class === '__KEEP_EXISTING__') {
-              merged.class = current.class;
-            }
-          }
           if (/^(ថ្នាក់ទី\s*)?(7|8|9|10|[៧៨៩]|១០)/i.test(merged.class)) {
             merged.classType = 'ទូទៅ';
           }
@@ -25671,13 +25746,16 @@ class ScoreManagementApp {
           if (/^(ថ្នាក់ទី\s*)?(7|8|9|10|[៧៨៩]|១០)/i.test(newStu.class)) {
             newStu.classType = 'ទូទៅ';
           }
+          if (newStu.class && !newStu.newClass) {
+            newStu.newClass = newStu.class;
+          }
           this.students.push(newStu);
           added++;
         }
       });
     }
 
-    // Ensure all students have a score record
+    // Ensure all students have a score record without touching existing scores
     this.students.forEach(stu => {
       if (!this.scores[stu.id]) this.scores[stu.id] = {};
     });
@@ -25688,7 +25766,7 @@ class ScoreManagementApp {
     this.renderNavigation();
     this.renderCurrentView();
     this.closeImportStudentModal();
-    this.showToast(`បានដំណើរការដោយជោគជ័យ! បាន Update បន្ថែមព័ត៌មាន ${updated} នាក់ និងបន្ថែមសិស្សថ្មី ${added} នាក់។`, 'success');
+    this.showToast(`បានដំណើរការដោយជោគជ័យ! បាន Update បន្ថែមព័ត៌មាន ${updated} នាក់ និងបន្ថែមសិស្សថ្មី ${added} នាក់ (រក្សាទុកថ្នាក់ថ្មីនិងពិន្ទុសិស្សត្រឹមត្រូវ)។`, 'success');
   }
 
   // =========================================================================
