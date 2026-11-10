@@ -7686,15 +7686,15 @@ class ScoreManagementApp {
             </tr>
             <tr style="font-size: 11.5px; border-bottom: 1px solid #cbd5e1;">
               <th style="padding: 3px; width: 48px; border-right: 1px solid #e2e8f0; background: #f0f9ff; color: #0369a1;">ចំនួន</th>
-              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #f0f9ff; color: #0369a1;">ថ្នាក់</th>
+              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #f0f9ff; color: #0369a1;">ឆ្នាំ</th>
               <th style="padding: 3px; width: 48px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309;">ចំនួន</th>
-              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309;">ថ្នាក់</th>
+              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #fffbeb; color: #b45309;">ឆ្នាំ</th>
               <th style="padding: 3px; width: 48px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ចំនួន</th>
-              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ថ្នាក់</th>
+              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #f0fdf4; color: #15803d;">ឆ្នាំ</th>
               <th style="padding: 3px; width: 48px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c;">ចំនួន</th>
-              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c;">ថ្នាក់</th>
+              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #fff7ed; color: #c2410c;">ឆ្នាំ</th>
               <th style="padding: 3px; width: 48px; border-right: 1px solid #e2e8f0; background: #faf5ff; color: #7e22ce;">ចំនួន</th>
-              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #faf5ff; color: #7e22ce;">ថ្នាក់</th>
+              <th style="padding: 3px; width: 44px; border-right: 1px solid #e2e8f0; background: #faf5ff; color: #7e22ce;">ឆ្នាំ</th>
             </tr>
           </thead>
           <tbody>
@@ -7705,22 +7705,22 @@ class ScoreManagementApp {
     studentsInClass.forEach((s, idx) => {
       const lend = (this.bookLending[s.id] || this.bookLending[s.id + '_' + (s.class || clsName)]) || {};
       const khQty = lend.kh_qty !== undefined && lend.kh_qty !== null ? lend.kh_qty : '';
-      const khG = lend.kh_grade || (khQty !== '' ? gradeNum : '');
+      const khG = lend.kh_grade !== undefined ? lend.kh_grade : '';
       const mathQty = lend.math_qty !== undefined && lend.math_qty !== null ? lend.math_qty : '';
-      const mathG = lend.math_grade || (mathQty !== '' ? gradeNum : '');
+      const mathG = lend.math_grade !== undefined ? lend.math_grade : '';
       const sciQty = lend.sci_qty !== undefined && lend.sci_qty !== null ? lend.sci_qty : '';
-      const sciG = lend.sci_grade || (sciQty !== '' ? gradeNum : '');
+      const sciG = lend.sci_grade !== undefined ? lend.sci_grade : '';
       const socQty = lend.soc_qty !== undefined && lend.soc_qty !== null ? lend.soc_qty : '';
-      const socG = lend.soc_grade || (socQty !== '' ? gradeNum : '');
+      const socG = lend.soc_grade !== undefined ? lend.soc_grade : '';
       const engQty = lend.eng_qty !== undefined && lend.eng_qty !== null ? lend.eng_qty : '';
-      const engG = lend.eng_grade || (engQty !== '' ? gradeNum : '');
+      const engG = lend.eng_grade !== undefined ? lend.eng_grade : '';
 
       const isComplete = (khQty !== '' && mathQty !== '' && sciQty !== '' && socQty !== '' && engQty !== '');
 
-      const makeInput = (field, val, isGrade = false) => {
-        const w = isGrade ? '38px' : '42px';
-        const type = isGrade ? 'text' : 'number';
-        const maxAttr = isGrade ? 'maxlength="3"' : 'min="0" max="10"';
+      const makeInput = (field, val, isYear = false) => {
+        const w = isYear ? '44px' : '38px';
+        const type = isYear ? 'text' : 'number';
+        const maxAttr = isYear ? 'maxlength="6" placeholder="ឆ្នាំ"' : 'min="0" max="10"';
         return `<input type="${type}" ${maxAttr} class="book-len-input" data-stu="${esc(s.id)}" data-field="${field}" value="${esc(val)}" style="width:${w}; text-align:center; padding:3px 2px; border:1px solid #cbd5e1; border-radius:4px; font-size:12px; font-weight:600; outline:none; transition:border-color 0.15s;">`;
       };
 
@@ -7761,13 +7761,15 @@ class ScoreManagementApp {
     const btnAuto = document.getElementById('btnAutoFillBookLending');
     if (btnAuto) {
       btnAuto.addEventListener('click', () => {
+        const defYear = (this.activeYear ? this.activeYear.split('-')[0] : '2024');
         studentsInClass.forEach(s => {
+          const old = this.bookLending[s.id] || {};
           this.bookLending[s.id] = {
-            kh_qty: 1, kh_grade: gradeNum,
-            math_qty: 1, math_grade: gradeNum,
-            sci_qty: 1, sci_grade: gradeNum,
-            soc_qty: 1, soc_grade: gradeNum,
-            eng_qty: 1, eng_grade: gradeNum
+            kh_qty: 1, kh_grade: old.kh_grade || defYear,
+            math_qty: 1, math_grade: old.math_grade || defYear,
+            sci_qty: 1, sci_grade: old.sci_grade || defYear,
+            soc_qty: 1, soc_grade: old.soc_grade || defYear,
+            eng_qty: 1, eng_grade: old.eng_grade || defYear
           };
         });
         this.saveState(true);
@@ -8579,11 +8581,11 @@ class ScoreManagementApp {
 
         data.columns = [
           'ល.រ', 'គោត្តនាម និង នាមខ្លួន', 'ភេទ',
-          'ភាសាខ្មែរ (ចំនួន)', 'ភាសាខ្មែរ (ថ្នាក់)',
-          'គណិតវិទ្យា (ចំនួន)', 'គណិតវិទ្យា (ថ្នាក់)',
-          'វិទ្យាសាស្ត្រ (ចំនួន)', 'វិទ្យាសាស្ត្រ (ថ្នាក់)',
-          'សិក្សាសង្គម (ចំនួន)', 'សិក្សាសង្គម (ថ្នាក់)',
-          'អង់គ្លេស (ចំនួន)', 'អង់គ្លេស (ថ្នាក់)',
+          'ភាសាខ្មែរ (ចំនួន)', 'ភាសាខ្មែរ (ឆ្នាំ)',
+          'គណិតវិទ្យា (ចំនួន)', 'គណិតវិទ្យា (ឆ្នាំ)',
+          'វិទ្យាសាស្ត្រ (ចំនួន)', 'វិទ្យាសាស្ត្រ (ឆ្នាំ)',
+          'សិក្សាសង្គម (ចំនួន)', 'សិក្សាសង្គម (ឆ្នាំ)',
+          'អង់គ្លេស (ចំនួន)', 'អង់គ្លេស (ឆ្នាំ)',
           'ហត្ថលេខា'
         ];
 
@@ -8592,15 +8594,15 @@ class ScoreManagementApp {
         data.rows = list.map((s, idx) => {
           const lend = (this.bookLending && (this.bookLending[s.id] || this.bookLending[s.id + '_' + (s.class || clsName)])) || {};
           const khQty = lend.kh_qty !== undefined && lend.kh_qty !== null && lend.kh_qty !== '' ? Number(lend.kh_qty) : '';
-          const khG = lend.kh_grade || (khQty !== '' ? gradeNum : '');
+          const khG = lend.kh_grade !== undefined && lend.kh_grade !== null ? lend.kh_grade : '';
           const mathQty = lend.math_qty !== undefined && lend.math_qty !== null && lend.math_qty !== '' ? Number(lend.math_qty) : '';
-          const mathG = lend.math_grade || (mathQty !== '' ? gradeNum : '');
+          const mathG = lend.math_grade !== undefined && lend.math_grade !== null ? lend.math_grade : '';
           const sciQty = lend.sci_qty !== undefined && lend.sci_qty !== null && lend.sci_qty !== '' ? Number(lend.sci_qty) : '';
-          const sciG = lend.sci_grade || (sciQty !== '' ? gradeNum : '');
+          const sciG = lend.sci_grade !== undefined && lend.sci_grade !== null ? lend.sci_grade : '';
           const socQty = lend.soc_qty !== undefined && lend.soc_qty !== null && lend.soc_qty !== '' ? Number(lend.soc_qty) : '';
-          const socG = lend.soc_grade || (socQty !== '' ? gradeNum : '');
+          const socG = lend.soc_grade !== undefined && lend.soc_grade !== null ? lend.soc_grade : '';
           const engQty = lend.eng_qty !== undefined && lend.eng_qty !== null && lend.eng_qty !== '' ? Number(lend.eng_qty) : '';
-          const engG = lend.eng_grade || (engQty !== '' ? gradeNum : '');
+          const engG = lend.eng_grade !== undefined && lend.eng_grade !== null ? lend.eng_grade : '';
 
           if (khQty !== '') sumKh += khQty;
           if (mathQty !== '') sumMath += mathQty;
@@ -8613,15 +8615,15 @@ class ScoreManagementApp {
             s.khmerName || '',
             s.gender || '',
             khQty !== '' ? this.toKhmerNum(khQty) : '',
-            khG !== '' ? this.toKhmerNum(khG) : '',
+            khG !== '' ? (isNaN(khG) ? khG : this.toKhmerNum(khG)) : '',
             mathQty !== '' ? this.toKhmerNum(mathQty) : '',
-            mathG !== '' ? this.toKhmerNum(mathG) : '',
+            mathG !== '' ? (isNaN(mathG) ? mathG : this.toKhmerNum(mathG)) : '',
             sciQty !== '' ? this.toKhmerNum(sciQty) : '',
-            sciG !== '' ? this.toKhmerNum(sciG) : '',
+            sciG !== '' ? (isNaN(sciG) ? sciG : this.toKhmerNum(sciG)) : '',
             socQty !== '' ? this.toKhmerNum(socQty) : '',
-            socG !== '' ? this.toKhmerNum(socG) : '',
+            socG !== '' ? (isNaN(socG) ? socG : this.toKhmerNum(socG)) : '',
             engQty !== '' ? this.toKhmerNum(engQty) : '',
-            engG !== '' ? this.toKhmerNum(engG) : '',
+            engG !== '' ? (isNaN(engG) ? engG : this.toKhmerNum(engG)) : '',
             '' // ហត្ថលេខា
           ];
         });
@@ -8682,15 +8684,15 @@ class ScoreManagementApp {
           </tr>
           <tr>
             <th style="width: 34px; text-align: center; vertical-align: middle;">ចំនួន</th>
-            <th style="width: 34px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
+            <th style="width: 34px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
             <th style="width: 34px; text-align: center; vertical-align: middle;">ចំនួន</th>
-            <th style="width: 34px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
+            <th style="width: 34px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
             <th style="width: 34px; text-align: center; vertical-align: middle;">ចំនួន</th>
-            <th style="width: 34px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
+            <th style="width: 34px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
             <th style="width: 34px; text-align: center; vertical-align: middle;">ចំនួន</th>
-            <th style="width: 34px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
+            <th style="width: 34px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
             <th style="width: 34px; text-align: center; vertical-align: middle;">ចំនួន</th>
-            <th style="width: 34px; text-align: center; vertical-align: middle;">ថ្នាក់</th>
+            <th style="width: 34px; text-align: center; vertical-align: middle;">ឆ្នាំ</th>
           </tr>
         </thead>`;
 
@@ -9366,11 +9368,11 @@ class ScoreManagementApp {
         ],
         [
           '', '', '',
-          'ចំនួន', 'ថ្នាក់',
-          'ចំនួន', 'ថ្នាក់',
-          'ចំនួន', 'ថ្នាក់',
-          'ចំនួន', 'ថ្នាក់',
-          'ចំនួន', 'ថ្នាក់',
+          'ចំនួន', 'ឆ្នាំ',
+          'ចំនួន', 'ឆ្នាំ',
+          'ចំនួន', 'ឆ្នាំ',
+          'ចំនួន', 'ឆ្នាំ',
+          'ចំនួន', 'ឆ្នាំ',
           ''
         ],
         ...data.rows,
