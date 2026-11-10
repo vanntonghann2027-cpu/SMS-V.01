@@ -948,6 +948,19 @@ button {
 .book-lending-table.grade10-book-table td {
   padding: 2px 1.5px !important;
 }
+.book-lending-table.grade11-12-book-table {
+  font-size: 7.2pt !important;
+}
+.book-lending-table.grade11-12-book-table th,
+.book-lending-table.grade11-12-book-table td {
+  padding: 1.5px 1px !important;
+}
+.book-lending-table td.book-student-name,
+.book-lending-table tbody td:nth-child(2) {
+  font-size: 11pt !important;
+  font-weight: 600 !important;
+  white-space: nowrap !important;
+}
 .book-lending-footer-wrapper {
   margin-top: 10px;
   font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif;
