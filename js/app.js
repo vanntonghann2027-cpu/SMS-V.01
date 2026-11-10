@@ -14045,11 +14045,13 @@ class ScoreManagementApp {
 
     const evaluated = gradeStudents.map(stu => {
       const res = resultMap.get(stu.id);
+      const originalClass = stu.oldClass || stu.initialClass || stu.class || '';
       return {
         studentId: stu.id,
         khmerName: stu.khmerName || '',
         gender: stu.gender || '',
-        oldClass: stu.class || '',
+        oldClass: originalClass,
+        currentClass: stu.class || '',
         total: res ? res.total : 0,
         average: res ? res.average : 0,
         rank: res ? res.rank : 1,
