@@ -1378,6 +1378,10 @@ class ScoreManagementApp {
     return `${locPrefix}ថ្ងៃទី ${this.toKhmerNum(day)} ខែ ${monthName} ឆ្នាំ ${this.toKhmerNum(year)}`;
   }
 
+  getKhmerDate(dateStr, location = 'សៀមរាប') {
+    return this.formatKhmerDocSolarDate(dateStr, location);
+  }
+
   getKhmerLunarDate(dateStr) {
     let year = 2026, month = 8, day = 4;
     if (dateStr) {
@@ -7513,10 +7517,16 @@ class ScoreManagementApp {
       optionsHead.textContent = isStudy ? 'កំណត់រចនាសម្ព័ន្ធរបាយការណ៍' : (isLibrary ? 'គ្រប់គ្រងទិន្នន័យសិស្សខ្ចីសៀវភៅពុម្ព' : 'កំណត់ទម្រង់នៃរបាយការណ៍');
     }
 
-    // Default grade filter to currently active grade the first time (or grade_9 for library)
+    // Default grade filter to currently active grade the first time (or smart lower secondary grade for library)
     const gradeSel = document.getElementById('reportGradeSelect');
-    if (gradeSel && isLibrary && !['grade_7', 'grade_8', 'grade_9'].includes(gradeSel.value)) {
-      gradeSel.value = 'grade_9';
+    if (gradeSel && isLibrary) {
+      const validGrades = ['grade_7', 'grade_8', 'grade_9'];
+      const valid = (this.students || []).filter(s => !this.isIncompleteLateStudent(s));
+      const hasCurrent = validGrades.includes(gradeSel.value) && valid.some(s => this.studentMatchesGrade(s, gradeSel.value));
+      if (!hasCurrent) {
+        const found = validGrades.find(g => valid.some(s => this.studentMatchesGrade(s, g)));
+        gradeSel.value = found || (validGrades.includes(gradeSel.value) ? gradeSel.value : 'grade_8');
+      }
     } else if (gradeSel && !this.reportGradeInitialized) {
       gradeSel.value = this.activeClass || 'grade_10';
       this.reportGradeInitialized = true;
@@ -7544,6 +7554,9 @@ class ScoreManagementApp {
           this.reportState.option = (item.options && item.options[0] && item.options[0].v) || 'default';
           this.hideReportPreview();
           this.renderReportsView();
+          if (item.key === 'book_lending_report') {
+            this.previewReport();
+          }
         });
         submenu.appendChild(btn);
       });
@@ -7583,10 +7596,32 @@ class ScoreManagementApp {
     if (!libraryBlock) return;
 
     const f = this.getReportFilters();
-    const studentsInClass = this.getReportStudents(f);
-    const clsName = (f.classVal && f.classVal !== 'ALL') ? f.classVal : ((studentsInClass[0] && studentsInClass[0].class) || '9D');
+    let studentsInClass = this.getReportStudents(f);
 
-    let gradeNum = '9';
+    // Smart fallback if filter returned 0 students
+    if (studentsInClass.length === 0) {
+      const valid = (this.students || []).filter(s => !this.isIncompleteLateStudent(s));
+      if (f.classVal && f.classVal !== 'ALL') {
+        studentsInClass = valid.filter(s => String(s.class || '').trim() === f.classVal);
+      }
+      if (studentsInClass.length === 0 && f.gradeKey && f.gradeKey !== 'ALL') {
+        studentsInClass = valid.filter(s => this.studentMatchesGrade(s, f.gradeKey));
+      }
+      if (studentsInClass.length === 0) {
+        for (const g of ['grade_8', 'grade_7', 'grade_9']) {
+          const subList = valid.filter(s => this.studentMatchesGrade(s, g));
+          if (subList.length > 0) {
+            const firstCls = subList[0].class;
+            studentsInClass = subList.filter(s => s.class === firstCls);
+            break;
+          }
+        }
+      }
+    }
+
+    const clsName = (f.classVal && f.classVal !== 'ALL') ? f.classVal : ((studentsInClass[0] && studentsInClass[0].class) || '8A');
+
+    let gradeNum = '8';
     if (f.gradeKey === 'grade_7' || clsName.includes('7') || clsName.includes('៧')) gradeNum = '7';
     else if (f.gradeKey === 'grade_8' || clsName.includes('8') || clsName.includes('៨')) gradeNum = '8';
     else if (f.gradeKey === 'grade_9' || clsName.includes('9') || clsName.includes('៩')) gradeNum = '9';
@@ -7607,6 +7642,9 @@ class ScoreManagementApp {
           </div>
         </div>
         <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
+          <button type="button" id="btnPreviewBookLendingDirect" style="background: linear-gradient(135deg, #4f46e5, #4338ca); color: #ffffff; border: none; padding: 7px 14px; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(79,70,229,0.3);">
+            <i class="ri-eye-line"></i> <span>👁️ មើលជាមុនទម្រង់ស្រង់</span>
+          </button>
           <button type="button" id="btnAutoFillBookLending" style="background: linear-gradient(135deg, #0284c7, #0369a1); color: #ffffff; border: none; padding: 7px 14px; border-radius: 6px; font-weight: 600; font-size: 13px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 1px 3px rgba(2,132,199,0.3);">
             <i class="ri-flashlight-fill" style="color: #fef08a;"></i> <span>⚡ កំណត់ស្វ័យប្រវត្ត (១ក្បាលគ្រប់មុខ)</span>
           </button>
@@ -7736,6 +7774,15 @@ class ScoreManagementApp {
         this.showToast(`បានកំណត់ស្វ័យប្រវត្តិ ១ក្បាលគ្រប់មុខសម្រាប់សិស្សទាំង ${this.toKhmerNum(studentsInClass.length)} នាក់ក្នុងថ្នាក់ ${clsName}!`, 'success');
         this.renderLibraryDataEntryView();
         this.hideReportPreview();
+      });
+    }
+
+    // Preview direct button:
+    const btnPreviewDirect = document.getElementById('btnPreviewBookLendingDirect');
+    if (btnPreviewDirect) {
+      btnPreviewDirect.addEventListener('click', () => {
+        this.collectBookLendingInputsFromTable();
+        this.previewReport();
       });
     }
 
@@ -8051,7 +8098,12 @@ class ScoreManagementApp {
     const data = { title: item ? item.label : 'របាយការណ៍', subtitle: scopeLabel, columns: [], rows: [], footer: null, cards: null, filters: f };
     const isF = s => s.gender === 'ស្រី';
 
-    switch (itemKey) {
+    let effectiveItemKey = itemKey;
+    if (group === 'report_library' && (!effectiveItemKey || !effectiveItemKey.startsWith('book_lending'))) {
+      effectiveItemKey = 'book_lending_report';
+    }
+
+    switch (effectiveItemKey) {
       case 'student_list': {
         const list = this.getReportStudents(f);
         const isGrade7 = option === 'grade7' || (option !== 'basic' && option !== 'detail' && option !== 'extra' && option !== 'grade8_9' && option !== 'grade10_12' && f.gradeKey === 'grade_7');
@@ -8483,13 +8535,35 @@ class ScoreManagementApp {
       }
       case 'book_lending_entry':
       case 'book_lending_report': {
-        const list = this.getReportStudents(f);
+        let list = this.getReportStudents(f);
         data.isBookLending = true;
+
+        // Smart fallback if filter returned 0 students
+        if (list.length === 0) {
+          const valid = (this.students || []).filter(s => !this.isIncompleteLateStudent(s));
+          if (f.classVal && f.classVal !== 'ALL') {
+            list = valid.filter(s => String(s.class || '').trim() === f.classVal);
+          }
+          if (list.length === 0 && f.gradeKey && f.gradeKey !== 'ALL') {
+            list = valid.filter(s => this.studentMatchesGrade(s, f.gradeKey));
+          }
+          if (list.length === 0) {
+            for (const g of ['grade_8', 'grade_7', 'grade_9']) {
+              const subList = valid.filter(s => this.studentMatchesGrade(s, g));
+              if (subList.length > 0) {
+                const firstCls = subList[0].class;
+                list = subList.filter(s => s.class === firstCls);
+                break;
+              }
+            }
+          }
+        }
+
         const totalFemale = list.filter(isF).length;
 
         // Determine grade number (7, 8, or 9)
-        let gradeNum = '9';
-        const clsName = (f.classVal && f.classVal !== 'ALL') ? f.classVal : ((list[0] && list[0].class) || '9D');
+        const clsName = (f.classVal && f.classVal !== 'ALL') ? f.classVal : ((list[0] && list[0].class) || '8A');
+        let gradeNum = '8';
         if (f.gradeKey === 'grade_7' || clsName.includes('7') || clsName.includes('៧')) gradeNum = '7';
         else if (f.gradeKey === 'grade_8' || clsName.includes('8') || clsName.includes('៨')) gradeNum = '8';
         else if (f.gradeKey === 'grade_9' || clsName.includes('9') || clsName.includes('៩')) gradeNum = '9';
@@ -9038,21 +9112,20 @@ class ScoreManagementApp {
     try {
       lunarText = this.getKhmerLunarDate(signDateVal);
     } catch (_) {
-      lunarText = 'ថ្ងៃពុធ ១៣កើត ខែកត្តិក ឆ្នាំរោង ឆស័ក ពុទ្ធសករាជ ២៥៦៩';
+      lunarText = 'ថ្ងៃពុធ ១ពោច ខែកត្តិក ឆ្នាំរោង ឆស័ក ព.ស. ២៥៦៩';
     }
-    const solarText = this.getKhmerDate(signDateVal, 'សៀមរាប');
+    const solarText = this.formatKhmerDocSolarDate(signDateVal, 'វត្តស្វាយ');
 
     return `
       <div class="book-lending-footer-wrapper" style="margin-top: 10px; page-break-inside: avoid; font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif;">
-        <div style="font-size: 10.5pt; font-weight: bold; margin-bottom: 12px; text-align: left;">
-          បញ្ឈប់បញ្ជីត្រឹមលេខរៀង ${esc(totalKh)} ស្រី ${esc(femaleKh)} នាក់
-        </div>
-
         <table style="width: 100%; border-collapse: collapse; border: none; font-size: 10pt; line-height: 1.5;">
           <tr style="border: none;">
-            <td style="border: none; width: 45%; padding: 0 4px; text-align: left; vertical-align: top;">
+            <td style="border: none; width: 50%; padding: 0 4px; text-align: left; vertical-align: top;">
+              <div style="font-size: 10.5pt; font-weight: bold; margin-bottom: 8px;">
+                បញ្ឈប់បញ្ជីត្រឹមលេខរៀង ${esc(totalKh)} ស្រី ${esc(femaleKh)} នាក់
+              </div>
             </td>
-            <td style="border: none; width: 55%; padding: 0 4px; text-align: center; vertical-align: top;">
+            <td style="border: none; width: 50%; padding: 0 4px; text-align: center; vertical-align: top;">
               <div style="font-size: 9.5pt; white-space: nowrap;">${esc(lunarText)}</div>
               <div style="font-size: 9.5pt; white-space: nowrap; margin-top: 2px;">${esc(solarText)}</div>
               <div style="font-size: 10.5pt; font-weight: bold; margin-top: 4px;">គ្រូទទួលបន្ទុកថ្នាក់</div>
@@ -9061,12 +9134,12 @@ class ScoreManagementApp {
           </tr>
 
           <tr style="border: none;">
-            <td style="border: none; width: 45%; padding: 0 4px; text-align: center; vertical-align: top;">
+            <td style="border: none; width: 50%; padding: 0 4px; text-align: center; vertical-align: top;">
               <div style="font-size: 10pt; font-weight: 500;">បានឃើញ និង ឯកភាព</div>
               <div style="font-family: 'Khmer OS Muol Light', 'Moul', serif; font-size: 10.5pt; margin-top: 3px;">នាយកសាលា</div>
               <div style="height: 55px;"></div>
             </td>
-            <td style="border: none; width: 55%; padding: 0 4px;"></td>
+            <td style="border: none; width: 50%; padding: 0 4px;"></td>
           </tr>
         </table>
       </div>
@@ -9074,6 +9147,9 @@ class ScoreManagementApp {
   }
 
   previewReport() {
+    if (this.reportState && this.reportState.group === 'report_library') {
+      this.collectBookLendingInputsFromTable();
+    }
     const data = this.buildReportData();
     const card = document.getElementById('reportPreviewCard');
     const body = document.getElementById('reportPreviewBody');
@@ -9263,7 +9339,7 @@ class ScoreManagementApp {
       const signDateVal = f.signDate || new Date().toISOString().slice(0, 10);
       let lunarText = '';
       try { lunarText = this.getKhmerLunarDate(signDateVal); } catch (_) { lunarText = ''; }
-      const solarText = this.getKhmerDate(signDateVal, 'សៀមរាប');
+      const solarText = this.formatKhmerDocSolarDate(signDateVal, 'វត្តស្វាយ');
 
       const aoa = [
         ['ខេត្ត៖ សៀមរាប', '', '', '', '', '', '', '', '', '', '', 'ព្រះរាជាណាចក្រកម្ពុជា'],

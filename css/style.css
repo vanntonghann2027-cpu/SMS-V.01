@@ -925,6 +925,27 @@ button {
   padding: 2.5px 3px !important;
   border: 1px solid #000000;
 }
+.book-lending-table {
+  font-size: 8.5pt !important;
+  font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif !important;
+  width: 100% !important;
+}
+.book-lending-table th,
+.book-lending-table td {
+  border: 1px solid #000000 !important;
+  padding: 2.5px 3px !important;
+  color: #000000 !important;
+}
+.book-lending-table th {
+  background-color: #f8fafc !important;
+  font-weight: bold !important;
+  text-align: center !important;
+}
+.book-lending-footer-wrapper {
+  margin-top: 10px;
+  font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif;
+  page-break-inside: avoid;
+}
 .grade7-footer-wrapper {
   margin-top: 10px;
   font-family: 'Khmer OS Siemreap', 'Siemreap', sans-serif;
