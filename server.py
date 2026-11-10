@@ -842,9 +842,9 @@ class ProxyHTTPRequestHandler(http.server.SimpleHTTPRequestHandler):
                 # Periodic automatic disk backup (throttled to at most once every 90s to keep score entry instant)
                 now_ts = time.time()
                 force_backup = isinstance(parsed_json, dict) and bool(parsed_json.pop('_forceBackup', False))
-                last_backup_ts = getattr(AppHandler, '_last_auto_backup_ts', 0.0)
+                last_backup_ts = getattr(ProxyHTTPRequestHandler, '_last_auto_backup_ts', 0.0)
                 if isinstance(parsed_json, dict) and parsed_json.get('students') and (force_backup or (now_ts - last_backup_ts >= 90.0)):
-                    AppHandler._last_auto_backup_ts = now_ts
+                    ProxyHTTPRequestHandler._last_auto_backup_ts = now_ts
                     ts = time.strftime('%Y%m%d_%H%M%S')
                     backup_file = os.path.join(BACKUP_DIR, f"backup_{ts}.json")
                     if not os.path.exists(backup_file):

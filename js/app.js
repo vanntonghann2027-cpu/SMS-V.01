@@ -972,7 +972,7 @@ class ScoreManagementApp {
       const cleanedName = this.cleanStudentName(s.khmerName);
       if (s.khmerName && s.khmerName !== cleanedName) needsSaveAfterClean = true;
       const isLateId = Boolean(s.isLateEntry) || String(s.id || '').trim().startsWith('END-');
-      const isIncompleteLate = isLateId && !(cleanedName && String(s.gender || '').trim() && String(s.dob || '').trim());
+      const isIncompleteLate = isLateId && !cleanedName;
       if (isIncompleteLate) {
         return {
           ...s,
@@ -10848,10 +10848,8 @@ class ScoreManagementApp {
     const idStr = String(stu.id || stu.studentId || '').trim();
     const isLate = Boolean(stu.isLateEntry) || idStr.startsWith('END-') || idStr.startsWith('END ');
     if (!isLate) return false;
-    const hasName = Boolean(String(stu.khmerName || '').trim());
-    const hasGender = Boolean(String(stu.gender || '').trim());
-    const hasDob = Boolean(String(stu.dob || '').trim());
-    return !(hasName && hasGender && hasDob);
+    const hasName = Boolean(String(stu.khmerName || stu.name || '').trim());
+    return !hasName;
   }
 
   // =========================================================================
@@ -15796,13 +15794,13 @@ class ScoreManagementApp {
 
       return {
         studentId: stu.id,
-        khmerName: isIncompleteLate ? '' : this.cleanStudentName(stu.khmerName),
-        latinName: isIncompleteLate ? '' : (stu.latinName || ''),
-        gender: isIncompleteLate ? '' : stu.gender,
-        dob: isIncompleteLate ? '' : (stu.dob || '2008-01-01'),
-        grade: isIncompleteLate ? '' : (stu.class || gradeLabel),
-        class: isIncompleteLate ? '' : (stu.class || gradeLabel),
-        classType: isIncompleteLate ? '' : (stu.classType || ''),
+        khmerName: (stu && stu.khmerName) ? (this.cleanStudentName(stu.khmerName) || stu.khmerName) : '',
+        latinName: (stu && stu.latinName) || '',
+        gender: (stu && stu.gender) || '',
+        dob: (stu && stu.dob) || (isIncompleteLate ? '' : '2008-01-01'),
+        grade: (stu && stu.class) || gradeLabel,
+        class: (stu && stu.class) || gradeLabel,
+        classType: (stu && stu.classType) || '',
         status: statusDisplay,
         isClassTransferred: Boolean(isTransferred),
         isLateEntry: Boolean(stu.isLateEntry) || String(stu.id || '').startsWith('END-'),
@@ -15846,18 +15844,18 @@ class ScoreManagementApp {
       return true;
     });
 
-    // Add any new incomplete END-xxxx students to this.students (only ID filled, other fields empty)
+    // Add any new incomplete END-xxxx students to this.students (never overwrite existing name or details!)
     newGradeArrangements.forEach(item => {
       if (this.isIncompleteLateStudent(item)) {
         const existingIdx = this.students.findIndex(s => s.id === item.studentId);
         const lateStuRecord = {
           id: item.studentId,
-          khmerName: '',
-          latinName: '',
-          gender: '',
-          dob: '',
-          class: '',
-          classType: '',
+          khmerName: item.khmerName || '',
+          latinName: item.latinName || '',
+          gender: item.gender || '',
+          dob: item.dob || '',
+          class: item.class || '',
+          classType: item.classType || '',
           phone: '',
           guardian: '',
           address: '',
@@ -15866,7 +15864,13 @@ class ScoreManagementApp {
           gradeLevel: selectedGrade
         };
         if (existingIdx !== -1) {
-          this.students[existingIdx] = { ...this.students[existingIdx], ...lateStuRecord };
+          const existing = this.students[existingIdx];
+          this.students[existingIdx] = {
+            ...lateStuRecord,
+            ...existing,
+            isLateEntry: true,
+            gradeLevel: existing.gradeLevel || selectedGrade
+          };
         } else {
           this.students.push(lateStuRecord);
         }
@@ -16374,10 +16378,10 @@ class ScoreManagementApp {
 
       tr.innerHTML = `
         <td style="font-weight: 700; color: var(--primary);">${item.studentId}</td>
-        <td style="font-weight: 600;">${isIncompleteLate ? '' : (item.khmerName || '')}</td>
+        <td style="font-weight: 600;">${item.khmerName || ''}</td>
         <td>${genderCellHtml}</td>
-        <td>${isIncompleteLate ? '' : dobStr}</td>
-        <td>${isIncompleteLate ? '' : (item.grade || '')}</td>
+        <td>${item.dob ? dobStr : ''}</td>
+        <td>${item.grade || ''}</td>
         <td>${statusHtml}</td>
         <td><span class="badge-exam-room-circle">${roomNumDisplay}</span></td>
         <td><span class="badge-exam-desk-circle">${deskNumDisplay}</span></td>
@@ -17699,7 +17703,7 @@ class ScoreManagementApp {
       const seqNum = idx + 1;
       const sId = stu.studentId || stu.id;
       const stuObj = (this.students && this.students.find(s => String(s.id) === String(sId))) || stu;
-      const stuName = stuObj.khmerName || stuObj.name || '-';
+      const stuName = stuObj.khmerName || stuObj.name || (String(sId).startsWith('END-') ? `សិស្សចូលក្រោយ (${sId})` : '-');
       const stuGender = (stuObj.gender === 'F' || stuObj.gender === 'ស្រី') ? 'ស្រី' : ((stuObj.gender === 'M' || stuObj.gender === 'ប្រុស') ? 'ប្រុស' : (stuObj.gender || '-'));
       const stuRoom = stu.roomNumber || foundRoom || '-';
       const stuDesk = stu.deskNumber || seqNum;
@@ -18098,7 +18102,7 @@ class ScoreManagementApp {
       const seqNum = idx + 1;
       const sId = stu.studentId || stu.id;
       const stuObj = (this.students && this.students.find(s => String(s.id) === String(sId))) || stu;
-      const stuName = stuObj.khmerName || stuObj.name || '-';
+      const stuName = stuObj.khmerName || stuObj.name || (String(sId).startsWith('END-') ? `សិស្សចូលក្រោយ (${sId})` : '-');
       const stuGender = (stuObj.gender === 'F' || stuObj.gender === 'ស្រី') ? 'ស្រី' : ((stuObj.gender === 'M' || stuObj.gender === 'ប្រុស') ? 'ប្រុស' : (stuObj.gender || '-'));
       const stuRoom = stu.roomNumber || foundRoom || '-';
       const stuDesk = stu.deskNumber || seqNum;
@@ -19314,7 +19318,7 @@ class ScoreManagementApp {
       const seqNum = idx + 1;
       const sId = stu.studentId || stu.id;
       const stuObj = (this.students && this.students.find(s => String(s.id) === String(sId))) || stu;
-      const stuName = stuObj.khmerName || stuObj.name || '-';
+      const stuName = stuObj.khmerName || stuObj.name || (String(sId).startsWith('END-') ? `សិស្សចូលក្រោយ (${sId})` : '-');
       const stuGender = (stuObj.gender === 'F' || stuObj.gender === 'ស្រី') ? 'ស្រី' : ((stuObj.gender === 'M' || stuObj.gender === 'ប្រុស') ? 'ប្រុស' : (stuObj.gender || '-'));
       const stuRoom = stu.roomNumber || foundRoom || '-';
       const stuDesk = stu.deskNumber || seqNum;
@@ -21211,7 +21215,7 @@ class ScoreManagementApp {
       const seqNum = idx + 1;
       const sId = stu.studentId || stu.id;
       const stuObj = (this.students && this.students.find(s => String(s.id) === String(sId))) || stu;
-      const stuName = stuObj.khmerName || stuObj.name || '-';
+      const stuName = stuObj.khmerName || stuObj.name || (String(sId).startsWith('END-') ? `សិស្សចូលក្រោយ (${sId})` : '-');
       const stuGender = (stuObj.gender === 'F' || stuObj.gender === 'ស្រី') ? 'ស្រី' : ((stuObj.gender === 'M' || stuObj.gender === 'ប្រុស') ? 'ប្រុស' : (stuObj.gender || '-'));
       const stuRoom = stu.roomNumber || foundRoom || '-';
       const stuDesk = stu.deskNumber || seqNum;
@@ -26134,7 +26138,20 @@ CREATE POLICY "Allow all sms_app_state" ON public.sms_app_state FOR ALL TO anon,
         const existingMap = new Map((this.students || []).map((s) => [String(s.id), s]));
         for (const row of allStuRows) {
           if (row && row.id && row.student_json) {
-            existingMap.set(String(row.id), { ...row.student_json });
+            const localStu = existingMap.get(String(row.id));
+            if (!localStu) {
+              existingMap.set(String(row.id), { ...row.student_json });
+            } else {
+              // Merge: keep local edits (class, newClass, oldClass, khmerName, etc.) if local has them
+              existingMap.set(String(row.id), {
+                ...row.student_json,
+                ...localStu,
+                class: localStu.class || row.student_json.class,
+                newClass: localStu.newClass || localStu.class || row.student_json.newClass || row.student_json.class,
+                oldClass: localStu.oldClass !== undefined ? localStu.oldClass : row.student_json.oldClass,
+                khmerName: localStu.khmerName || row.student_json.khmerName
+              });
+            }
           }
         }
         this.students = Array.from(existingMap.values());
