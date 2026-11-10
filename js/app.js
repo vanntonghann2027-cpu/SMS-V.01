@@ -9585,11 +9585,74 @@ class ScoreManagementApp {
     const matchedGradeKey = this.getStandardGradeKey(this.activeClass);
     const activeSubjects = this.getActiveSubjectsForGrade(matchedGradeKey, isSemester);
     const isGrade789 = ['grade_7', 'grade_8', 'grade_9'].includes(matchedGradeKey) || /^grade_[789]/.test(matchedGradeKey);
+    const isNationalExamGrade = (matchedGradeKey === 'grade_9' || matchedGradeKey === 'grade_12_sci' || matchedGradeKey === 'grade_12_soc' || /12|9/.test(String(matchedGradeKey)));
     const hasKhmer = activeSubjects.some(s => s.code === 'kh');
 
-    const results = this.students
-      .filter(stu => this.studentMatchesGrade(stu, this.activeClass) && !this.isIncompleteLateStudent(stu))
-      .map(stu => {
+    const targetStudents = this.students
+      .filter(stu => this.studentMatchesGrade(stu, this.activeClass) && !this.isIncompleteLateStudent(stu));
+
+    // Determine the fixed curriculum divisor (total coefficients) for this grade level:
+    // "ការគណនាមធ្យមភាគបើចែក និង ១២ គឺចែក ទាំងអស់គ្នា ព្រោះគិតតាមកម្រិតមិនមែនគិតលើមុខវិជ្ជាមិនប្រឡងទេ"
+    // The divisor applies uniformly to ALL students in this grade level.
+    let gradeDivisor = 0;
+    let gradeMaxPossible = 0;
+
+    activeSubjects.forEach(sub => {
+      if (sub.scoreType === 'none') return;
+      if (isGrade789 && (sub.code === 'kh_dict' || sub.code === 'kh_essay' || sub.code === 'reading_speed')) {
+        return;
+      }
+
+      const isForeignLang = (sub.code === 'eng' || sub.code === 'lag' || sub.fullKey === 'eng' || sub.fullKey === 'lag' || (sub.name && sub.name.includes('ភាសាបរទេស')));
+      if (isNationalExamGrade && isForeignLang) {
+        // Foreign language has 0 coefficient in Grade 9 & 12
+        return;
+      }
+      if (sub.isBonus) {
+        return;
+      }
+
+      // Check if this subject has been tested in this exam (has at least one student with recorded score in the grade)
+      const isSubjectTestedInClass = targetStudents.some(stu => {
+        const sData = (this.scores[stu.id] && this.scores[stu.id][period]) ||
+                      (period === 'test_early' && this.scores[stu.id] && this.scores[stu.id]['year_start_test']) || {};
+        let val = this.getSubjectScore(sData, sub.code);
+        if (isGrade789 && sub.code === 'kh') {
+          const dictRaw = this.getSubjectScore(sData, 'kh_dict');
+          const essayRaw = this.getSubjectScore(sData, 'kh_essay');
+          if (dictRaw !== undefined || essayRaw !== undefined) {
+            val = (parseFloat(dictRaw) || 0) + (parseFloat(essayRaw) || 0);
+          }
+        }
+        return val !== undefined && val !== null && val !== '' && !isNaN(parseFloat(val));
+      });
+
+      if (isSubjectTestedInClass) {
+        const coef = sub.coef !== undefined ? Number(sub.coef) : 1;
+        gradeDivisor += coef;
+        gradeMaxPossible += (sub.maxScore || (coef * 50));
+      }
+    });
+
+    // If no scores have been recorded yet across the entire grade, fallback to standard core curriculum subjects
+    if (gradeDivisor <= 0) {
+      if (isGrade789) {
+        gradeDivisor = (matchedGradeKey === 'grade_9') ? 11 : 12;
+        gradeMaxPossible = gradeDivisor * 50;
+      } else {
+        activeSubjects.forEach(sub => {
+          if (sub.scoreType === 'none') return;
+          if (sub.isBonus) return;
+          const isForeignLang = (sub.code === 'eng' || sub.code === 'lag' || (sub.name && sub.name.includes('ភាសាបរទេស')));
+          if (isNationalExamGrade && isForeignLang) return;
+          const coef = sub.coef !== undefined ? Number(sub.coef) : 1;
+          gradeDivisor += coef;
+          gradeMaxPossible += (sub.maxScore || (coef * 50));
+        });
+      }
+    }
+
+    const results = targetStudents.map(stu => {
         let studentScores = (this.scores[stu.id] && this.scores[stu.id][period]) || {};
         if ((!studentScores || Object.keys(studentScores).length === 0) && (period === 'sem1_exam' || period === 'sem1_overall')) {
           studentScores = (this.scores[stu.id] && (this.scores[stu.id]['sem1_overall'] || this.scores[stu.id]['sem1_exam'])) || {};
@@ -9598,8 +9661,6 @@ class ScoreManagementApp {
           studentScores = (this.scores[stu.id] && (this.scores[stu.id]['test_early'] || this.scores[stu.id]['year_start_test'])) || {};
         }
         let totalWeighted = 0;
-        let totalCoef = 0;
-        let totalMaxPossible = 0;
 
         // Auto-compute Khmer for Grade 7, 8, 9:
         // Khmer (100) = Dictation (40) + Essay (60)
@@ -9633,22 +9694,16 @@ class ScoreManagementApp {
           if (rawVal !== undefined && rawVal !== null && rawVal !== '' && !isNaN(parseFloat(rawVal))) {
             const contrib = this.computeSubjectScoreContribution(rawVal, sub, matchedGradeKey, isSemester);
             totalWeighted += contrib.weighted;
-            totalCoef += contrib.coef;
-            if (contrib.coef > 0) {
-              totalMaxPossible += (sub.maxScore || (contrib.coef * 50));
-            } else if (contrib.isBonus) {
-              totalMaxPossible += Math.max(0, (sub.maxScore || 50) - 25);
-            }
           }
         });
 
-        // Standard Cambodian Average: Total weighted divided by total coefficients
-        const average = totalCoef > 0 ? (totalWeighted / totalCoef) : 0;
+        // Standard Cambodian Average: Total weighted divided by the grade level uniform divisor (e.g. 12 for Grade 8)
+        const average = gradeDivisor > 0 ? (totalWeighted / gradeDivisor) : 0;
 
-        // Percentage out of 100% (based on base of 50 or totalMaxPossible)
-        const percentage = totalMaxPossible > 0
-          ? (totalWeighted / totalMaxPossible) * 100
-          : (totalCoef > 0 ? (average / 50) * 100 : 0);
+        // Percentage out of 100% (based on base of 50 or gradeMaxPossible)
+        const percentage = gradeMaxPossible > 0
+          ? (totalWeighted / gradeMaxPossible) * 100
+          : (gradeDivisor > 0 ? (average / 50) * 100 : 0);
 
         // Cambodian MoEYS Mention System (Passing is average >= 25, percentage >= 50%)
         let mention = 'F';
@@ -13216,146 +13271,238 @@ class ScoreManagementApp {
     this.exportPeriodScoresExcel();
   }
 
-  exportPeriodScoresExcel() {
-    const period = this.currentPeriod;
-    const periodMeta = PERIOD_DEFINITIONS[period] || { title: period };
-    const activeSubjects = this.subjects.filter(s => s.enabled);
-    const results = this.calculatePeriodResults(period);
-    const matchedGradeKey = this.detectCurriculumGradeKey(this.activeClass);
-    const isGrade789 = ['grade_7', 'grade_8', 'grade_9'].includes(matchedGradeKey) || /^grade_[789]/.test(matchedGradeKey);
-    const classLabel = typeof this.getClassLabel === 'function' ? this.getClassLabel(this.activeClass) : (this.activeClass || 'ថ្នាក់');
+  generateExcelHtml(allRows, title) {
+    let html = `<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<!--[if gte mso 9]>
+<xml>
+ <x:ExcelWorkbook>
+  <x:ExcelWorksheets>
+   <x:ExcelWorksheet>
+    <x:Name>Scores</x:Name>
+    <x:WorksheetOptions>
+     <x:DisplayGridlines/>
+    </x:WorksheetOptions>
+   </x:ExcelWorksheet>
+  </x:ExcelWorksheets>
+ </x:ExcelWorkbook>
+</xml>
+<![endif]-->
+<style>
+  table { border-collapse: collapse; font-family: 'Kantumruy Pro', 'Khmer OS Siemreap', 'Segoe UI', Calibri, sans-serif; font-size: 11pt; }
+  th { background-color: #1e40af; color: #ffffff; font-weight: bold; border: 1px solid #94a3b8; padding: 6px 10px; text-align: center; }
+  td { border: 1px solid #cbd5e1; padding: 5px 8px; }
+  .title-cell { font-size: 14pt; font-weight: bold; text-align: center; border: none; }
+  .subtitle-cell { font-size: 10.5pt; text-align: center; color: #475569; border: none; }
+  .num { text-align: right; }
+  .center { text-align: center; }
+  .pass { color: #15803d; font-weight: bold; }
+  .fail { color: #b91c1c; font-weight: bold; }
+</style>
+</head>
+<body>
+<table border="1">`;
 
-    const titleRow1 = ['ព្រះរាជាណាចក្រកម្ពុជា ជាតិ សាសនា ព្រះមហាក្សត្រ'];
-    const titleRow2 = [`តារាងពិន្ទុ និងចំណាត់ថ្នាក់សិស្ស - ${periodMeta.title || period}`];
-    const titleRow3 = [`កម្រិតថ្នាក់៖ ${classLabel} | ឆ្នាំសិក្សា៖ ${this.academicYear || '២០២៥ - ២០២៦'} | ចំនួនសិស្សសរុប៖ ${results.length} នាក់ | កាលបរិច្ឆេទនាំចេញ៖ ${new Date().toLocaleDateString('km-KH')}`];
-    const emptyRow = [];
-
-    // Header row
-    const headerRow = [
-      'ចំណាត់ថ្នាក់',
-      'អត្តលេខ',
-      'គោត្តនាម-នាម',
-      'ភេទ'
-    ];
-
-    activeSubjects.forEach(s => {
-      let subInfo = s.name;
-      if (s.scoreType === 'none') {
-        subInfo += ' (មិនយកពិន្ទុ)';
-      } else if (s.isBonus) {
-        subInfo += ' (ពិន្ទុបន្ថែម)';
-      } else {
-        subInfo += ` (${s.maxScore}×${s.coef})`;
-      }
-      headerRow.push(subInfo);
+    allRows.forEach((row, rIdx) => {
+      html += '<tr>';
+      row.forEach(cell => {
+        const val = (cell === null || cell === undefined) ? '' : String(cell);
+        if (rIdx < 3) {
+          html += `<td colspan="15" class="${rIdx === 0 ? 'title-cell' : 'subtitle-cell'}">${val}</td>`;
+        } else if (rIdx === 4) {
+          html += `<th>${val}</th>`;
+        } else {
+          const isNum = !isNaN(parseFloat(val)) && isFinite(val) && val.trim() !== '';
+          const isPass = val === 'ជាប់';
+          const isFail = val === 'ធ្លាក់';
+          const cls = isPass ? 'center pass' : isFail ? 'center fail' : isNum ? 'num' : 'center';
+          html += `<td class="${cls}">${val}</td>`;
+        }
+      });
+      html += '</tr>';
     });
 
-    headerRow.push('ពិន្ទុសរុប', 'មធ្យមភាគ', 'ភាគរយ', 'និទ្ទេស', 'លទ្ធផល');
+    html += `</table></body></html>`;
+    return html;
+  }
 
-    // Data rows
-    const dataRows = results.map(item => {
-      const stu = item.student;
-      let stuScores = {};
-      if (this.scores[stu.id]) {
-        stuScores = this.scores[stu.id][period] || {};
-        if (period === 'test_early' && !this.scores[stu.id]['test_early'] && this.scores[stu.id]['year_start_test']) {
-          stuScores = this.scores[stu.id]['year_start_test'] || {};
-        }
-      }
+  exportPeriodScoresExcel() {
+    try {
+      const period = (this.currentPeriod && !['student_info', 'overview_stats', 'curriculum_setting'].includes(this.currentPeriod))
+        ? this.currentPeriod
+        : (this.activeScorePeriod || 'test_early');
+      const periodMeta = (typeof PERIOD_DEFINITIONS !== 'undefined' && PERIOD_DEFINITIONS[period]) || { title: period };
+      const activeSubjects = this.subjects.filter(s => s.enabled);
+      const results = this.calculatePeriodResults(period);
+      const matchedGradeKey = this.getStandardGradeKey ? this.getStandardGradeKey(this.activeClass) : this.detectCurriculumGradeKey(this.activeClass);
+      const isGrade789 = ['grade_7', 'grade_8', 'grade_9'].includes(matchedGradeKey) || /^grade_[789]/.test(matchedGradeKey);
+      const classLabel = typeof this.getClassLabel === 'function' ? this.getClassLabel(this.activeClass) : (this.activeClass || 'ថ្នាក់');
 
-      const row = [
-        item.rank,
-        stu.id,
-        stu.khmerName || '',
-        stu.gender || ''
+      const titleRow1 = ['ព្រះរាជាណាចក្រកម្ពុជា ជាតិ សាសនា ព្រះមហាក្សត្រ'];
+      const titleRow2 = [`តារាងពិន្ទុ និងចំណាត់ថ្នាក់សិស្ស - ${periodMeta.title || period}`];
+      const titleRow3 = [`កម្រិតថ្នាក់៖ ${classLabel} | ឆ្នាំសិក្សា៖ ${this.academicYear || '២០២៥ - ២០២៦'} | ចំនួនសិស្សសរុប៖ ${results.length} នាក់ | កាលបរិច្ឆេទនាំចេញ៖ ${new Date().toLocaleDateString('km-KH')}`];
+      const emptyRow = [];
+
+      // Header row
+      const headerRow = [
+        'ចំណាត់ថ្នាក់',
+        'អត្តលេខ',
+        'គោត្តនាម-នាម',
+        'ភេទ'
       ];
 
       activeSubjects.forEach(s => {
-        let val = this.getSubjectScore(stuScores, s.code);
-        if (isGrade789 && s.code === 'kh') {
-          const dictRaw = this.getSubjectScore(stuScores, 'kh_dict');
-          const essayRaw = this.getSubjectScore(stuScores, 'kh_essay');
-          if (dictRaw !== undefined || essayRaw !== undefined) {
-            val = (parseFloat(dictRaw) || 0) + (parseFloat(essayRaw) || 0);
+        let subInfo = s.name;
+        if (s.scoreType === 'none') {
+          subInfo += ' (មិនយកពិន្ទុ)';
+        } else if (s.isBonus) {
+          subInfo += ' (ពិន្ទុបន្ថែម)';
+        } else {
+          subInfo += ` (${s.maxScore}×${s.coef})`;
+        }
+        headerRow.push(subInfo);
+      });
+
+      headerRow.push('ពិន្ទុសរុប', 'មធ្យមភាគ', 'ភាគរយ', 'និទ្ទេស', 'លទ្ធផល');
+
+      // Data rows
+      const dataRows = results.map(item => {
+        const stu = item.student;
+        let stuScores = {};
+        if (this.scores[stu.id]) {
+          stuScores = this.scores[stu.id][period] || {};
+          if (period === 'test_early' && !this.scores[stu.id]['test_early'] && this.scores[stu.id]['year_start_test']) {
+            stuScores = this.scores[stu.id]['year_start_test'] || {};
           }
         }
-        if (val !== undefined && val !== null && val !== '' && !isNaN(parseFloat(val))) {
-          row.push(parseFloat(val));
-        } else {
-          row.push('');
-        }
-      });
 
-      row.push(
-        item.total,
-        item.average,
-        `${item.percentage}%`,
-        item.mentionKhmer || item.mention,
-        item.isPassed ? 'ជាប់' : 'ធ្លាក់'
-      );
+        const row = [
+          item.rank,
+          stu.id,
+          stu.khmerName || '',
+          stu.gender || ''
+        ];
 
-      return row;
-    });
-
-    // Statistics / Summary rows
-    const totalCount = results.length;
-    const femaleCount = results.filter(r => r.student.gender === 'ស្រី' || r.student.gender === 'F').length;
-    const passedCount = results.filter(r => r.isPassed).length;
-    const passedRate = totalCount > 0 ? ((passedCount / totalCount) * 100).toFixed(1) : '0';
-    const failedCount = totalCount - passedCount;
-    const failedRate = totalCount > 0 ? ((failedCount / totalCount) * 100).toFixed(1) : '0';
-    const classAvg = totalCount > 0 ? (results.reduce((acc, r) => acc + (r.average || 0), 0) / totalCount).toFixed(2) : '0.00';
-
-    const statRows = [
-      [],
-      ['--- ស្ថិតិសង្ខេបប្រចាំថ្នាក់ ---'],
-      [`សិស្សសរុប៖ ${totalCount} នាក់ (ស្រី ${femaleCount} នាក់)`],
-      [`សិស្សជាប់មធ្យមភាគ (>= 50%)៖ ${passedCount} នាក់ (${passedRate}%)`],
-      [`សិស្សក្រោមមធ្យមភាគ (< 50%)៖ ${failedCount} នាក់ (${failedRate}%)`],
-      [`មធ្យមភាគថ្នាក់សរុប៖ ${classAvg}`]
-    ];
-
-    const allRows = [
-      titleRow1,
-      titleRow2,
-      titleRow3,
-      emptyRow,
-      headerRow,
-      ...dataRows,
-      ...statRows
-    ];
-
-    const safePeriodTitle = (periodMeta.title || period).replace(/[\\/:*?"<>|]/g, '_');
-    const safeClass = String(this.activeClass || 'grade').replace(/[\\/:*?"<>|]/g, '_');
-    const filename = `តារាងពិន្ទុ_${safePeriodTitle}_${safeClass}_${new Date().toISOString().slice(0, 10)}`;
-
-    if (typeof XLSX !== 'undefined') {
-      const ws = XLSX.utils.aoa_to_sheet(allRows);
-
-      // Auto column widths
-      ws['!cols'] = headerRow.map((c, i) => {
-        let maxLen = String(c).length;
-        dataRows.forEach(r => {
-          const l = String(r[i] ?? '').length;
-          if (l > maxLen) maxLen = l;
+        activeSubjects.forEach(s => {
+          let val = this.getSubjectScore(stuScores, s.code);
+          if (isGrade789 && s.code === 'kh') {
+            const dictRaw = this.getSubjectScore(stuScores, 'kh_dict');
+            const essayRaw = this.getSubjectScore(stuScores, 'kh_essay');
+            if (dictRaw !== undefined || essayRaw !== undefined) {
+              val = (parseFloat(dictRaw) || 0) + (parseFloat(essayRaw) || 0);
+            }
+          }
+          if (val !== undefined && val !== null && val !== '' && !isNaN(parseFloat(val))) {
+            row.push(parseFloat(val));
+          } else {
+            row.push('');
+          }
         });
-        return { wch: Math.min(40, Math.max(8, maxLen + 3)) };
+
+        row.push(
+          item.total,
+          item.average,
+          `${item.percentage}%`,
+          item.mentionKhmer || item.mention,
+          item.isPassed ? 'ជាប់' : 'ធ្លាក់'
+        );
+
+        return row;
       });
 
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, safePeriodTitle.slice(0, 30));
-      XLSX.writeFile(wb, `${filename}.xlsx`);
-      this.showToast('បាននាំចេញតារាងពិន្ទុជាឯកសារ Excel (.xlsx) ដោយជោគជ័យ!', 'success');
-    } else {
-      // Fallback CSV
+      // Statistics / Summary rows
+      const totalCount = results.length;
+      const femaleCount = results.filter(r => r.student.gender === 'ស្រី' || r.student.gender === 'F').length;
+      const passedCount = results.filter(r => r.isPassed).length;
+      const passedRate = totalCount > 0 ? ((passedCount / totalCount) * 100).toFixed(1) : '0';
+      const failedCount = totalCount - passedCount;
+      const failedRate = totalCount > 0 ? ((failedCount / totalCount) * 100).toFixed(1) : '0';
+      const classAvg = totalCount > 0 ? (results.reduce((acc, r) => acc + (r.average || 0), 0) / totalCount).toFixed(2) : '0.00';
+
+      const statRows = [
+        [],
+        ['--- ស្ថិតិសង្ខេបប្រចាំថ្នាក់ ---'],
+        [`សិស្សសរុប៖ ${totalCount} នាក់ (ស្រី ${femaleCount} នាក់)`],
+        [`សិស្សជាប់មធ្យមភាគ (>= 50%)៖ ${passedCount} នាក់ (${passedRate}%)`],
+        [`សិស្សក្រោមមធ្យមភាគ (< 50%)៖ ${failedCount} នាក់ (${failedRate}%)`],
+        [`មធ្យមភាគថ្នាក់សរុប៖ ${classAvg}`]
+      ];
+
+      const allRows = [
+        titleRow1,
+        titleRow2,
+        titleRow3,
+        emptyRow,
+        headerRow,
+        ...dataRows,
+        ...statRows
+      ];
+
+      const safePeriodTitle = String(periodMeta.title || period).replace(/[\\/:*?"<>|]/g, '_');
+      const safeClass = String(this.activeClass || 'grade').replace(/[\\/:*?"<>|]/g, '_');
+      const fileBase = `ពិន្ទុ_${safePeriodTitle}_${safeClass}_${new Date().toISOString().slice(0, 10)}`;
+
+      // 1. First priority: Try SheetJS (.xlsx)
+      if (typeof XLSX !== 'undefined' && XLSX.utils && typeof XLSX.utils.aoa_to_sheet === 'function') {
+        try {
+          const ws = XLSX.utils.aoa_to_sheet(allRows);
+          ws['!cols'] = headerRow.map((c, i) => {
+            let maxLen = String(c).length;
+            dataRows.forEach(r => {
+              const l = String(r[i] ?? '').length;
+              if (l > maxLen) maxLen = l;
+            });
+            return { wch: Math.min(45, Math.max(8, maxLen + 2)) };
+          });
+
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, 'Scores');
+          XLSX.writeFile(wb, `${fileBase}.xlsx`);
+          this.showToast('បាននាំចេញតារាងពិន្ទុជាឯកសារ Excel (.xlsx) ដោយជោគជ័យ!', 'success');
+          return;
+        } catch (xlsxErr) {
+          console.warn('SheetJS XLSX.writeFile failed, falling back to Excel XML/HTML:', xlsxErr);
+        }
+      }
+
+      // 2. High-fidelity Fallback: Excel XML/HTML (.xls) directly recognized by Microsoft Excel
+      try {
+        const excelHtml = this.generateExcelHtml(allRows, safePeriodTitle);
+        const blob = new Blob(['\uFEFF' + excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${fileBase}.xls`;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          if (a.parentNode) document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        }, 300);
+        this.showToast('បាននាំចេញតារាងពិន្ទុជាឯកសារ Excel (.xls) ដោយជោគជ័យ!', 'success');
+        return;
+      } catch (xmlErr) {
+        console.warn('Excel XML fallback failed, falling back to CSV:', xmlErr);
+      }
+
+      // 3. Fallback: CSV with UTF-8 BOM
       const csv = '\uFEFF' + allRows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = `${filename}.csv`;
+      a.href = url;
+      a.download = `${fileBase}.csv`;
+      document.body.appendChild(a);
       a.click();
-      URL.revokeObjectURL(a.href);
+      setTimeout(() => {
+        if (a.parentNode) document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 300);
       this.showToast('បាននាំចេញតារាងពិន្ទុជាឯកសារ CSV ដោយជោគជ័យ!', 'success');
+    } catch (err) {
+      console.error('exportPeriodScoresExcel fatal error:', err);
+      alert('មិនអាចនាំចេញឯកសារបានទេ៖ ' + (err.message || err));
     }
   }
 
