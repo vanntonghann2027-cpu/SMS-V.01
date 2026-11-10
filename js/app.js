@@ -13382,8 +13382,12 @@ class ScoreManagementApp {
       if (index !== -1) {
         const prevStu = this.students[index];
         let resolvedOldClass = manualOldClass;
-        if (!resolvedOldClass && prevStu.class && prevStu.class !== className && !prevStu.class.startsWith('ថ្នាក់ទី')) {
-          resolvedOldClass = prevStu.class;
+        if (!resolvedOldClass) {
+          if (prevStu.oldClass) {
+            resolvedOldClass = prevStu.oldClass;
+          } else if (prevStu.class && prevStu.class !== className && !prevStu.class.startsWith('ថ្នាក់ទី')) {
+            resolvedOldClass = prevStu.class;
+          }
         }
 
         // Safeguard DOB: format if picked, or preserve existing DOB so it is NEVER accidentally deleted
@@ -14280,9 +14284,15 @@ class ScoreManagementApp {
 
       const prevClass = stu.class || '';
       const nextClass = assigned.newClass || prevClass;
-      const oldClassToStore = (prevClass && !prevClass.startsWith('ថ្នាក់ទី'))
-        ? prevClass
-        : (stu.oldClass || '');
+      
+      // Preserve the true original class:
+      // If student already has a valid oldClass distinct from prevClass, KEEP IT so repeated distributions never overwrite the true original!
+      let oldClassToStore = stu.oldClass || stu.initialClass || '';
+      if (!oldClassToStore || oldClassToStore === prevClass) {
+        if (prevClass && !prevClass.startsWith('ថ្នាក់ទី')) {
+          oldClassToStore = prevClass;
+        }
+      }
 
       const updatedStu = {
         ...stu,
