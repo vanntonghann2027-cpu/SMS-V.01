@@ -1049,6 +1049,7 @@ class ScoreManagementApp {
       this.roomSubjectSecretsByPeriod[initPeriodKey] = JSON.parse(JSON.stringify(this.roomSubjectSecrets));
     }
     this.classSections = parsed.classSections || this.getDefaultClassSections();
+    this.mergeDefaultAndStudentSections();
     this.examSubjectOrders = parsed.examSubjectOrders || this.getDefaultExamSubjectOrders();
     const defaultSubjectOrders = this.getDefaultExamSubjectOrders();
     ['grade_11_sci', 'grade_11_soc', 'grade_12_sci', 'grade_12_soc'].forEach(gk => {
@@ -4502,15 +4503,65 @@ class ScoreManagementApp {
 
   getDefaultClassSections() {
     return [
-      { id: 'grade_7', name: '7', type: 'general', gradeLevel: 'grade_7', sections: ['A', 'B', 'C'], status: 'active' },
-      { id: 'grade_8', name: '8', type: 'general', gradeLevel: 'grade_8', sections: ['A', 'B', 'C'], status: 'active' },
-      { id: 'grade_9', name: '9', type: 'general', gradeLevel: 'grade_9', sections: ['A', 'B', 'C'], status: 'active' },
-      { id: 'grade_10', name: '10', type: 'general', gradeLevel: 'grade_10', sections: ['A', 'B', 'C'], status: 'active' },
+      { id: 'grade_7', name: '7', type: 'general', gradeLevel: 'grade_7', sections: ['A', 'B', 'C', 'D', 'E'], status: 'active' },
+      { id: 'grade_8', name: '8', type: 'general', gradeLevel: 'grade_8', sections: ['A', 'B', 'C', 'D', 'E'], status: 'active' },
+      { id: 'grade_9', name: '9', type: 'general', gradeLevel: 'grade_9', sections: ['A', 'B', 'C', 'D', 'E'], status: 'active' },
+      { id: 'grade_10', name: '10', type: 'general', gradeLevel: 'grade_10', sections: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'], status: 'active' },
       { id: 'grade_11_sci', name: '11 វិទ្យាសាស្ត្រ', type: 'science', gradeLevel: 'grade_11_sci', sections: ['A', 'B', 'C'], status: 'active' },
-      { id: 'grade_11_soc', name: '11 វិទ្យាសាស្ត្រសង្គម', type: 'social', gradeLevel: 'grade_11_soc', sections: ['D', 'E'], status: 'active' },
+      { id: 'grade_11_soc', name: '11 វិទ្យាសាស្ត្រសង្គម', type: 'social', gradeLevel: 'grade_11_soc', sections: ['D', 'E', 'F', 'G'], status: 'active' },
       { id: 'grade_12_sci', name: '12 វិទ្យាសាស្ត្រ', type: 'science', gradeLevel: 'grade_12_sci', sections: ['A', 'B', 'C'], status: 'active' },
-      { id: 'grade_12_soc', name: '12 វិទ្យាសាស្ត្រសង្គម', type: 'social', gradeLevel: 'grade_12_soc', sections: ['D', 'E'], status: 'active' }
+      { id: 'grade_12_soc', name: '12 វិទ្យាសាស្ត្រសង្គម', type: 'social', gradeLevel: 'grade_12_soc', sections: ['D', 'E', 'F'], status: 'active' }
     ];
+  }
+
+  mergeDefaultAndStudentSections() {
+    if (!this.classSections || !Array.isArray(this.classSections) || this.classSections.length === 0) {
+      this.classSections = this.getDefaultClassSections();
+    }
+    const defaults = this.getDefaultClassSections();
+    defaults.forEach(def => {
+      let entry = this.classSections.find(c => c.gradeLevel === def.gradeLevel);
+      if (!entry) {
+        entry = { ...def, sections: [...def.sections] };
+        this.classSections.push(entry);
+      }
+      if (!Array.isArray(entry.sections)) entry.sections = [];
+      def.sections.forEach(sec => {
+        if (!entry.sections.includes(sec)) entry.sections.push(sec);
+      });
+    });
+
+    // Scan all students and register any section letters found in student classes
+    (this.students || []).forEach(stu => {
+      const cls = String(stu.class || stu.newClass || '').trim();
+      if (!cls || cls.startsWith('ថ្នាក់ទី')) return;
+      const numMatch = cls.match(/^(\d+)/);
+      if (!numMatch) return;
+      const gradeNum = numMatch[1];
+      const letter = cls.replace(/^\d+/, '').trim().toUpperCase();
+      if (!letter) return;
+
+      this.classSections.forEach(entry => {
+        if (entry.gradeLevel && entry.gradeLevel.includes(gradeNum)) {
+          if (gradeNum === '11' || gradeNum === '12') {
+            const isSocLetter = ['D', 'E', 'F', 'G'].includes(letter);
+            if (isSocLetter && entry.gradeLevel.endsWith('_soc')) {
+              if (!entry.sections.includes(letter)) entry.sections.push(letter);
+            } else if (!isSocLetter && entry.gradeLevel.endsWith('_sci')) {
+              if (!entry.sections.includes(letter)) entry.sections.push(letter);
+            }
+          } else {
+            if (!entry.sections.includes(letter)) entry.sections.push(letter);
+          }
+        }
+      });
+    });
+
+    this.classSections.forEach(entry => {
+      if (Array.isArray(entry.sections)) {
+        entry.sections.sort();
+      }
+    });
   }
 
   initDOMElements() {
@@ -8139,11 +8190,11 @@ class ScoreManagementApp {
     let classes = [];
     const valid = (this.students || []).filter(s => !this.isIncompleteLateStudent(s));
     if (gradeKey === 'ALL') {
-      classes = valid.map(s => String(s.class || '').trim()).filter(Boolean);
+      classes = valid.map(s => String(s.class || s.newClass || '').trim()).filter(Boolean);
     } else {
       classes = [
         ...this.getClassListForGradeKey(gradeKey),
-        ...valid.filter(s => this.studentMatchesGrade(s, gradeKey)).map(s => String(s.class || '').trim()).filter(Boolean)
+        ...valid.filter(s => this.studentMatchesGrade(s, gradeKey)).map(s => String(s.class || s.newClass || '').trim()).filter(Boolean)
       ];
     }
     classes = [...new Set(classes)].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
@@ -8158,10 +8209,12 @@ class ScoreManagementApp {
   getStudentGradeKey(stu) {
     if (!stu) return 'grade_7';
     const keys = this.getReportGradeKeys();
+    const matched = keys.find(g => this.studentMatchesGrade(stu, g));
+    if (matched) return matched;
     if (stu.gradeLevel && keys.includes(stu.gradeLevel)) {
       return stu.gradeLevel;
     }
-    return keys.find(g => this.studentMatchesGrade(stu, g)) || 'grade_7';
+    return 'grade_7';
   }
 
   getStudentGradeKeyForReport(stu) {
@@ -8211,12 +8264,13 @@ class ScoreManagementApp {
     const list = (this.students || []).filter(s => {
       if (this.isIncompleteLateStudent(s)) return false;
       if (filters.gradeKey !== 'ALL' && !this.studentMatchesGrade(s, filters.gradeKey)) return false;
-      if (filters.classVal !== 'ALL' && String(s.class || '').trim() !== filters.classVal) return false;
+      const currentClass = String(s.class || s.newClass || '').trim();
+      if (filters.classVal !== 'ALL' && currentClass !== filters.classVal) return false;
 
       // Program filter (general, sci, soc)
       if (filters.program && filters.program !== 'ALL') {
         const clsType = String(s.classType || '').toLowerCase();
-        const cls = String(s.class || '').toLowerCase();
+        const cls = currentClass.toLowerCase();
         if (filters.program === 'sci' && !clsType.includes('វិទ្យាសាស្ត្រ') && !cls.includes('sci')) return false;
         if (filters.program === 'soc' && !clsType.includes('សង្គម') && !cls.includes('soc')) return false;
         if (filters.program === 'general' && (clsType.includes('សង្គម') || clsType.includes('វិទ្យាសាស្ត្រ') && clsType !== 'ទូទៅ')) {
@@ -8231,7 +8285,7 @@ class ScoreManagementApp {
       return true;
     });
     list.sort((a, b) => {
-      const c = String(a.class || '').localeCompare(String(b.class || ''), undefined, { numeric: true });
+      const c = String(a.class || a.newClass || '').localeCompare(String(b.class || b.newClass || ''), undefined, { numeric: true });
       if (c !== 0) return c;
       return (a.khmerName || '').localeCompare(b.khmerName || '', 'km');
     });
@@ -8348,7 +8402,7 @@ class ScoreManagementApp {
   groupReportStudents(students, mode) {
     const groups = new Map();
     students.forEach(s => {
-      const key = mode === 'by_class' ? (String(s.class || '').trim() || '-') : this.resolveGradeLabelFromKey(this.getStudentGradeKeyForReport(s));
+      const key = mode === 'by_class' ? (String(s.class || s.newClass || '').trim() || '-') : this.resolveGradeLabelFromKey(this.getStudentGradeKeyForReport(s));
       if (!groups.has(key)) groups.set(key, []);
       groups.get(key).push(s);
     });
@@ -10812,11 +10866,8 @@ class ScoreManagementApp {
     if (typeof stu === 'string') {
       cls = stu.trim();
     } else {
-      cls = (stu.class || stu.grade || '').trim();
+      cls = (stu.class || stu.newClass || stu.grade || '').trim();
       clsType = (stu.classType || '').trim();
-      if (stu.gradeLevel && stu.gradeLevel === gradeKey) {
-        return true;
-      }
       if (!cls && stu.gradeLevel) {
         return stu.gradeLevel === gradeKey;
       }
@@ -10838,6 +10889,9 @@ class ScoreManagementApp {
 
     const numMatch = normalized.match(/^(\d+)/) || normalized.match(/(\d+)/);
     const gradeNum = numMatch ? parseInt(numMatch[1], 10) : null;
+    if (!gradeNum && typeof stu === 'object' && stu.gradeLevel) {
+      return stu.gradeLevel === gradeKey;
+    }
 
     // Combined string for substring checks (class + classType)
     const clsNorm = cls + ' ' + clsType;
@@ -12107,19 +12161,23 @@ class ScoreManagementApp {
   }
 
   getClassListForGradeKey(gradeKey) {
-    if (!this.classSections || !Array.isArray(this.classSections)) {
-      this.classSections = this.getDefaultClassSections();
-    }
+    this.mergeDefaultAndStudentSections();
     const gradeEntry = this.classSections.find(c => c.gradeLevel === gradeKey);
     let rawSections = (gradeEntry && Array.isArray(gradeEntry.sections) && gradeEntry.sections.length > 0)
       ? gradeEntry.sections
-      : (gradeKey.endsWith('_soc') ? ['D', 'E'] : ['A', 'B', 'C']);
+      : (gradeKey.endsWith('_soc') ? ['D', 'E', 'F'] : ['A', 'B', 'C', 'D', 'E']);
 
     const list = rawSections
       .map(sec => this.formatSectionClassName(gradeKey, sec))
       .filter(Boolean);
 
-    return [...new Set(list)];
+    // Also include any explicit class from students in this grade (current or new class)
+    const studentClasses = (this.students || [])
+      .filter(s => this.studentMatchesGrade(s, gradeKey))
+      .map(s => String(s.class || s.newClass || '').trim())
+      .filter(c => c && !c.startsWith('ថ្នាក់ទី'));
+
+    return [...new Set([...list, ...studentClasses])].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   }
 
   populateStudentSectionSelect(gradeLabelOrKey, selectedClassVal = '') {
@@ -12133,6 +12191,7 @@ class ScoreManagementApp {
     if (cleanSelected && !cleanSelected.startsWith('ថ្នាក់ទី') && !options.includes(cleanSelected)) {
       options.push(cleanSelected);
     }
+    options.sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
     sectionSelect.innerHTML = '';
     options.forEach(clsName => {
@@ -13341,6 +13400,7 @@ class ScoreManagementApp {
           ...prevStu,
           ...geipFields,
           class: className,
+          newClass: className,
           oldClass: resolvedOldClass,
           classType: finalClassType,
           khmerName,
@@ -13418,6 +13478,7 @@ class ScoreManagementApp {
         ...geipFields,
         id,
         class: className,
+        newClass: className,
         oldClass: manualOldClass || '',
         classType: finalClassType,
         khmerName,
@@ -14228,7 +14289,8 @@ class ScoreManagementApp {
       const updatedStu = {
         ...stu,
         oldClass: oldClassToStore,
-        class: nextClass
+        class: nextClass,
+        newClass: nextClass
       };
 
       if (periodKey === 'test_early' || periodKey === 'stage_1') {
@@ -14296,7 +14358,8 @@ class ScoreManagementApp {
         restoredCount++;
         return {
           ...stu,
-          class: stu.oldClass
+          class: stu.oldClass,
+          newClass: stu.oldClass
         };
       }
       return stu;
