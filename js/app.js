@@ -9580,16 +9580,17 @@ class ScoreManagementApp {
   }
 
   // Score Calculation Formula
-  calculatePeriodResults(period) {
+  calculatePeriodResults(period, customGradeKey = null) {
     const isSemester = (period === 'sem1_exam' || period === 'sem2_exam' || period === 'sem1_overall' || period === 'sem2_overall' || period === 'yearly');
-    const matchedGradeKey = this.getStandardGradeKey(this.activeClass);
+    const gradeToUse = customGradeKey || this.activeClass;
+    const matchedGradeKey = this.getStandardGradeKey(gradeToUse);
     const activeSubjects = this.getActiveSubjectsForGrade(matchedGradeKey, isSemester);
     const isGrade789 = ['grade_7', 'grade_8', 'grade_9'].includes(matchedGradeKey) || /^grade_[789]/.test(matchedGradeKey);
     const isNationalExamGrade = (matchedGradeKey === 'grade_9' || matchedGradeKey === 'grade_12_sci' || matchedGradeKey === 'grade_12_soc' || /12|9/.test(String(matchedGradeKey)));
     const hasKhmer = activeSubjects.some(s => s.code === 'kh');
 
     const targetStudents = this.students
-      .filter(stu => this.studentMatchesGrade(stu, this.activeClass) && !this.isIncompleteLateStudent(stu));
+      .filter(stu => this.studentMatchesGrade(stu, gradeToUse) && !this.isIncompleteLateStudent(stu));
 
     // Determine the fixed curriculum divisor (total coefficients) for this grade level:
     // "ការគណនាមធ្យមភាគបើចែក និង ១២ គឺចែក ទាំងអស់គ្នា ព្រោះគិតតាមកម្រិតមិនមែនគិតលើមុខវិជ្ជាមិនប្រឡងទេ"
@@ -12123,147 +12124,13 @@ class ScoreManagementApp {
   }
 
   getStudentScoreStatsForClassAssign(stu, gradeKey, periodKey) {
-    const preset = GRADE_PRESETS[gradeKey] || GRADE_PRESETS.grade_7;
-    const subjects = (preset && Array.isArray(preset.subjects)) ? preset.subjects.filter(s => s.enabled !== false) : [];
-    const stuScores = (this.scores && this.scores[stu.id]) ? this.scores[stu.id] : {};
-
-    const codeAliases = {
-      kh: ['kh', 'K'],
-      math: ['math', 'M'],
-      phy: ['phy', 'P'],
-      chem: ['chem', 'C'],
-      bio: ['bio', 'B'],
-      his: ['his', 'H'],
-      ict: ['ict', 'IT'],
-      moral: ['moral', 'MO'],
-      geo_env: ['geo_env', 'ES'],
-      geo: ['geo', 'G'],
-      home_ec: ['home_ec', 'HE'],
-      eng: ['eng', 'E'],
-      sport: ['sport', 'SP']
-    };
-
-    const readPeriodSubScore = (periodObj, subCode) => {
-      if (!periodObj) return null;
-      const aliases = codeAliases[subCode] || [subCode];
-      for (const k of aliases) {
-        if (periodObj[k] !== undefined && periodObj[k] !== null && periodObj[k] !== '') {
-          const v = parseFloat(periodObj[k]);
-          if (!isNaN(v)) return v;
-        }
-      }
-      if (subCode === 'kh' && (periodObj['essay'] !== undefined || periodObj['dictation'] !== undefined)) {
-        const eVal = parseFloat(periodObj['essay']) || 0;
-        const dVal = parseFloat(periodObj['dictation']) || 0;
-        if (eVal > 0 || dVal > 0) return eVal + dVal;
-      }
-      return null;
-    };
-
-    const computeMonthlyAvgForRange = (monthsList, subCode) => {
-      let mSum = 0, mCount = 0;
-      monthsList.forEach(m => {
-        const mv = readPeriodSubScore(stuScores[m], subCode);
-        if (mv !== null) {
-          mSum += mv;
-          mCount++;
-        }
-      });
-      return mCount > 0 ? (mSum / mCount) : null;
-    };
-
-    const computeSemesterOverall = (semNum, subCode) => {
-      const overallKey = semNum === 1 ? 'sem1_overall' : 'sem2_overall';
-      const mAvgKey = semNum === 1 ? 'sem1_monthly_avg' : 'sem2_monthly_avg';
-      const examKey = semNum === 1 ? 'sem1_exam' : 'sem2_exam';
-      const legacyExamKey = semNum === 1 ? 'sem1' : 'sem2';
-      const monthsList = semNum === 1
-        ? ['m01', 'm02', 'm03', 'm04', 'm05', 'm06']
-        : ['m07', 'm08', 'm09', 'm10', 'm11', 'm12'];
-
-      let val = readPeriodSubScore(stuScores[overallKey], subCode);
-      if (val !== null && val > 0) return val;
-
-      let mAvg = readPeriodSubScore(stuScores[mAvgKey], subCode);
-      if (mAvg === null) {
-        mAvg = computeMonthlyAvgForRange(monthsList, subCode);
-      }
-      let exScore = readPeriodSubScore(stuScores[examKey], subCode);
-      if (exScore === null) exScore = readPeriodSubScore(stuScores[legacyExamKey], subCode);
-
-      if (mAvg !== null && exScore !== null) return (mAvg + exScore) / 2;
-      if (exScore !== null) return exScore;
-      if (mAvg !== null) return mAvg;
-      return val;
-    };
-
-    const normalizedPeriod = periodKey === 'stage_1'
-      ? 'test_early'
-      : (periodKey === 'stage_2' ? 'sem1_overall' : (periodKey || 'test_early'));
-
-    let totalWeighted = 0;
-    let totalCoef = 0;
-
-    const isSem = (normalizedPeriod === 'sem1_exam' || normalizedPeriod === 'sem2_exam' || normalizedPeriod === 'sem1_overall' || normalizedPeriod === 'sem2_overall' || normalizedPeriod === 'yearly');
-
-    subjects.forEach(sub => {
-      const conf = this.getSubjectCurriculumConfig(gradeKey, sub.code);
-      const isBonus = conf
-        ? (isSem ? conf.isBonusSemester : conf.isBonusMonthly)
-        : (((gradeKey === 'grade_9' || gradeKey.includes('12')) && (sub.code === 'eng' || sub.code === 'lag')));
-      const coef = isBonus ? 0 : (conf ? (isSem ? (parseFloat(conf.coefSemester) || 0) : (parseFloat(conf.coefMonthly) || 0)) : (Number(sub.coef) || 1));
-      totalCoef += coef;
-      let val = null;
-
-      if (normalizedPeriod === 'test_early') {
-        val = readPeriodSubScore(stuScores['test_early'], sub.code);
-        if (val === null) val = readPeriodSubScore(stuScores['year_start_test'], sub.code);
-        if (val === null) val = readPeriodSubScore(stuScores['year_start'], sub.code);
-      } else if (normalizedPeriod === 'sem1_exam') {
-        val = readPeriodSubScore(stuScores['sem1_exam'], sub.code);
-        if (val === null) val = readPeriodSubScore(stuScores['sem1'], sub.code);
-      } else if (normalizedPeriod === 'sem2_exam') {
-        val = readPeriodSubScore(stuScores['sem2_exam'], sub.code);
-        if (val === null) val = readPeriodSubScore(stuScores['sem2'], sub.code);
-      } else if (normalizedPeriod === 'sem1_monthly_avg') {
-        val = readPeriodSubScore(stuScores['sem1_monthly_avg'], sub.code);
-        if (val === null || val === 0) {
-          val = computeMonthlyAvgForRange(['m01', 'm02', 'm03', 'm04', 'm05', 'm06'], sub.code);
-        }
-      } else if (normalizedPeriod === 'sem2_monthly_avg') {
-        val = readPeriodSubScore(stuScores['sem2_monthly_avg'], sub.code);
-        if (val === null || val === 0) {
-          val = computeMonthlyAvgForRange(['m07', 'm08', 'm09', 'm10', 'm11', 'm12'], sub.code);
-        }
-      } else if (normalizedPeriod === 'sem1_overall') {
-        val = computeSemesterOverall(1, sub.code);
-      } else if (normalizedPeriod === 'sem2_overall') {
-        val = computeSemesterOverall(2, sub.code);
-      } else if (normalizedPeriod === 'yearly') {
-        val = readPeriodSubScore(stuScores['yearly'], sub.code);
-        if (val === null || val === 0) {
-          const s1 = computeSemesterOverall(1, sub.code);
-          const s2 = computeSemesterOverall(2, sub.code);
-          if (s1 !== null && s2 !== null) val = (s1 + s2) / 2;
-          else if (s1 !== null) val = s1;
-          else if (s2 !== null) val = s2;
-        }
-      } else {
-        // Monthly score (m01..m12) or custom period key
-        val = readPeriodSubScore(stuScores[normalizedPeriod], sub.code);
-      }
-
-      if (val !== null && !isNaN(val)) {
-        const contrib = this.computeSubjectScoreContribution(val, sub, gradeKey, isSem);
-        totalWeighted += contrib.weighted;
-      }
-    });
-
-    const average = totalCoef > 0 ? (totalWeighted / totalCoef) : 0;
-    return {
-      total: Math.round(totalWeighted * 100) / 100,
-      average: Math.round(average * 100) / 100
-    };
+    if (!stu) return { total: 0, average: 0 };
+    const periodResults = this.calculatePeriodResults(periodKey, gradeKey);
+    const found = periodResults.find(r => r.student && r.student.id === stu.id);
+    if (found) {
+      return { total: found.total, average: found.average };
+    }
+    return { total: 0, average: 0 };
   }
 
   computeAutoClassAssignment(triggerSource = '') {
@@ -12300,17 +12167,20 @@ class ScoreManagementApp {
 
     const maxPerClass = Math.max(1, parseInt(this.assignMaxPerClassInput ? this.assignMaxPerClassInput.value : 45, 10) || 45);
 
-    // Compute scores & averages for the selected period
+    // Compute scores & averages for the selected period using official calculatePeriodResults
+    const periodResults = this.calculatePeriodResults(periodKey, gradeKey);
+    const resultMap = new Map(periodResults.map(r => [r.student.id, r]));
+
     const evaluated = gradeStudents.map(stu => {
-      const stats = this.getStudentScoreStatsForClassAssign(stu, gradeKey, periodKey);
+      const res = resultMap.get(stu.id);
       return {
         studentId: stu.id,
         khmerName: stu.khmerName || '',
         gender: stu.gender || '',
         oldClass: stu.class || '',
-        total: stats.total,
-        average: stats.average,
-        rank: 1,
+        total: res ? res.total : 0,
+        average: res ? res.average : 0,
+        rank: res ? res.rank : 1,
         newClass: stu.class || (targetClasses[0] || '7A'),
         placementMode: 'avg'
       };
@@ -12634,6 +12504,10 @@ class ScoreManagementApp {
   }
 
   exportAutoClassAssignmentCSV() {
+    this.exportAutoClassAssignmentExcel();
+  }
+
+  exportAutoClassAssignmentExcel() {
     const list = this.pendingClassAssignments || [];
     if (list.length === 0) {
       this.showToast('មិនមានទិន្នន័យសម្រាប់ទាញយកឡើយ!', 'error');
@@ -12645,21 +12519,134 @@ class ScoreManagementApp {
     const periodKey = this.assignStageSelect ? this.assignStageSelect.value : 'test_early';
     const stageName = this.getAssignStageDisplayName(periodKey);
 
-    let csv = '\uFEFF';
-    csv += 'ចំណាត់ថ្នាក់,អត្តលេខ,គោត្តនាមនិងនាម,ភេទ,ពិន្ទុសរុប,មធ្យមភាគ,ថ្នាក់ចាស់,ថ្នាក់ថ្មី,របៀបរៀប\n';
-    list.forEach(item => {
+    const titleRow1 = ['ព្រះរាជាណាចក្រកម្ពុជា ជាតិ សាសនា ព្រះមហាក្សត្រ'];
+    const titleRow2 = [`តារាងលទ្ធផលនៃការបែងចែកថ្នាក់សិស្សស្វ័យប្រវត្តិតាមមធ្យមភាគ`];
+    const titleRow3 = [`កម្រិតថ្នាក់៖ ${gradeLabel} | ដំណាក់កាលពិន្ទុ៖ ${stageName} | ចំនួនសិស្សសរុប៖ ${list.length} នាក់ | កាលបរិច្ឆេទ៖ ${new Date().toLocaleDateString('km-KH')}`];
+    const emptyRow = [];
+
+    const headerRow = [
+      'ចំណាត់ថ្នាក់',
+      'អត្តលេខ',
+      'គោត្តនាម-នាម',
+      'ភេទ',
+      'ពិន្ទុសរុប',
+      'មធ្យមភាគ',
+      'ថ្នាក់ចាស់',
+      'ថ្នាក់ថ្មី',
+      'របៀបរៀបថ្នាក់',
+      'ស្ថានភាព'
+    ];
+
+    const dataRows = list.map(item => {
       const modeLabel = item.placementMode === 'alpha' ? 'តាមឈ្មោះ (ក➔អ)' : 'តាមមធ្យមភាគ';
-      csv += `"${item.rank}","${item.studentId}","${item.khmerName}","${item.gender}","${item.total.toFixed(1)}","${item.average.toFixed(2)}","${item.oldClass || ''}","${item.newClass || ''}","${modeLabel}"\n`;
+      const statusLabel = (item.oldClass === item.newClass) ? 'ថ្នាក់ដដែល' : 'ប្ដូរថ្នាក់ថ្មី';
+      return [
+        item.rank,
+        item.studentId,
+        item.khmerName || '',
+        item.gender || '',
+        item.total,
+        item.average,
+        item.oldClass || '',
+        item.newClass || '',
+        modeLabel,
+        statusLabel
+      ];
     });
 
+    // Summary statistics
+    const totalCount = list.length;
+    const femaleCount = list.filter(r => r.gender === 'ស្រី' || r.gender === 'F').length;
+    const changedCount = list.filter(r => r.oldClass !== r.newClass).length;
+    const sameCount = totalCount - changedCount;
+
+    // Distribution by new class
+    const classCounts = {};
+    list.forEach(r => {
+      const c = r.newClass || 'ផ្សេងៗ';
+      classCounts[c] = (classCounts[c] || 0) + 1;
+    });
+    const distStr = Object.entries(classCounts).map(([c, n]) => `${c}: ${n} នាក់`).join(' | ');
+
+    const statRows = [
+      [],
+      ['--- ស្ថិតិសង្ខេបនៃការបែងចែកថ្នាក់ ---'],
+      [`សិស្សសរុប៖ ${totalCount} នាក់ (ស្រី ${femaleCount} នាក់)`],
+      [`សិស្សប្ដូរថ្នាក់ថ្មី៖ ${changedCount} នាក់ | សិស្សនៅថ្នាក់ដដែល៖ ${sameCount} នាក់`],
+      [`ការបែងចែកតាមថ្នាក់ថ្មី៖ ${distStr}`]
+    ];
+
+    const allRows = [
+      titleRow1,
+      titleRow2,
+      titleRow3,
+      emptyRow,
+      headerRow,
+      ...dataRows,
+      ...statRows
+    ];
+
+    const safeGrade = String(gradeLabel).replace(/[\\/:*?"<>|]/g, '_');
+    const safeStage = String(stageName).replace(/[\\/:*?"<>|]/g, '_');
+    const fileBase = `បញ្ជីបែងចែកថ្នាក់_${safeGrade}_${safeStage}_${new Date().toISOString().slice(0, 10)}`;
+
+    // 1. Try SheetJS (.xlsx)
+    if (typeof XLSX !== 'undefined' && XLSX.utils && typeof XLSX.utils.aoa_to_sheet === 'function') {
+      try {
+        const ws = XLSX.utils.aoa_to_sheet(allRows);
+        ws['!cols'] = headerRow.map((c, i) => {
+          let maxLen = String(c).length;
+          dataRows.forEach(r => {
+            const l = String(r[i] ?? '').length;
+            if (l > maxLen) maxLen = l;
+          });
+          return { wch: Math.min(45, Math.max(8, maxLen + 2)) };
+        });
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'ClassAssignment');
+        XLSX.writeFile(wb, `${fileBase}.xlsx`);
+        this.showToast('បាននាំចេញបញ្ជីបែងចែកថ្នាក់ជាឯកសារ Excel (.xlsx) ដោយជោគជ័យ!', 'success');
+        return;
+      } catch (xlsxErr) {
+        console.warn('SheetJS export failed, falling back:', xlsxErr);
+      }
+    }
+
+    // 2. Fallback: Excel XML/HTML (.xls)
+    try {
+      const excelHtml = this.generateExcelHtml(allRows, safeStage);
+      const blob = new Blob(['\uFEFF' + excelHtml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${fileBase}.xls`;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        if (a.parentNode) document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 300);
+      this.showToast('បាននាំចេញបញ្ជីបែងចែកថ្នាក់ជា Excel (.xls) ដោយជោគជ័យ!', 'success');
+      return;
+    } catch (xmlErr) {
+      console.warn('Excel XML fallback failed:', xmlErr);
+    }
+
+    // 3. Fallback: CSV
+    const csv = '\uFEFF' + allRows.map(r => r.map(c => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `បញ្ជីបែងចែកថ្នាក់_${gradeLabel}_${stageName}_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.download = `${fileBase}.csv`;
+    document.body.appendChild(a);
     a.click();
-    URL.revokeObjectURL(url);
-    this.showToast('បានទាញយកបញ្ជីបែងចែកថ្នាក់ (CSV) ដោយជោគជ័យ!', 'success');
+    setTimeout(() => {
+      if (a.parentNode) document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }, 300);
+    this.showToast('បាននាំចេញបញ្ជីបែងចែកថ្នាក់ជា CSV ដោយជោគជ័យ!', 'success');
   }
 
   printAutoClassAssignment() {

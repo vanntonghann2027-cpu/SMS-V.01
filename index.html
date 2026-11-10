@@ -4847,8 +4847,10 @@
             <i class="ri-printer-line"></i> បោះពុម្ពបញ្ជីថ្នាក់ថ្មី
           </button>
           <button type="button" class="btn btn-outline" id="btnExportClassAssignmentCSV"
-            title="ទាញយកបញ្ជីបែងចែកថ្នាក់ជា Excel/CSV">
-            <i class="ri-file-excel-2-line"></i> ទាញយក CSV
+            onclick="if(window.app) window.app.exportAutoClassAssignmentExcel();"
+            title="នាំចេញបញ្ជីបែងចែកថ្នាក់ជាឯកសារ Excel (.xlsx)"
+            style="color: #047857; border-color: #6ee7b7; background: #ecfdf5; font-weight: 700;">
+            <i class="ri-file-excel-2-line" style="color: #10b981;"></i> <span>នាំចេញជា Excel (.xlsx)</span>
           </button>
           <button type="button" class="btn btn-outline" id="btnUndoClassAssignment"
             style="color: #b45309; border-color: #fcd34d;" title="ត្រឡប់ទៅថ្នាក់ចាស់វិញសម្រាប់កម្រិតថ្នាក់នេះ">
@@ -5236,7 +5238,7 @@
   <script src="js/cambodia_geography.js"></script>
 
   <!-- Main Application Script -->
-  <script src="js/app.js?v=20261110_5"></script>
+  <script src="js/app.js?v=20261110_6"></script>
 </body>
 
 </html>
